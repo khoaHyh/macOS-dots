@@ -1,0 +1,52 @@
+# Don't print a new line at the start of the prompt
+add_newline = false
+
+# Set higher value to allow longer-running commands to keep executing
+command_timeout = 3000
+
+# Make prompt a single line instead of two lines
+[line_break]
+disabled = true
+
+# Replace the "❯" symbol in the prompt with "➜"
+[character]                            # The name of the module we are configuring is "character"
+success_symbol = "[➜](bold green)"     # The "success_symbol" segment is being set to "➜" with the color "bold green"
+
+[aws]
+disabled = true
+# symbol = " "
+
+[directory]
+read_only = " "
+
+[docker_context]
+disabled = true
+# symbol = " "
+
+[git_branch]
+symbol = " "
+
+[lua]
+disabled = true
+
+[nodejs]
+symbol = " "
+
+[package]
+disabled = true
+
+[python]
+disabled = true
+# symbol = " "
+
+[ruby]
+disabled = true
+# symbol = " "
+
+[rust]
+disabled = true
+# symbol = " "
+
+[swift]
+disabled = true
+# symbol = "ﯣ "
