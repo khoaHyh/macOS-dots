@@ -1,0 +1,32 @@
+[include]
+  path = ~/dev/macOS-dots/themes.gitconfig
+
+[core]
+  pager = delta
+  editor = nvim
+
+[alias]
+  staash = stash --include-untracked
+  co = checkout
+  br = branch
+  ci = commit
+  st = status
+  unstage = reset HEAD --
+  last = log -1 HEAD
+
+[interactive]
+  diffFilter = delta --color-only
+
+[delta]
+  navigate = true    # use n and N to move between diff sections
+  dark = true
+  side-by-side = true
+  true-color = always
+  # features = gruvmax-fang
+  # features = mellow-barbet
+
+[merge]
+  conflictStyle = zdiff3
+
+[diff]
+  colorMoved = default

@@ -27,7 +27,8 @@ alias vi=/usr/local/bin/vim
 alias vim=/usr/local/bin/vim
 
 # Handle NVM
-. $(brew --prefix nvm)/nvm.sh
+export NVM_DIR=~/.nvm
+[ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"  # This loads nvm bash_completion
 
 # zsh-autosuggestions keys
 bindkey '^ ' autosuggest-accept
@@ -40,8 +41,6 @@ export PATH=$(python3 -m site --user-base)/bin:$PATH
 
 # Add GOPATH
 export PATH=$PATH:~/go/bin
-
-[ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"  # This loads nvm bash_completion
 
 # starship prompt
 eval "$(starship init zsh)"
