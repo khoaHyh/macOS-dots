@@ -53,3 +53,8 @@ alias fzb="fzf --preview 'bat --color=always {}' --preview-window '~3'"
 
 eval $(thefuck --alias)
 source $(brew --prefix)/share/zsh-autosuggestions/zsh-autosuggestions.zsh
+
+# Android dev
+export ANDROID_HOME=$HOME/Library/Android/sdk
+export PATH=$PATH:$ANDROID_HOME/emulator
+export PATH=$PATH:$ANDROID_HOME/platform-tools
