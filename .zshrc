@@ -21,6 +21,7 @@ alias gp='git push'
 alias gpull='git pull'
 alias gd='git diff'
 alias glog='git log --oneline --decorate --graph'
+alias gs='git switch'
 
 # Add aliases for homebrew vim
 alias vi=/usr/local/bin/vim
@@ -35,9 +36,6 @@ bindkey '^ ' autosuggest-accept
 bindkey '^e' autosuggest-accept
 
 export EDITOR=/usr/local/bin/vim
-
-# Add pip binaries to $PATH
-export PATH=$(python3 -m site --user-base)/bin:$PATH
 
 # Add GOPATH
 export PATH=$PATH:~/go/bin
@@ -58,3 +56,8 @@ source $(brew --prefix)/share/zsh-autosuggestions/zsh-autosuggestions.zsh
 export ANDROID_HOME=$HOME/Library/Android/sdk
 export PATH=$PATH:$ANDROID_HOME/emulator
 export PATH=$PATH:$ANDROID_HOME/platform-tools
+
+# Initialize pyenv
+export PYENV_ROOT="$HOME/.pyenv"
+export PATH="$PYENV_ROOT/bin:$PATH"
+eval "$(pyenv init -)"

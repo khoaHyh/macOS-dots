@@ -1,5 +1,5 @@
 ## Quickly restart the yabai launch agent
-ctrl + alt + cmd - r: launchctl kickstart -k "gui/${UID}/homebrew.mxcl.yabai"
+ctrl + alt + cmd - r: yabai --restart-service
 
 # opens iTerm2
 alt - return : "${HOME}"/.config/scripts/open_iterm2.sh
