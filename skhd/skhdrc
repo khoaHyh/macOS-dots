@@ -2,7 +2,7 @@
 ctrl + alt + cmd - r: yabai --restart-service
 
 # opens iTerm2
-alt - return : "${HOME}"/.config/scripts/open_iterm2.sh
+alt - return: open -n /Applications/Ghostty.app
 # alt - return : open -na /Applications/iTerm.app
 
 # opens Alacritty
