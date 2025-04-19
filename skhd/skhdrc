@@ -1,12 +1,7 @@
 ## Quickly restart the yabai launch agent
 ctrl + alt + cmd - r: yabai --restart-service
 
-# opens iTerm2
-alt - return: open -n /Applications/Ghostty.app
-# alt - return : open -na /Applications/iTerm.app
-
-# opens Alacritty
-# alt - return : open -na /Applications/Alacritty.app
+alt - return: open -a /Applications/Ghostty.app -n
 
 # Close active application
 shift + alt - q : $(yabai -m window $(yabai -m query --windows --window | jq -re ".id") --close)
