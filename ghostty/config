@@ -16,6 +16,7 @@ font-family = SpaceMono Nerd Font Mono
 font-family-bold = SpaceMono Nerd Font Mono Bold
 font-family-italic = SpaceMono Nerd Font Mono Italic
 font-family-bold-italic = SpaceMono Nerd Font Mono Bold Italic
+font-thicken = true
 
 # Rounded borders
 window-decoration = auto
