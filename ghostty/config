@@ -27,3 +27,5 @@ quit-after-last-window-closed = "true"
 
 # This is cool
 keybind = global:cmd+s=toggle_quick_terminal
+
+macos-option-as-alt = true

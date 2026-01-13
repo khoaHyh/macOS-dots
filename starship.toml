@@ -12,6 +12,11 @@ disabled = true
 [character]                            # The name of the module we are configuring is "character"
 success_symbol = "[➜](bold green)"     # The "success_symbol" segment is being set to "➜" with the color "bold green"
 
+[custom.jj]
+when = "jj-starship detect" # walks up directory to find .jj or .git
+shell = ["jj-starship"] # executes jj-starship directly w/o shell wrapper overhead
+format = "$output " # passes thru jj-starship's ANSI colors directly
+
 [aws]
 disabled = true
 # symbol = " "

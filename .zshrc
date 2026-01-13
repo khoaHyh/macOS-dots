@@ -1,7 +1,7 @@
 # Path to your oh-my-zsh installation.
 export ZSH="/Users/khuynh/.oh-my-zsh"
 
-plugins=(vi-mode direnv nvm)
+plugins=(vi-mode nvm)
 
 ZSH_DISABLE_COMPFIX="true"
 
@@ -9,9 +9,6 @@ ZSH_DISABLE_COMPFIX="true"
 zstyle ':omz:plugins:nvm' lazy yes
 
 source $ZSH/oh-my-zsh.sh
-# source /opt/homebrew/opt/chruby/share/chruby/chruby.sh
-# auto-switch ruby version according .to ruby-version file
-source /opt/homebrew/opt/chruby/share/chruby/auto.sh
 
 # Git aliases
 alias ga='git add'
@@ -27,6 +24,11 @@ alias gs='git switch'
 alias vi=/usr/local/bin/vim
 alias vim=/usr/local/bin/vim
 
+# NVM
+export NVM_DIR="$HOME/.nvm"
+[ -s "$HOMEBREW_PREFIX/opt/nvm/nvm.sh" ] && \. "$HOMEBREW_PREFIX/opt/nvm/nvm.sh" # This loads nvm
+[ -s "$HOMEBREW_PREFIX/opt/nvm/etc/bash_completion.d/nvm" ] && \. "$HOMEBREW_PREFIX/opt/nvm/etc/bash_completion.d/nvm" # This loads nvm bash_completion
+
 # Handle NVM
 export NVM_DIR=~/.nvm
 [ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"  # This loads nvm bash_completion
@@ -40,10 +42,7 @@ export EDITOR=/usr/local/bin/vim
 # Add GOPATH
 export PATH=$PATH:~/go/bin
 
-# starship prompt
 eval "$(starship init zsh)"
-export PATH="$HOME/.rbenv/bin:$PATH"
-eval "$(rbenv init -)"
 
 # `bat` config stuff
 export BAT_THEME="gruvbox-dark"
