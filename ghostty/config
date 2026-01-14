@@ -29,3 +29,4 @@ quit-after-last-window-closed = "true"
 keybind = global:cmd+s=toggle_quick_terminal
 
 macos-option-as-alt = true
+keybind = shift+enter=text:\x1b\r
