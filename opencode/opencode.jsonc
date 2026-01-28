@@ -1,4 +1,5 @@
 {
+  "plugin": ["oh-my-opencode@3.1.5"],
   "small_model": "opencode/gpt-5.1-codex-mini",
   "$schema": "https://opencode.ai/config.json",
   "mcp": {
