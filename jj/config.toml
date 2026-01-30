@@ -1,0 +1,59 @@
+[user]
+name = "khoaHyh"
+email = "khoahuynh.toronto@gmail.com"
+
+[ui]
+merge-editor = "nvim"
+graph.style = "square"
+pager = { command = ["less", "-FRX"], env = { LESSCHARSET = "utf-8" } }
+
+[merge-tools.difft]
+program = "difft"
+diff-args = ["--color=always", "$left", "$right"]
+
+[git]
+# Prevent pushing commits that are work-in-progress
+# jj git push will refuse to push these commits and warn me 
+private-commits = "description(glob:'wip:*') | description(glob:'WIP:*') | description(exact:'')"
+
+
+[aliases]
+bm = ["bookmark"]
+gf = ["git", "fetch"]
+gp = ["git", "push"]
+difft = ["diff", "--tool", "difft"]
+
+# Get all open stacks of work.
+open = ["log", "-r", "open()"]
+
+# Advance a bookmark to your latest pushable change
+# Usage: jj tug [bookmark_name]
+# - jj tug        → moves closest_bookmark(@) to closest_pushable(@)
+# - jj tug main   → moves 'main' to closest_pushable(@)
+tug = ["util", "exec", "--", "sh", "-c", """
+  if [ -n "$1" ]; then
+    jj bookmark move "$1" --to 'closest_pushable(@)'
+  else
+    jj bookmark move --from 'closest_bookmark(@)' --to 'closest_pushable(@)'
+  fi
+""", "sh"]
+
+# Show my entire connected stack
+stack = ["log", "-r", "stack()"]
+
+[revset-aliases]
+# Find commits authored by me 
+"mine()" = "author(exact:'khoaHyh') | author(exact:'khoahuynh.toronto@gmail.com')"
+
+# My commits that aren't immutable (trunk/tags/remote branches)
+# Shows all my mutable work across the repo
+'wip()' = 'mine() ~ immutable()'
+
+# My commits not yet merged into trunk
+# Shows my unmerged/unpushed work
+'open()' = 'mine() ~ ::trunk()'
+
+# Show my entire stack - all mutable commits connected to @
+# reachable() finds commits reachable in any direction (ancestors + descendants)
+# within the mutable() set (excludes immutable trunk/tags)
+'stack()' = 'reachable(@, mutable())'

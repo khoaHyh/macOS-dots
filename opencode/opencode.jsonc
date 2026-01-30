@@ -1,14 +1,23 @@
 {
-  "plugin": ["oh-my-opencode@3.1.7"],
-  "small_model": "opencode/gpt-5.1-codex-mini",
   "$schema": "https://opencode.ai/config.json",
+  "plugin": ["oh-my-opencode@3.1.9"],
+  "small_model": "opencode/kimi-k2.5-free",
   "mcp": {
     "context7": {
       "type": "remote",
       "url": "https://mcp.context7.com/mcp"
     },
     "notion": {
+      "type": "remote",
       "url": "https://mcp.notion.com/mcp"
+    },
+    "playwright": {
+      "type": "local",
+      "command": [
+        "npx",
+        "@playwright/mcp@latest"
+      ],
+      "enabled": true
     }
   }
 }
