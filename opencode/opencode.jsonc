@@ -1,11 +1,28 @@
 {
   "$schema": "https://opencode.ai/config.json",
-  "plugin": ["oh-my-opencode@3.1.9"],
+  "plugin": ["oh-my-opencode@latest"],
   "small_model": "opencode/kimi-k2.5-free",
   "mcp": {
     "context7": {
       "type": "remote",
       "url": "https://mcp.context7.com/mcp"
+    },
+    "terraform": {
+      "type": "local",
+      "command": [
+        "docker",
+        "run",
+        "-i",
+        "--rm",
+        "hashicorp/terraform-mcp-server"
+      ]
+    },
+    "aws-terraform": {
+      "type": "local",
+      "command": [
+        "uvx",
+        "awslabs.terraform-mcp-server@latest"
+      ]
     },
     "notion": {
       "type": "remote",
@@ -17,6 +34,11 @@
         "npx",
         "@playwright/mcp@latest"
       ],
+      "enabled": true
+    },
+    "linear": {
+      "type": "remote",
+      "url": "https://mcp.linear.app/mcp",
       "enabled": true
     }
   }
