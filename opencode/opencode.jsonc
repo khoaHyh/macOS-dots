@@ -28,14 +28,15 @@
       "type": "remote",
       "url": "https://mcp.notion.com/mcp"
     },
-    "playwright": {
-      "type": "local",
-      "command": [
-        "npx",
-        "@playwright/mcp@latest"
-      ],
-      "enabled": true
-    },
+    // Prefer CLI + skills instead
+    // "playwright": {
+    //   "type": "local",
+    //   "command": [
+    //     "npx",
+    //     "@playwright/mcp@latest"
+    //   ],
+    //   "enabled": true
+    // },
     "linear": {
       "type": "remote",
       "url": "https://mcp.linear.app/mcp",
