@@ -50,3 +50,4 @@ eval "$(pyenv init -)"
 
 export PATH=$PATH:/Users/khuynh/.spicetify
 export PATH="$HOME/.bun/bin:$PATH"
+export PATH="$HOME/.local/bin:$PATH"

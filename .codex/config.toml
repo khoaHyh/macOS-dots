@@ -12,10 +12,9 @@ apply_patch_freeform = true
 skills = true
 shell_snapshot = true
 
+# use oauth login instead of api key (`codex mcp login context7`)
 [mcp_servers.context7]
-command = "npx"
-args = ["-y", "@upstash/context7-mcp"]
-startup_timeout_ms = 20_000
+url = "https://mcp.context7.com/mcp"
 
 [projects."/Users/khuynh/dev/skills"]
 trust_level = "trusted"
