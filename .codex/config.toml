@@ -16,8 +16,14 @@ shell_snapshot = true
 [mcp_servers.context7]
 url = "https://mcp.context7.com/mcp"
 
+[mcp_servers.notion]
+url = "https://mcp.notion.com/mcp"
+
 [projects."/Users/khuynh/dev/skills"]
 trust_level = "trusted"
 
 [projects."/Users/khuynh/dev/macOS-dots"]
+trust_level = "trusted"
+
+[projects."/Users/khuynh/dev/custodia-web"]
 trust_level = "trusted"
