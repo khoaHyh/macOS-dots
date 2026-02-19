@@ -26,6 +26,9 @@ alias gs='git switch'
 alias vi=/usr/local/bin/vim
 alias vim=/usr/local/bin/vim
 
+## opencode
+alias oc=opencode
+
 # zsh-autosuggestions keys
 bindkey '^ ' autosuggest-accept
 bindkey '^e' autosuggest-accept
