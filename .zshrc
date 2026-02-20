@@ -29,10 +29,6 @@ alias vim=/usr/local/bin/vim
 ## opencode
 alias oc=opencode
 
-# zsh-autosuggestions keys
-bindkey '^ ' autosuggest-accept
-bindkey '^e' autosuggest-accept
-
 export EDITOR=/usr/local/bin/vim
 
 # Add GOPATH
@@ -46,6 +42,12 @@ alias fzb="fzf --preview 'bat --color=always {}' --preview-window '~3'"
 
 eval $(thefuck --alias)
 source $(brew --prefix)/share/zsh-autosuggestions/zsh-autosuggestions.zsh
+
+# zsh-autosuggestions keys
+for keymap in main emacs viins vicmd; do
+  bindkey -M "$keymap" '^@' autosuggest-accept
+done
+bindkey '^e' autosuggest-accept
 
 export PYENV_ROOT="$HOME/.pyenv"
 export PATH="$PYENV_ROOT/bin:$PATH"
