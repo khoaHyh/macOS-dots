@@ -1,5 +1,11 @@
 {
   "$schema": "https://raw.githubusercontent.com/code-yeongyu/oh-my-opencode/master/assets/oh-my-opencode.schema.json",
+  "sisyphus_agent": {
+    "disabled": false,
+    "planner_enabled": true,
+    "default_builder_enabled": true,
+    "replace_plan": false
+  },
   "agents": {
     "hephaestus": {
       "model": "openai/gpt-5.3-codex",
