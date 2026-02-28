@@ -20,10 +20,10 @@
       "variant": "high"
     },
     "librarian": {
-      "model": "opencode/kimi-k2.5"
+      "model": "opencode-go/kimi-k2.5"
     },
     "explore": {
-      "model": "opencode/kimi-k2.5"
+      "model": "opencode-go/kimi-k2.5"
     },
     "multimodal-looker": {
       "model": "openai/gpt-5.3-codex",
@@ -42,12 +42,12 @@
       "variant": "medium"
     },
     "atlas": {
-      "model": "opencode/kimi-k2.5"
+      "model": "opencode-go/kimi-k2.5"
     }
   },
   "categories": {
     "visual-engineering": {
-      "model": "opencode/kimi-k2.5"
+      "model": "openai/gpt-5.2"
     },
     "ultrabrain": {
       "model": "openai/gpt-5.3-codex",
@@ -58,20 +58,20 @@
       "variant": "high"
     },
     "artistry": {
-      "model": "opencode/kimi-k2.5"
+      "model": "openai/gpt-5.2"
     },
     "quick": {
-      "model": "opencode/kimi-k2.5"
+      "model": "opencode-go/kimi-k2.5"
     },
     "unspecified-low": {
-      "model": "opencode/kimi-k2.5"
+      "model": "opencode-go/kimi-k2.5"
     },
     "unspecified-high": {
       "model": "openai/gpt-5.3-codex",
       "variant": "high"
     },
     "writing": {
-      "model": "opencode/kimi-k2.5"
+      "model": "openai/gpt-5.1-codex-mini"
     }
   }
 }
