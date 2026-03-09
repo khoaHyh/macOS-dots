@@ -1,8 +1,8 @@
-model = "gpt-5.3-codex"
+model = "gpt-5.4"
 model_reasoning_effort = "high"
 tool_output_token_limit = 25000
 # Leave room for native compaction near the 272–273k context window.
-model_auto_compact_token_limit = 233000
+model_auto_compact_token_limit = 800000
 web_search = "live"
 [features]
 # Use PTY-backed execution instead of pipes - programs think they're in a real terminal,
