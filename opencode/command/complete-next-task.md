@@ -1,5 +1,6 @@
 ---
 description: Complete the next incomplete task from a PRD
+agent: Bob
 ---
 
 Complete one task from a PRD file. Implements the next task with `passes: false`, runs feedback loops, and commits.
@@ -10,7 +11,7 @@ Complete one task from a PRD file. Implements the next task with `passes: false`
 /complete-next-task <prd-name>
 ```
 
-Where `<prd-name>` matches `.opencode/state/<prd-name>/prd.json`
+Where `<prd-name>` matches `.specs/<prd-name>/prd.json`.
 
 ## Before Starting
 
@@ -24,22 +25,19 @@ Use the detected VCS (jj or git) for all version control operations.
 
 ## File Locations
 
-**IMPORTANT**: The `.opencode/state/` directory may not be at cwd. Search for it:
+**Canonical state root**: `.specs/`
 
-1. Start at cwd
-2. Check if `.opencode/state/<prd-name>/prd.json` exists
-3. If not, go up one directory
-4. Repeat until found or reaching filesystem root
+Search for `.specs/<prd-name>/prd.json` from cwd upward.
 
 Use this bash to find the state directory:
 
 ```bash
-find_opencode_state() {
+find_specs_state() {
   local prd="$1"
   local dir="$PWD"
   while [[ "$dir" != "/" ]]; do
-    if [[ -f "$dir/.opencode/state/$prd/prd.json" ]]; then
-      echo "$dir/.opencode/state/$prd"
+    if [[ -f "$dir/.specs/$prd/prd.json" ]]; then
+      echo "$dir/.specs/$prd"
       return 0
     fi
     dir="$(dirname "$dir")"
@@ -48,13 +46,17 @@ find_opencode_state() {
 }
 ```
 
-Once found, use **absolute paths** for all file operations:
+State layout:
 
 ```
 <state-dir>/
 ├── prd.json       # Task list with passes field
 └── progress.txt   # Cross-iteration memory
 ```
+
+Legacy compatibility note:
+- `.opencode/state/` may exist in older projects.
+- Treat it as migration-only compatibility input, not a canonical destination for new state.
 
 ## Process
 
@@ -96,7 +98,6 @@ Extract `prdName` from PRD, then:
 
 Work on the single task until verification steps pass.
 
-
 ### 5. Feedback Loops (REQUIRED)
 
 Before committing, run ALL applicable:
@@ -129,7 +130,7 @@ If you discover a **reusable pattern**, also add to `## Codebase Patterns` at th
 - jj: `jj describe -m 'feat(<scope>): <description>' && jj bookmark create <prdName>/<task-id> && jj new`
 - git: `git add -A && git commit -m 'feat(<scope>): <description>'`
 
-Bookmark format: `<prdName>/<task-id>` (e.g., `lib-relay-implementation/types-2`)
+Bookmark format: `<prdName>/<task-id>` (for example, `lib-relay-implementation/types-2`)
 
 ## Completion
 

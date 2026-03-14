@@ -1,6 +1,6 @@
 ---
 description: Explain code or concepts without making changes
-agent: plan
+agent: Bob
 subtask: true
 ---
 

@@ -1,0 +1,10 @@
+{
+  "name": "custom-opencode-harness",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "bun test",
+    "eval:run": "bun run evals/run.ts",
+    "eval:roi": "bun run evals/roi.ts"
+  }
+}
