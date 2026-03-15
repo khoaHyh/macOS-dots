@@ -1,3 +1,4 @@
+import { getFixture } from "./core";
 import type { Fixture, FixtureName } from "./core";
 
 type PolicyInput = {
@@ -6,64 +7,35 @@ type PolicyInput = {
   codebaseDiscoveryNeeded?: boolean;
   externalResearchNeeded?: boolean;
   dialecticRequested?: boolean;
+  firstPassFailed?: boolean;
+  unresolvedAmbiguity?: boolean;
 };
 
 export function evaluatePolicy(input: PolicyInput): Fixture {
-  const { fixture, codebaseDiscoveryNeeded, externalResearchNeeded, dialecticRequested } = input;
-
-  let result: Fixture;
-  if (fixture === "explicit-scuba") {
-    result = {
-      name: "explicit-scuba",
-      route: "Scuba",
-      review: "light",
-      escalation: [],
-      reason: "explicit-scuba",
-      source: "explicit",
-    };
-  } else if (fixture === "planning-flow") {
-    result = {
-      name: "planning-flow",
-      route: "PlanB",
-      review: "light",
-      escalation: [],
-      reason: "planning-request",
-      planPath: ".specs/example-plan.md",
-    };
-  } else if (fixture === "risky-change") {
-    result = {
-      name: "risky-change",
-      route: "Bob",
-      review: "momus",
-      escalation: ["oracle"],
-      reason: "risk-threshold",
-      source: "automatic",
-      escalationReason: "risk-threshold",
-    };
-  } else {
-    result = {
-      name: "trivial-build",
-      route: "Bob",
-      review: "light",
-      escalation: [],
-      reason: "default-low-risk",
-    };
-  }
+  let result = getFixture(input.fixture);
 
   if (!result.escalation.length) {
-    if (codebaseDiscoveryNeeded) {
+    if (input.codebaseDiscoveryNeeded) {
       result = { ...result, escalation: ["explore"], escalationReason: "codebase-discovery" };
-    } else if (externalResearchNeeded) {
+    } else if (input.externalResearchNeeded) {
       result = { ...result, escalation: ["librarian"], escalationReason: "external-research" };
     }
   }
 
-  if (dialecticRequested) {
+  if (input.dialecticRequested) {
     result = { ...result, review: "dialectic" };
   }
 
-  if (result.escalation.length > 1) {
-    result = { ...result, escalation: result.escalation.slice(0, 1) };
+  if (input.firstPassFailed && input.unresolvedAmbiguity && !result.escalation.includes("oracle")) {
+    result = {
+      ...result,
+      escalation: [...result.escalation, "oracle"],
+      escalationReason: "unresolved-first-pass",
+    };
+  }
+
+  if (result.escalation.length > 2) {
+    result = { ...result, escalation: result.escalation.slice(0, 2) };
   }
 
   return result;

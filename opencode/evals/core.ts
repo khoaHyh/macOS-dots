@@ -1,15 +1,19 @@
-export type FixtureName = "explicit-scuba" | "planning-flow" | "risky-change" | "trivial-build";
+const fixtureNames = ["explicit-scuba", "planning-flow", "risky-change", "trivial-build"] as const;
+
+export type FixtureName = (typeof fixtureNames)[number];
 
 export type Fixture = {
   name: FixtureName;
   route: "PlanB" | "Bob" | "Scuba";
-  review: "light" | "momus" | "dialectic";
+  review: "light" | "reviewer" | "dialectic";
   escalation: string[];
   reason: string;
   source?: "explicit" | "automatic";
   planPath?: string;
   escalationReason?: string;
 };
+
+type FixtureTemplate = Omit<Fixture, "escalation"> & { escalation: readonly string[] };
 
 export type RoiMetrics = {
   promptFootprint: number;
@@ -18,7 +22,7 @@ export type RoiMetrics = {
   tokenCalls: number;
 };
 
-const fixtures: Record<FixtureName, Fixture> = {
+const fixtures = {
   "explicit-scuba": {
     name: "explicit-scuba",
     route: "Scuba",
@@ -38,10 +42,11 @@ const fixtures: Record<FixtureName, Fixture> = {
   "risky-change": {
     name: "risky-change",
     route: "Bob",
-    review: "momus",
+    review: "reviewer",
     escalation: ["oracle"],
     reason: "risk-threshold",
     source: "automatic",
+    escalationReason: "risk-threshold",
   },
   "trivial-build": {
     name: "trivial-build",
@@ -50,17 +55,28 @@ const fixtures: Record<FixtureName, Fixture> = {
     escalation: [],
     reason: "default-low-risk",
   },
-};
+} satisfies Record<FixtureName, FixtureTemplate>;
+
+function isFixtureName(input: string): input is FixtureName {
+  return fixtureNames.includes(input as FixtureName);
+}
+
+function cloneFixture(fixture: FixtureTemplate): Fixture {
+  return {
+    ...fixture,
+    escalation: [...fixture.escalation],
+  };
+}
 
 export function listFixtureNames(): FixtureName[] {
-  return Object.keys(fixtures).sort() as FixtureName[];
+  return [...fixtureNames];
 }
 
 export function getFixture(name: string): Fixture {
-  if (!(name in fixtures)) {
+  if (!isFixtureName(name)) {
     throw new Error(`Unknown fixture: ${name}`);
   }
-  return fixtures[name as FixtureName];
+  return cloneFixture(fixtures[name]);
 }
 
 export function summarizeRoiMetrics(input: { baseline: RoiMetrics; candidate: RoiMetrics }) {

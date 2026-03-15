@@ -29,15 +29,15 @@ The following are available as non-primary specialist subagents only:
 - `explore` - focused codebase/pattern search
 - `librarian` - external docs/examples/research
 - `oracle` - strategic consultation and complex architecture/debugging guidance
-- `momus` - higher-rigor review specialist
+- `reviewer` - higher-rigor review specialist
 
 These specialists must be invoked explicitly or by documented escalation triggers. They must not add default cognitive or token overhead to ordinary tasks.
 
 ## Decision: Review Model
 - Default review mode is `light`.
-- `momus` is available as a higher-rigor review subagent.
+- `reviewer` is available as a higher-rigor review subagent.
 - `dialectic` remains an optional escalated review path, especially for plan and architecture disagreements.
-- `momus` or `dialectic` must not run by default on ordinary tasks.
+- `reviewer` or `dialectic` must not run by default on ordinary tasks.
 
 ## Decision: Planning Source of Truth
 - `.specs/` is the single source of truth for planning artifacts in v1.

@@ -21,6 +21,13 @@ describe("eval foundation", () => {
     });
   });
 
+  test("returns a fresh fixture object each time", () => {
+    const first = getFixture("planning-flow");
+    first.escalation.push("explore");
+
+    expect(getFixture("planning-flow").escalation).toEqual([]);
+  });
+
   test("throws for missing fixtures", () => {
     expect(() => getFixture("does-not-exist")).toThrow(/Unknown fixture/);
   });

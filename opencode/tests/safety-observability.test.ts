@@ -17,13 +17,13 @@ describe("safety and observability", () => {
     const lines = formatFixtureOutput({
       name: "risky-change",
       route: "Bob",
-      review: "momus",
+      review: "reviewer",
       escalation: ["oracle"],
       reason: "risk-threshold",
       source: "automatic",
     });
     expect(lines).toContain("ROUTE=Bob");
-    expect(lines).toContain("REVIEW=momus");
+    expect(lines).toContain("REVIEW=reviewer");
     expect(lines).toContain("REASON=risk-threshold");
     expect(lines).toContain("ESCALATION=oracle");
     expect(lines).toContain("ESCALATION_REASON=risk-threshold");

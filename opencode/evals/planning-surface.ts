@@ -1,26 +1,20 @@
-import { readFileSync } from "node:fs";
 import { join } from "node:path";
+import { readUtf8 } from "./lib/read";
+
+const canonicalPlanTokens = [".specs/<filename>.md", "`.specs/` as the canonical"] as const;
+
+function hasCanonicalPlanToken(input: string): boolean {
+  return canonicalPlanTokens.some((token) => input.includes(token));
+}
 
 export function inspectPlanningSurface(rootDir = join(import.meta.dir, "..", "..")) {
-  const planSpec = readFileSync(join(rootDir, "opencode", "command", "plan-spec.md"), "utf8");
-  const plannotate = readFileSync(join(rootDir, "opencode", "command", "plannotate.md"), "utf8");
-  const skill = readFileSync(join(rootDir, ".agents", "skills", "spec-planner", "SKILL.md"), "utf8");
-  const combined = [planSpec, plannotate, skill].join("\\n");
-  const legacyCanonicalReferences: string[] = [];
-
-  if (combined.includes("`specs/<filename>.md`")) {
-    legacyCanonicalReferences.push("specs/<filename>.md");
-  }
-  if (combined.includes("Spec written to: specs/<filename>.md")) {
-    legacyCanonicalReferences.push("specs-confirmation");
-  }
+  const planSpec = readUtf8(rootDir, "opencode", "command", "plan-spec.md");
+  const plannotate = readUtf8(rootDir, "opencode", "command", "plannotate.md");
+  const skill = readUtf8(rootDir, ".agents", "skills", "spec-planner", "SKILL.md");
+  const combined = [planSpec, plannotate, skill].join("\n");
 
   return {
-    canonicalPlanDirectory:
-      combined.includes(".specs/<filename>.md") || combined.includes("`.specs/` as the canonical")
-        ? ".specs"
-        : "unknown",
-    legacyCanonicalReferences,
+    canonicalPlanDirectory: hasCanonicalPlanToken(combined) ? ".specs" : "unknown",
     dialogueFirst: combined.includes("dialogue-first"),
   };
 }
