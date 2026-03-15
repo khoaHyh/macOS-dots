@@ -18,8 +18,32 @@ Planning workflow:
 3. Run targeted research when needed:
    - `explore` for codebase facts, patterns, and integration surfaces.
    - `librarian` for external docs, APIs, and migration caveats.
-4. After each planning round, restate confirmed decisions and remaining unknowns.
-5. Continue until the readiness gate is fully satisfied.
+4. When choices or tradeoffs exist, ask via the `question` tool (interactive options UI), not plain-text A/B/C prompts.
+5. After each planning round, restate confirmed decisions and remaining unknowns.
+6. Continue until the readiness gate is fully satisfied.
+
+Interactive question protocol:
+- Always use the `question` tool for multiple-choice or structured decisions.
+- Do not ask the user to type letters/numbers like `A`, `B`, `C`, `D`, or `1`, `2`, `3` in chat.
+- Provide 2-5 meaningful options with concise labels and descriptions.
+- Use multi-select only when multiple answers are truly valid.
+- If the `question` tool is unavailable, fall back to numbered options and state that interactive selection is unavailable.
+- Guard clause: before sending any message that contains explicit options/tradeoff choices, convert it into a `question` tool call first; only send plain-text options in the documented fallback case.
+
+Example:
+```typescript
+question({
+  questions: [{
+    header: "Decision Needed",
+    question: "Which plan direction should we take?",
+    options: [
+      { label: "Conservative", description: "Minimal change, low risk" },
+      { label: "Balanced", description: "Moderate scope, best overall tradeoff" },
+      { label: "Aggressive", description: "Maximum scope, fastest long-term payoff" }
+    ]
+  }]
+})
+```
 
 Readiness gate (all required before finalizing):
 - Core objective is explicit.
@@ -33,7 +57,7 @@ Readiness gate (all required before finalizing):
 Gap handling protocol:
 - `CRITICAL`: requires user decision.
   - Add placeholder: `[DECISION NEEDED: ...]`.
-  - Ask one concrete question with options before finalizing.
+  - Ask one concrete `question` tool prompt with options before finalizing.
 - `MINOR`: can be resolved safely by planner.
   - Resolve directly.
   - Disclose under `Auto-Resolved` in the plan summary.

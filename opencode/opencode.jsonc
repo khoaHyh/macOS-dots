@@ -21,7 +21,8 @@
       "prompt": "{file:./prompts/planb-codex-harness.md}",
       "color": "#F3C969",
       "tools": {
-        "submit_plan": true
+        "submit_plan": true,
+        "question": true
       }
     },
     "Bob": {
