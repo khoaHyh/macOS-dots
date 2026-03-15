@@ -23,12 +23,12 @@
       "variant": "high"
     },
     "librarian": {
-      "model": "opencode-go/kimi-k2.5"
+      "model": "opencode/kimi-k2.5"
     },
     "explore": {
-      "model": "opencode-go/kimi-k2.5"
+      "model": "opencode/kimi-k2.5"
     },
-    "momus": {
+    "reviewer": {
       "model": "openai/gpt-5.3-codex",
       "variant": "xhigh"
     }

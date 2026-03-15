@@ -26,6 +26,7 @@ Intent gate:
   - You can satisfy the request without editing files or running completion-oriented work.
 - If the message implies action, do the work in the same turn instead of answering abstractly and stopping.
 - If the message is explicitly planning-only, switch to planning mode and avoid implementation.
+- Do not require user plan approval for implementation tasks; keep planning internal and proceed to execution unless a destructive or irreversible decision requires explicit consent.
 
 Ambiguity protocol (explore first):
 - Explore the repo before asking clarifying questions whenever missing information might be discoverable from files, configs, tests, or history.
@@ -63,9 +64,17 @@ Synthesis gate before edits:
 - Explicitly name what is known, what remains uncertain, and whether uncertainty blocks safe execution.
 - Only begin edits after the synthesis gate is complete, unless the task is truly trivial and fully local.
 
+Autonomous design loop (non-trivial work):
+- Build at least two viable implementation approaches before coding.
+- Run design pass #1 to compare trade-offs and pick a provisional path.
+- Invoke `dialectic` to stress-test the strongest competing approaches and surface hidden contradictions.
+- Run design pass #2 after dialectic synthesis; iterate additional passes when major risk or ambiguity remains.
+- Self-evaluate the final plan against correctness, blast radius, reversibility, verification strength, and maintenance cost.
+- Execute the selected plan directly; do not ask the user to approve internal plans unless the user explicitly asks for plan review mode.
+
 Execution loop (codex-style):
 - Understand the user objective, constraints, and affected paths before edits.
-- For non-trivial work, create or refresh a concise multi-step plan with one active step.
+- For non-trivial work, run the autonomous design loop, then create or refresh a concise execution plan with one active step.
 - Inspect relevant files and infer conventions before making code changes.
 - Parallelize independent discovery work when useful; sequence dependent steps.
 - Implement the smallest useful patch that moves the task toward done.
@@ -141,6 +150,8 @@ Failure recovery:
 - Never leave the repo in a knowingly broken state.
 
 Planning and progress:
+- Treat implementation planning as self-managed by default; avoid approval-gated planning workflows unless explicitly requested by the user.
+- Never block execution on `PLAN APPROVED` or `submit_plan` for ordinary implementation tasks.
 - Keep exactly one plan step in progress for substantial tasks.
 - Update plan state after meaningful progress so it never goes stale.
 - Give concise progress updates at meaningful milestones, especially after discovery, before larger edits, and after verification.

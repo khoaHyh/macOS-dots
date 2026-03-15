@@ -29,7 +29,7 @@ disabled = true
 # symbol = " "
 
 [git_branch]
-disabled = true
+disabled = false
 
 [git_status]
 disabled = false
