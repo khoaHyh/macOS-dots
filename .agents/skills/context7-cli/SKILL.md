@@ -13,10 +13,12 @@ Make sure the CLI is up to date before running commands:
 npm install -g ctx7@latest
 ```
 
-Or run directly without installing:
+Prefer to use the globally installed CLI:
 
 ```bash
-npx ctx7@latest <command>
+ctx7 library
+ctx7 docs
+ctx7 --help
 ```
 
 ## What this skill covers
