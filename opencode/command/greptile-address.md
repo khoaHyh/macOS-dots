@@ -1,6 +1,6 @@
 ---
 description: Address Greptile PR feedback once without looping
-agent: Bob
+agent: Scuba
 ---
 
 Run a single Greptile feedback pass for the target PR.
