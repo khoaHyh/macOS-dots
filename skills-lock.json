@@ -1,0 +1,45 @@
+{
+  "version": 1,
+  "skills": {
+    "check-pr": {
+      "source": "greptileai/skills",
+      "sourceType": "github",
+      "computedHash": "bcba47ce82fefb5b1a53040123920699fe830682e882a0c17ea238f51c796275"
+    },
+    "context7-cli": {
+      "source": "upstash/context7",
+      "sourceType": "github",
+      "computedHash": "2c09d102a9a6c5e6a06e2cc8a5641947270aa977e8e37c7e532719badf1575e6"
+    },
+    "deepen-codebase-design": {
+      "source": "khoahyh/skills",
+      "sourceType": "github",
+      "computedHash": "81ccdc702ab33d21920ad76bfc5a1fd592fb2918db74612fc5fb65d1f117b493"
+    },
+    "dialectic": {
+      "source": "kyleamathews/hegelian-dialectic-skill",
+      "sourceType": "github",
+      "computedHash": "ea8927f97742394a9767934d1d3374b6fa41a935b6c7b7812401dfcf62b70869"
+    },
+    "find-docs": {
+      "source": "upstash/context7",
+      "sourceType": "github",
+      "computedHash": "b631499b08026841fe535f17927d692fc37d29111032ee1991e55ecec1f937be"
+    },
+    "greploop": {
+      "source": "greptileai/skills",
+      "sourceType": "github",
+      "computedHash": "ad757a3bc10a1998712566b4f4eb01115e166e6293724b9facd8d1db4642542f"
+    },
+    "greptile-address": {
+      "source": "khoahyh/skills",
+      "sourceType": "github",
+      "computedHash": "1d71f00365ec0bbdeb74a5e84420b441ac18f38c5cc132e6123cfa8581641c19"
+    },
+    "sharingan": {
+      "source": "khoahyh/skills",
+      "sourceType": "github",
+      "computedHash": "f8034b9364951736a9e82a9dc3c5e1cc4e339a4d3fa52cec6af50c3c0b32cb7f"
+    }
+  }
+}
