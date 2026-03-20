@@ -6,20 +6,10 @@
 	email = khoahuynh.toronto@gmail.com
 
 [core]
-  pager = delta
   editor = nvim
 
 [alias]
   staash = stash --include-untracked
-  co = checkout
-  br = branch
-  ci = commit
-  st = status
-  unstage = reset HEAD --
-  last = log -1 HEAD
-  dft = "!GIT_EXTERNAL_DIFF=difft git diff"
-  dfl = "!GIT_EXTERNAL_DIFF=difft git log -p --ext-diff"
-  dfs = "!GIT_EXTERNAL_DIFF=difft git show --ext-diff"
 
 [interactive]
   diffFilter = delta --color-only

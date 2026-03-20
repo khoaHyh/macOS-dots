@@ -18,7 +18,11 @@ alias gaa='git add .'
 alias gcm='git commit -m'
 alias gp='git push'
 alias gpull='git pull'
-alias gd='git diff'
+alias gd='git -c core.pager=delta diff'
+# Uncommitted vs your last commit (HEAD)
+alias gdh='git --no-pager -c diff.external=difft diff HEAD' 
+# Everything on your branch (committed + uncommitted) vs base branch divergence. Usage: `gdm master` or `gdm main`.
+alias gdm='git --no-pager -c diff.external=difft diff --merge-base' 
 alias glog='git log --oneline --decorate --graph'
 alias gs='git switch'
 
@@ -56,3 +60,5 @@ eval "$(pyenv init -)"
 export PATH=$PATH:/Users/khuynh/.spicetify
 export PATH="$HOME/.bun/bin:$PATH"
 export PATH="$HOME/.local/bin:$PATH"
+
+export GREPTILE_API_KEY="op://Employee/GREPTILE_API_KEY/credential"
