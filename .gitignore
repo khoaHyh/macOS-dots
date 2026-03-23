@@ -1,6 +1,26 @@
 jj/*
 !jj/config.toml
 .DS_Store
+
+.playwright-cli
+
+# agent plan/prd/specs
 .sisyphus
-specs
-.specs
+specs/
+
+# plan artifacts live in .specs and should never be committed
+.specs/*
+!.specs/.gitkeep
+
+# guard against accidental default plan file commits
+PLAN.md
+
+# pi runtime/state files
+pi/auth.json
+pi/sessions/
+pi/bin/
+pi/git/
+pi/npm/
+
+# file-backed todo extension state
+.pi/todos/

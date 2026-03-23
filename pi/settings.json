@@ -1,0 +1,16 @@
+{
+  "defaultProvider": "openai-codex",
+  "defaultModel": "gpt-5.3-codex",
+  "defaultThinkingLevel": "xhigh",
+  "hideThinkingBlock": false,
+  "theme": "rose-pine-dawn",
+  "quietStartup": true,
+  "liteline": {
+    "glyphPreference": "auto",
+    "showModeSegment": true,
+    "showHeader": true,
+    "fiveHourLimitTokens": 5000000,
+    "weeklyLimitTokens": 50000000
+  },
+  "lastChangelogVersion": "0.61.1"
+}

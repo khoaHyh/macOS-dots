@@ -13,6 +13,7 @@ Personal macOS setup for shell, terminal, window management, and CLI tooling.
 - `scripts/open_iterm2.sh`: optional iTerm2 launcher script
 - `jj/config.toml`: Jujutsu aliases/revsets
 - `opencode/`: local OpenCode agent/tool config
+- `pi/`: global pi coding agent config (`settings.json`, `AGENTS.md`, prompts/skills/extensions/themes)
 
 ## Requirements
 
@@ -61,7 +62,7 @@ curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.3/install.sh | bash
 ### 3) Symlink configs
 
 ```bash
-mkdir -p ~/.config/yabai ~/.config/skhd ~/.config/scripts
+mkdir -p ~/.config/yabai ~/.config/skhd ~/.config/scripts ~/.pi
 
 ln -sf ~/dev/macOS-dots/.zshrc ~/.zshrc
 ln -sf ~/dev/macOS-dots/.tmux.conf ~/.tmux.conf
@@ -70,6 +71,8 @@ ln -sf ~/dev/macOS-dots/starship.toml ~/.config/starship.toml
 ln -sf ~/dev/macOS-dots/yabai/yabairc ~/.config/yabai/yabairc
 ln -sf ~/dev/macOS-dots/skhd/skhdrc ~/.config/skhd/skhdrc
 ln -sf ~/dev/macOS-dots/scripts/open_iterm2.sh ~/.config/scripts/open_iterm2.sh
+[ -d ~/.pi/agent ] && [ ! -L ~/.pi/agent ] && mv ~/.pi/agent ~/.pi/agent.backup.$(date +%Y%m%d-%H%M%S)
+ln -sfn ~/dev/macOS-dots/pi ~/.pi/agent
 chmod +x ~/.config/scripts/open_iterm2.sh
 ```
 
@@ -112,6 +115,7 @@ Open tmux and press `prefix + I` to install plugins.
 
 ```bash
 ls -l ~/.zshrc ~/.tmux.conf ~/.gitconfig ~/.config/starship.toml ~/.config/yabai/yabairc ~/.config/skhd/skhdrc
+ls -ld ~/.pi/agent
 brew services list | grep -E 'yabai|skhd'
 ls -la ~/.tmux/plugins/tpm
 ```
@@ -121,6 +125,7 @@ ls -la ~/.tmux/plugins/tpm
 - `skhdrc` currently opens Ghostty (`alt + return`).
 - `open_iterm2.sh` is optional and can be bound if you prefer iTerm2.
 - `.tmux.conf` currently uses `egel/tmux-gruvbox`; Catppuccin lines are commented out.
+- `~/.pi/agent -> ~/dev/macOS-dots/pi` keeps pi config in this repo; runtime files (`auth.json`, sessions, package installs) are gitignored.
 - Yabai may require SIP adjustments for full functionality: <https://github.com/koekeishiya/yabai/wiki/Disabling-System-Integrity-Protection>
 
 ## Update
