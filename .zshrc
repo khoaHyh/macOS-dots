@@ -25,6 +25,8 @@ alias gdh='git --no-pager -c diff.external=difft diff HEAD'
 alias gdm='git --no-pager -c diff.external=difft diff --merge-base' 
 alias glog='git log --oneline --decorate --graph'
 alias gs='git switch'
+alias gwr='git worktree remove'
+alias gwp='git worktree prune'
 
 # Add aliases for homebrew vim
 alias vi=/usr/local/bin/vim
