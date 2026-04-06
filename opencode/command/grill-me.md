@@ -12,6 +12,8 @@ skill({ name: 'grill-me' })
 
 Then follow the skill instructions exactly.
 
+When asking questions during the grill-me workflow, use the question tool.
+
 <user-request>
 $ARGUMENTS
 </user-request>
