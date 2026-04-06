@@ -7,10 +7,6 @@
     "replace_plan": false
   },
   "agents": {
-    "PlanB": {
-      "model": "openai/gpt-5.4",
-      "variant": "high"
-    },
     "Bob": {
       "model": "openai/gpt-5.3-codex-spark"
     },

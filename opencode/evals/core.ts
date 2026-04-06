@@ -4,7 +4,7 @@ export type FixtureName = (typeof fixtureNames)[number];
 
 export type Fixture = {
   name: FixtureName;
-  route: "PlanB" | "Bob" | "Scuba";
+  route: "Bob" | "Scuba";
   review: "light" | "reviewer" | "dialectic";
   escalation: string[];
   reason: string;
@@ -33,7 +33,7 @@ const fixtures = {
   },
   "planning-flow": {
     name: "planning-flow",
-    route: "PlanB",
+    route: "Scuba",
     review: "light",
     escalation: [],
     reason: "planning-request",

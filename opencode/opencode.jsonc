@@ -9,16 +9,6 @@
     "submit_plan": true
   },
   "agent": {
-    "PlanB": {
-      "mode": "primary",
-      "description": "Dialogue-first planning agent",
-      "model": "openai/gpt-5.4",
-      "prompt": "{file:./prompts/planb-codex-harness.md}",
-      "color": "#F3C969",
-      "tools": {
-        "question": true
-      }
-    },
     "Bob": {
       "mode": "primary",
       "description": "Default build agent for ordinary repo-local work",
