@@ -1,6 +1,5 @@
 ---
 description: Dialogue-driven spec development through skeptical questioning
-agent: Plan
 ---
 
 Develop implementation-ready specs through iterative dialogue and skeptical questioning.

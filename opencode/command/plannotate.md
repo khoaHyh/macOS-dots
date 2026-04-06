@@ -1,6 +1,5 @@
 ---
 description: Open Plannotator for a confirmed plan review
-agent: Plan
 ---
 
 Use this command to run an iterative planning discussion and only trigger Plannotator review when the plan is explicitly approved.

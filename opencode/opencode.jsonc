@@ -1,19 +1,14 @@
 {
   "$schema": "https://opencode.ai/config.json",
   "plugin": [
-    "@plannotator/opencode@latest"
+    "./node_modules/@plannotator/opencode/dist/index.js"
   ],
   "small_model": "openai/gpt-5.3-codex-spark",
   "default_agent": "Scuba",
   "tools": {
-    "submit_plan": false
+    "submit_plan": true
   },
   "agent": {
-    "plan": {
-      "tools": {
-        "submit_plan": true
-      }
-    },
     "PlanB": {
       "mode": "primary",
       "description": "Dialogue-first planning agent",
@@ -21,7 +16,6 @@
       "prompt": "{file:./prompts/planb-codex-harness.md}",
       "color": "#F3C969",
       "tools": {
-        "submit_plan": true,
         "question": true
       }
     },

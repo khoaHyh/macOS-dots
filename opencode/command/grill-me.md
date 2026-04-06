@@ -1,6 +1,5 @@
 ---
 description: Interview the user relentlessly about a plan or design until reaching shared understanding
-agent: Scuba
 ---
 
 Interview me relentlessly about every aspect of this plan until we reach a shared understanding.

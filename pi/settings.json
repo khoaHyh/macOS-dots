@@ -12,5 +12,8 @@
     "fiveHourLimitTokens": 5000000,
     "weeklyLimitTokens": 50000000
   },
-  "lastChangelogVersion": "0.64.0"
+  "lastChangelogVersion": "0.64.0",
+  "packages": [
+    "npm:@plannotator/pi-extension"
+  ]
 }
