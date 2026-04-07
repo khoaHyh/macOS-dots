@@ -45,6 +45,11 @@
       "source": "khoahyh/skills",
       "sourceType": "github",
       "computedHash": "f8034b9364951736a9e82a9dc3c5e1cc4e339a4d3fa52cec6af50c3c0b32cb7f"
+    },
+    "tdd": {
+      "source": "mattpocock/skills",
+      "sourceType": "github",
+      "computedHash": "ad055544599481182d0079c4198e85da26677cb408a677be2da04915375f0427"
     }
   }
 }
