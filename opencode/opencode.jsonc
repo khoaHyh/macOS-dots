@@ -3,8 +3,8 @@
   "plugin": [
     "@plannotator/opencode@latest"
   ],
-  "small_model": "openai/gpt-5.3-codex-spark",
-  "default_agent": "Scuba",
+  "small_model": "openai/gpt-5.4-mini",
+  "default_agent": "Bob",
   "tools": {
     "submit_plan": true
   },
@@ -12,14 +12,17 @@
     "Bob": {
       "mode": "primary",
       "description": "Default build agent for ordinary repo-local work",
-      "model": "openai/gpt-5.3-codex",
-      "prompt": "{file:./prompts/bob-codex-harness.md}",
+      "model": "openai/gpt-5.4",
+      "reasoningEffort": "xhigh",
+      "textVerbosity": "high",
+      "prompt": "{file:./prompts/bob-gpt54-harness.md}",
       "color": "#7DAEA3"
     },
     "Scuba": {
       "mode": "primary",
       "description": "Explicit codex-style deep-work agent",
       "model": "openai/gpt-5.3-codex",
+      "reasoningEffort": "xhigh",
       "prompt": "{file:./prompts/scuba-codex-harness.md}",
       "color": "#8A7DFF",
       "tools": {
@@ -35,7 +38,8 @@
     "explore-openai-fallback": {
       "mode": "subagent",
       "description": "Fallback codebase search specialist when Kimi is unavailable",
-      "model": "openai/gpt-5.3-codex-spark",
+      "model": "openai/gpt-5.4-mini",
+      "reasoningEffort": "none",
       "prompt": "{file:./prompts/explore-codex-harness.md}"
     },
     "librarian": {
@@ -47,19 +51,22 @@
     "librarian-openai-fallback": {
       "mode": "subagent",
       "description": "Fallback docs specialist when Kimi is unavailable",
-      "model": "openai/gpt-5.3-codex-spark",
+      "model": "openai/gpt-5.4-mini",
+      "reasoningEffort": "none",
       "prompt": "{file:./prompts/librarian-codex-harness.md}"
     },
     "oracle": {
       "mode": "subagent",
       "description": "Strategic consultation specialist",
       "model": "openai/gpt-5.4",
+      "reasoningEffort": "xhigh",
       "prompt": "{file:./prompts/oracle-codex-harness.md}"
     },
     "reviewer": {
       "mode": "subagent",
       "description": "Higher-rigor review specialist",
-      "model": "openai/gpt-5.3-codex",
+      "model": "openai/gpt-5.4",
+      "reasoningEffort": "xhigh",
       "prompt": "{file:./prompts/reviewer-codex-harness.md}"
     }
   },
