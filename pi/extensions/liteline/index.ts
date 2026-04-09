@@ -15,7 +15,7 @@ import {
   formatRecentSessionRow,
   getStartupLogoAscii,
   normalizeGlyphPreference,
-  parseJjBookmarkSummary,
+  parseGraphiteBranchInfoSummary,
   resolveGlyphMode,
   type GlyphPreference,
 } from "./liteline-utils.ts";
@@ -43,7 +43,7 @@ interface NerdSegment {
 
 const ANSI_RESET = "\x1b[0m";
 const MAX_RECENT_SESSIONS = 3;
-const JJ_REFRESH_MS = 4_000;
+const GRAPHITE_REFRESH_MS = 4_000;
 const RATE_LIMIT_REFRESH_MS = 60_000;
 const APP_SERVER_TIMEOUT_MS = 4_000;
 
@@ -402,8 +402,8 @@ export default function litelineExtension(pi: ExtensionAPI) {
   let headerData: HeaderData | null = null;
   let rateLimitUsage: RateLimitUsage = {};
 
-  let jjBookmark: string | null = null;
-  let lastJjRefresh = 0;
+  let graphiteStack: string | null = null;
+  let lastGraphiteRefresh = 0;
   let lastRateLimitRefresh = 0;
   let requestFooterRender: (() => void) | null = null;
   let requestHeaderRender: (() => void) | null = null;
@@ -467,7 +467,7 @@ export default function litelineExtension(pi: ExtensionAPI) {
       requestFooterRender = () => tui.requestRender();
 
       const unsubBranch = footerData.onBranchChange(() => {
-        void refreshJjBookmark();
+        void refreshGraphiteStack();
         tui.requestRender();
       });
 
@@ -488,7 +488,7 @@ export default function litelineExtension(pi: ExtensionAPI) {
           const contextText = formatCompactContextSegment(usage, glyphMode);
 
           const gitBranch = footerData.getGitBranch();
-          const vcsText = formatFooterVcsSegment({ gitBranch, jjBookmark, glyphMode });
+          const vcsText = formatFooterVcsSegment({ gitBranch, graphiteStack, glyphMode });
 
           if (glyphMode === "nerd") {
             const nerdSegments: NerdSegment[] = [];
@@ -519,7 +519,7 @@ export default function litelineExtension(pi: ExtensionAPI) {
           }
           asciiEntries.push({ text: modelText, color: "accent" });
           asciiEntries.push({ text: contextText, color: segmentColorForUsage(usage?.percent) });
-          asciiEntries.push({ text: vcsText, color: gitBranch || jjBookmark ? "success" : "muted" });
+          asciiEntries.push({ text: vcsText, color: gitBranch || graphiteStack ? "success" : "muted" });
 
           const rendered = renderAsciiSegments(theme, asciiEntries);
           return [truncateToWidth(rendered, width, "…", true)];
@@ -541,32 +541,26 @@ export default function litelineExtension(pi: ExtensionAPI) {
     void refreshRateLimitUsage(true);
   }
 
-  async function refreshJjBookmark(force = false): Promise<void> {
+  async function refreshGraphiteStack(force = false): Promise<void> {
     if (!currentCtx) return;
 
     const now = Date.now();
-    if (!force && now - lastJjRefresh < JJ_REFRESH_MS) return;
-    lastJjRefresh = now;
+    if (!force && now - lastGraphiteRefresh < GRAPHITE_REFRESH_MS) return;
+    lastGraphiteRefresh = now;
 
-    const rootCheck = await pi.exec("jj", ["root"], { timeout: 1_200 }).catch(() => null);
-    if (!rootCheck || rootCheck.code !== 0) {
-      if (jjBookmark !== null) {
-        jjBookmark = null;
+    const branchInfo = await pi.exec("gt", ["branch", "info"], { timeout: 1_200 }).catch(() => null);
+    if (!branchInfo || branchInfo.code !== 0) {
+      if (graphiteStack !== null) {
+        graphiteStack = null;
         requestFooterRender?.();
       }
       return;
     }
 
-    const bookmarkResult = await pi
-      .exec("jj", ["log", "-r", "@", "--no-graph", "-T", "bookmarks"], { timeout: 1_200 })
-      .catch(() => null);
+    const nextGraphiteStack = parseGraphiteBranchInfoSummary(branchInfo.stdout);
 
-    const nextBookmark = bookmarkResult && bookmarkResult.code === 0
-      ? parseJjBookmarkSummary(bookmarkResult.stdout)
-      : null;
-
-    if (nextBookmark !== jjBookmark) {
-      jjBookmark = nextBookmark;
+    if (nextGraphiteStack !== graphiteStack) {
+      graphiteStack = nextGraphiteStack;
       requestFooterRender?.();
     }
   }
@@ -576,7 +570,7 @@ export default function litelineExtension(pi: ExtensionAPI) {
     settings = readLitelineSettings(ctx.cwd);
     recalcGlyphMode();
     applyUi(ctx);
-    void refreshJjBookmark(true);
+    void refreshGraphiteStack(true);
   }
 
   pi.on("session_start", async (_event, ctx) => {
@@ -613,7 +607,7 @@ export default function litelineExtension(pi: ExtensionAPI) {
 
   pi.on("tool_result", async (event) => {
     if (event.toolName === "bash" || event.toolName === "edit" || event.toolName === "write") {
-      void refreshJjBookmark();
+      void refreshGraphiteStack();
     }
   });
 

@@ -7,11 +7,10 @@ Personal macOS setup for shell, terminal, window management, and CLI tooling.
 - `.zshrc`: oh-my-zsh, aliases, `nvm`, `pyenv`, `starship`, `thefuck`
 - `.tmux.conf`: custom keybinds, TPM plugins, `tmux-gruvbox` theme
 - `.gitconfig` + `themes.gitconfig`: git aliases and delta theme presets
-- `starship.toml`: prompt config (includes `jj-starship` custom module)
+- `starship.toml`: prompt config
 - `yabai/yabairc` + `skhd/skhdrc`: tiling and keyboard shortcuts
 - `ghostty/config`: terminal defaults used by the `alt + return` shortcut
 - `scripts/open_iterm2.sh`: optional iTerm2 launcher script
-- `jj/config.toml`: Jujutsu aliases/revsets
 - `opencode/`: local OpenCode agent/tool config
 - `pi/`: global pi coding agent config (`settings.json`, `AGENTS.md`, prompts/skills/extensions/themes)
 

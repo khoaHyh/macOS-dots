@@ -16,7 +16,10 @@
       "reasoningEffort": "xhigh",
       "textVerbosity": "high",
       "prompt": "{file:./prompts/bob-gpt54-harness.md}",
-      "color": "#7DAEA3"
+      "color": "#7DAEA3",
+      "permission": {
+        "question": "allow"
+      }
     },
     "Scuba": {
       "mode": "primary",

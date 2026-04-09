@@ -164,7 +164,7 @@ export function formatFooterModelSegment(model: string, thinking: string, glyphM
 
 export function formatFooterVcsSegment(options: {
   gitBranch: string | null;
-  jjBookmark: string | null;
+  graphiteStack: string | null;
   glyphMode: GlyphMode;
 }): string {
   const icons = footerGlyphs(options.glyphMode);
@@ -174,8 +174,8 @@ export function formatFooterVcsSegment(options: {
     parts.push(`${icons.branch} ${options.gitBranch}`);
   }
 
-  if (options.jjBookmark) {
-    parts.push(`jj ${options.jjBookmark}`);
+  if (options.graphiteStack) {
+    parts.push(`gt ${options.graphiteStack}`);
   }
 
   if (parts.length === 0) {
@@ -185,15 +185,10 @@ export function formatFooterVcsSegment(options: {
   return parts.join(" · ");
 }
 
-export function parseJjBookmarkSummary(rawOutput: string): string | null {
+export function parseGraphiteBranchInfoSummary(rawOutput: string): string | null {
   const normalized = rawOutput.replace(/\s+/g, " ").trim();
   if (!normalized) return null;
-
-  const names = normalized.split(" ").filter(Boolean);
-  if (names.length === 0) return null;
-  if (names.length === 1) return names[0];
-
-  return `${names[0]} +${names.length - 1}`;
+  return "stack";
 }
 
 function pluralize(count: number, singular: string, plural: string): string {

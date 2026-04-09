@@ -35,14 +35,14 @@ test("discoverRecentSessions reads titles, active state, and recency", () => {
     ].join("\n"));
 
     writeFileSync(older, [
-      JSON.stringify({
-        type: "message",
-        message: {
-          role: "user",
-          content: [{ type: "text", text: "Investigate jj bookmark footer behavior" }],
-        },
-      }),
-      "",
+        JSON.stringify({
+          type: "message",
+          message: {
+            role: "user",
+            content: [{ type: "text", text: "Investigate gt stack footer behavior" }],
+          },
+        }),
+        "",
     ].join("\n"));
 
     const now = Date.now();
@@ -59,7 +59,7 @@ test("discoverRecentSessions reads titles, active state, and recency", () => {
     assert.equal(result[0]?.active, true);
     assert.equal(result[0]?.title, "Refactor footer rendering");
     assert.equal(result[1]?.active, false);
-    assert.match(result[1]?.title ?? "", /Investigate jj bookmark footer/);
+    assert.match(result[1]?.title ?? "", /Investigate gt stack footer/);
   } finally {
     rmSync(dir, { recursive: true, force: true });
   }

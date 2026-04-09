@@ -21,7 +21,7 @@ First, invoke the skill tool to detect the VCS:
 skill({ name: 'vcs-detect' })
 ```
 
-Use the detected VCS (jj or git) for all version control operations.
+Use Git for repository operations. If Graphite is available, prefer `gt` for branch and stacked-PR operations.
 
 ## File Locations
 
@@ -70,7 +70,7 @@ Legacy compatibility note:
     3. Spikes/unknowns
     4. Standard features
     5. Polish/cleanup
-- Check recent history (jj: `jj log --limit 10`, git: `git log --oneline -10`)
+- Check recent history (`git log --oneline -10`; if Graphite is available, also inspect stack state with `gt ls`)
 
 ### 2. Initialize Progress (if needed)
 
@@ -91,8 +91,8 @@ Started: <YYYY-MM-DD>
 ### 3. Branch Setup
 
 Extract `prdName` from PRD, then:
-- jj: `jj new -m '<prdName>'`
-- git: `git checkout -b <prdName>` (or checkout if exists)
+- Graphite: `gt create -am 'chore(<scope>): start <prdName>' <prdName>` when you want a new stacked branch with the initial commit included
+- Git: `git checkout -b <prdName>` (or checkout if it already exists) when Graphite is unavailable or you need plain Git flow
 
 ### 4. Implement Task
 
@@ -127,10 +127,10 @@ If you discover a **reusable pattern**, also add to `## Codebase Patterns` at th
 
 ### 8. Commit
 
-- jj: `jj describe -m 'feat(<scope>): <description>' && jj bookmark create <prdName>/<task-id> && jj new`
-- git: `git add -A && git commit -m 'feat(<scope>): <description>'`
+- Graphite: `gt modify --commit -am 'feat(<scope>): <description>'` for an existing tracked branch, or `gt create -am 'feat(<scope>): <description>' <prdName>/<task-id>` when creating a new stacked branch
+- Git: `git add -A && git commit -m 'feat(<scope>): <description>'`
 
-Bookmark format: `<prdName>/<task-id>` (for example, `lib-relay-implementation/types-2`)
+Suggested Graphite branch format: `<prdName>/<task-id>` (for example, `lib-relay-implementation/types-2`)
 
 ## Completion
 

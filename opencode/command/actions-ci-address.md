@@ -5,7 +5,13 @@ agent: Scuba
 
 Run a single GitHub Actions CI remediation pass for the target PR/branch.
 
-First, invoke the skill tool to load the one-pass workflow:
+First, invoke the VCS detection skill so stacked Graphite repos use the correct flow:
+
+```text
+skill({ name: 'vcs-detect' })
+```
+
+Then invoke the skill tool to load the one-pass workflow:
 
 ```text
 skill({ name: 'actions-ci-address' })

@@ -22,6 +22,20 @@ gh --version && gh auth status
 
 If `gh` is missing or unauthenticated, stop and tell the user exactly what to run.
 
+Before any VCS command, load `vcs-detect` and branch on its result:
+
+- `git+graphite`: use Git for read-only repository inspection and Graphite for branch mutation/submission.
+- `git`: use normal Git flows.
+- `none`: stop and tell the user the directory is not version controlled.
+
+If `git+graphite`, also check whether the current branch is Graphite-tracked before making mutations:
+
+```bash
+gt branch info
+```
+
+If `gt branch info` fails because the branch is untracked, stop instead of falling back to raw `git commit` + `git push`.
+
 ## One-Pass Workflow
 
 1. Resolve target PR/branch:
@@ -92,13 +106,32 @@ Use `references/failure-signals.md` for common patterns.
 gh run rerun <RUN_ID> --failed
 ```
 
-8. If files changed, commit once and push once:
+8. If files changed, commit once and publish once using the detected VCS flow:
 
 - Commit message style:
 
 ```text
 fix(ci): address failing GitHub Actions checks
 ```
+
+- `git+graphite`:
+
+```bash
+git add <intended-files>
+gt modify --commit -am "fix(ci): address failing GitHub Actions checks"
+gt submit --stack
+```
+
+- `git`:
+
+```bash
+git add <intended-files>
+git commit -m "fix(ci): address failing GitHub Actions checks"
+git push
+```
+
+- Do not use raw `git commit` + `git push` when Graphite is available and the current branch is Graphite-tracked.
+- If Graphite is available but the current branch is untracked, stop and report that the branch must be tracked or handled with a Graphite-aware flow before continuing.
 
 9. Stop after this pass.
 

@@ -26,6 +26,11 @@
       "sourceType": "github",
       "computedHash": "b631499b08026841fe535f17927d692fc37d29111032ee1991e55ecec1f937be"
     },
+    "graphite": {
+      "source": "withgraphite/agent-skills",
+      "sourceType": "github",
+      "computedHash": "9315b842df6de2a23216a2e72033fa99337398a8d62c11d6c320e55a6b810339"
+    },
     "greploop": {
       "source": "greptileai/skills",
       "sourceType": "github",

@@ -1,70 +1,68 @@
 ---
 name: vcs-detect
-description: Detect whether the current project uses jj (Jujutsu) or git for version control. Run this BEFORE any VCS command to use the correct tool.
+description: Detect whether the current project uses git for version control and whether Graphite (`gt`) is available for stacked PR workflows. Run this BEFORE any VCS command to use the right tool.
 ---
 
 # VCS Detection Skill
 
-Detect the version control system in use before running any VCS commands.
+Detect whether the current directory is inside a Git repository before running VCS commands. If Graphite is installed, prefer `gt` for stacked PR workflows while continuing to use Git as the underlying VCS.
 
 ## Why This Matters
 
-- jj (Jujutsu) and git have different CLIs and workflows
-- Running `git` commands in a jj repo (or vice versa) causes errors
-- Some repos use jj with git colocated (both `.jj/` and `.git/` exist)
+- Graphite is a workflow layer on top of Git, not a separate VCS
+- Repos should still be detected with `git rev-parse --show-toplevel`
+- Stacked branch operations are often better expressed with `gt` than raw Git
 
 ## Detection Logic
 
-Both `jj root` and `git rev-parse --show-toplevel` walk up the filesystem to find repo root.
+Use Git to detect the repository. Then optionally check whether `gt` is available.
 
 **Priority order:**
 
-1. `jj root` succeeds → jj (handles colocated too)
-2. `git rev-parse` succeeds → git
-3. Both fail → no VCS
+1. `git rev-parse --show-toplevel` succeeds -> git repo
+2. `command -v gt` succeeds -> Graphite is available for stack workflows
+3. Git fails -> no VCS
 
 ## Detection Command
 
 ```bash
-if jj root &>/dev/null; then echo "jj"
-elif git rev-parse --show-toplevel &>/dev/null; then echo "git"
-else echo "none"
+if git rev-parse --show-toplevel >/dev/null 2>&1; then
+  if command -v gt >/dev/null 2>&1; then
+    echo "git+graphite"
+  else
+    echo "git"
+  fi
+else
+  echo "none"
 fi
 ```
 
 ## Command Mappings
 
-| Operation | git | jj |
-|-----------|-----|-----|
-| Status | `git status` | `jj status` |
-| Log | `git log` | `jj log` |
-| Diff | `git diff` | `jj diff` |
-| Commit | `git commit` | `jj commit` / `jj describe` |
-| Branch list | `git branch` | `jj branch list` |
-| New branch | `git checkout -b <name>` | `jj branch create <name>` |
-| Push | `git push` | `jj git push` |
-| Pull/Fetch | `git pull` / `git fetch` | `jj git fetch` |
-| Rebase | `git rebase` | `jj rebase` |
+| Operation | Git default | Graphite when available |
+|-----------|-------------|-------------------------|
+| Status | `git status` | `git status` |
+| Log | `git log --oneline -10` | `gt ls` for stack shape, `git log --oneline -10` for commits |
+| Diff | `git diff` | `git diff` |
+| Create branch | `git checkout -b <name>` | `gt create -am "<type>(<scope>): <description>" [branch-name]` |
+| Update current branch | `git add -A && git commit -m "<type>(<scope>): <description>"` | `gt modify -a` or `gt modify --commit -am "<type>(<scope>): <description>"` |
+| Submit PRs | `gh pr create` | `gt submit` / `gt submit --stack` |
+| Sync with trunk | `git fetch && git rebase origin/main` | `gt sync` or `gt restack` |
+| Set stack parent | N/A | `gt track --parent <branch>` |
 
 ## Usage
 
 Before any VCS operation:
 
-1. Run detection command
-2. Use appropriate CLI based on result
-3. If `none`, warn user directory is not version controlled
+1. Run the detection command
+2. If the result is `git+graphite`, use Git for repository state and `gt` for stacked-PR operations
+3. If the result is `git`, use regular Git commands
+4. If the result is `none`, warn the user the directory is not version controlled
 
 ## Example Integration
 
 ```
 User: Show me the git log
-Agent: [Runs detection] -> Result: jj
-Agent: [Runs `jj log` instead of `git log`]
+Agent: [Runs detection] -> Result: git+graphite
+Agent: [Runs `gt ls` to inspect the stack, then `git log --oneline -10` for commit history]
 ```
-
-## Colocated Repos
-
-When both `.jj/` and `.git/` exist, the repo is "colocated":
-- jj manages the working copy
-- git is available for compatibility (GitHub, etc.)
-- **Always prefer jj commands** in colocated repos

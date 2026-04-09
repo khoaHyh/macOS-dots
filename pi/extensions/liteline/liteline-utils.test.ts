@@ -16,8 +16,8 @@ import {
   getStartupLogoAscii,
   limitRecentSessions,
   parseCodexRateLimitPercents,
+  parseGraphiteBranchInfoSummary,
   normalizeGlyphPreference,
-  parseJjBookmarkSummary,
   resolveGlyphMode,
 } from "./liteline-utils.ts";
 
@@ -67,21 +67,20 @@ test("formatFooterModelSegment adds a powerline-style model glyph and compact th
   );
 });
 
-test("formatFooterVcsSegment keeps git and jj details compact", () => {
+test("formatFooterVcsSegment keeps git and graphite details compact", () => {
   assert.equal(
-    formatFooterVcsSegment({ gitBranch: "main", jjBookmark: "stack", glyphMode: "nerd" }),
-    "\uF126 main · jj stack",
+    formatFooterVcsSegment({ gitBranch: "main", graphiteStack: "stack", glyphMode: "nerd" }),
+    "\uF126 main · gt stack",
   );
   assert.equal(
-    formatFooterVcsSegment({ gitBranch: null, jjBookmark: "stack", glyphMode: "ascii" }),
-    "jj stack",
+    formatFooterVcsSegment({ gitBranch: null, graphiteStack: "stack", glyphMode: "ascii" }),
+    "gt stack",
   );
 });
 
-test("parseJjBookmarkSummary normalizes whitespace and summarizes multiples", () => {
-  assert.equal(parseJjBookmarkSummary(""), null);
-  assert.equal(parseJjBookmarkSummary("main"), "main");
-  assert.equal(parseJjBookmarkSummary("  main   feature/login  "), "main +1");
+test("parseGraphiteBranchInfoSummary treats any successful branch info output as a stack marker", () => {
+  assert.equal(parseGraphiteBranchInfoSummary(""), null);
+  assert.equal(parseGraphiteBranchInfoSummary("Branch: feature/login"), "stack");
 });
 
 test("abbreviateModel trims provider prefix when present", () => {
