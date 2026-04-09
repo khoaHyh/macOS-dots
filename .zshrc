@@ -34,6 +34,7 @@ alias vim=/usr/local/bin/vim
 
 ## opencode
 alias oc=opencode
+export OPENCODE_ENABLE_EXA=1
 
 export EDITOR=/usr/local/bin/vim
 
