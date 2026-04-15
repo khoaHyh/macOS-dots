@@ -20,13 +20,34 @@ font-thicken = true
 
 # Rounded borders
 window-decoration = auto
-macos-titlebar-style = hidden
+# Keep a visible titlebar so macOS can host real tabs
+macos-titlebar-style = tabs
 
 # Workaround for ghostty spawning new instance
 quit-after-last-window-closed = "true"
 
 # This is cool
 keybind = global:cmd+s=toggle_quick_terminal
+
+# Pane and tab management
+keybind = cmd+t=new_tab
+keybind = cmd+shift+left_bracket=previous_tab
+keybind = cmd+shift+right_bracket=next_tab
+keybind = cmd+d=new_split:right
+keybind = cmd+shift+d=new_split:down
+keybind = cmd+enter=toggle_split_zoom
+
+# Pane focus navigation (vim-style)
+keybind = cmd+alt+h=goto_split:left
+keybind = cmd+alt+j=goto_split:down
+keybind = cmd+alt+k=goto_split:up
+keybind = cmd+alt+l=goto_split:right
+
+# Pane resize (tmux-like)
+keybind = cmd+alt+shift+h=resize_split:left,30
+keybind = cmd+alt+shift+j=resize_split:down,30
+keybind = cmd+alt+shift+k=resize_split:up,30
+keybind = cmd+alt+shift+l=resize_split:right,30
 
 macos-option-as-alt = true
 

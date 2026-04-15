@@ -8,7 +8,7 @@
     "eval:roi": "bun run evals/roi.ts"
   },
   "dependencies": {
-    "@opencode-ai/plugin": "1.4.0",
+    "@opencode-ai/plugin": "1.4.3",
     "@plannotator/opencode": "^0.16.7"
   }
 }

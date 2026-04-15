@@ -1,7 +1,14 @@
 {
   "$schema": "https://opencode.ai/config.json",
   "plugin": [
-    "@plannotator/opencode@latest"
+    "@plannotator/opencode@latest",
+    // [
+    //   "oc-plugin-vault-tec",
+    //   {
+    //     "enabled": false,
+    //     "mode": "append"
+    //   }
+    // ]
   ],
   "small_model": "openai/gpt-5.4-mini",
   "default_agent": "Bob",
@@ -108,6 +115,23 @@
       "url": "https://api.greptile.com/mcp",
       "headers": {
         "Authorization": "Bearer ${env:GREPTILE_API_KEY}"
+      }
+    },
+    "slack": {
+      "type": "local",
+      "command": [
+        "npx",
+        "-y",
+        "slack-mcp-server@latest",
+        "--transport",
+        "stdio"
+      ],
+      "environment": {
+        "SLACK_MCP_ENABLED_TOOLS": "channels_list,conversations_history,conversations_replies,conversations_search_messages,usergroups_list,usergroups_me",
+        "SLACK_MCP_XOXP_TOKEN": "{env:SLACK_MCP_XOXP_TOKEN}",
+        "SLACK_MCP_XOXB_TOKEN": "{env:SLACK_MCP_XOXB_TOKEN}",
+        "SLACK_MCP_XOXC_TOKEN": "{env:SLACK_MCP_XOXC_TOKEN}",
+        "SLACK_MCP_XOXD_TOKEN": "{env:SLACK_MCP_XOXD_TOKEN}"
       }
     }
   }

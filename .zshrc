@@ -33,8 +33,84 @@ alias vi=/usr/local/bin/vim
 alias vim=/usr/local/bin/vim
 
 ## opencode
-alias oc=opencode
 export OPENCODE_ENABLE_EXA=1
+
+# Local-only shell overrides (not tracked in dotfiles)
+if [[ -f "$HOME/.zshrc.private" ]]; then
+  source "$HOME/.zshrc.private"
+fi
+
+# Allow re-sourcing this file even if older alias-based helpers are loaded.
+unalias oc occ ocs occs ocenv occlear 2>/dev/null
+
+ocenv() {
+  if [[ -z "${OPENCODE_1P_ENV_ID:-}" ]]; then
+    print -u2 "OPENCODE_1P_ENV_ID is not set. Add it to ~/.zshrc.private."
+    return 1
+  fi
+
+  local env_output line key value loaded=0
+  local -a slack_vars=(
+    SLACK_MCP_XOXP_TOKEN
+    SLACK_MCP_XOXB_TOKEN
+    SLACK_MCP_XOXC_TOKEN
+    SLACK_MCP_XOXD_TOKEN
+  )
+
+  if ! env_output=$(op environment read "$OPENCODE_1P_ENV_ID"); then
+    return 1
+  fi
+
+  if [[ "$env_output" == *"<concealed by 1Password>"* ]]; then
+    if ! env_output=$(op run --no-masking --environment "$OPENCODE_1P_ENV_ID" -- env); then
+      return 1
+    fi
+  fi
+
+  for key in "${slack_vars[@]}"; do
+    unset "$key"
+  done
+
+  while IFS= read -r line; do
+    [[ -z "$line" || "$line" != *=* ]] && continue
+    key=${line%%=*}
+    value=${line#*=}
+
+    case "$key" in
+      SLACK_MCP_XOXP_TOKEN|SLACK_MCP_XOXB_TOKEN|SLACK_MCP_XOXC_TOKEN|SLACK_MCP_XOXD_TOKEN)
+        export "$key=$value"
+        loaded=1
+        ;;
+    esac
+  done <<< "$env_output"
+
+  if (( ! loaded )); then
+    print -u2 "No Slack MCP variables were loaded from 1Password."
+    return 1
+  fi
+}
+
+occlear() {
+  unset SLACK_MCP_XOXP_TOKEN SLACK_MCP_XOXB_TOKEN SLACK_MCP_XOXC_TOKEN SLACK_MCP_XOXD_TOKEN
+}
+
+oc() {
+  opencode "$@"
+}
+
+occ() {
+  caffeinate -id -- opencode "$@"
+}
+
+ocs() {
+  ocenv || return
+  opencode "$@"
+}
+
+occs() {
+  ocenv || return
+  caffeinate -id -- opencode "$@"
+}
 
 export EDITOR=/usr/local/bin/vim
 
@@ -63,5 +139,13 @@ eval "$(pyenv init -)"
 export PATH=$PATH:/Users/khuynh/.spicetify
 export PATH="$HOME/.bun/bin:$PATH"
 export PATH="$HOME/.local/bin:$PATH"
+
+# copy most recently modified file within a particular directory (includes hidden files)
+zlastmod() {
+  local dir="${1:-$PWD}"
+  local latest=( "$dir"/*(.DNom[1]) )
+  (( $#latest )) || { print -u2 "No regular files in $dir"; return 1; }
+  printf '%s\n' "${latest[1]}"
+}
 
 export GREPTILE_API_KEY="op://Employee/GREPTILE_API_KEY/credential"
