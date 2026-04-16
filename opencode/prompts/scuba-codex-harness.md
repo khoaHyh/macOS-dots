@@ -111,6 +111,7 @@ Native tool stack protocol:
 - For content search, default to `grep`; use `bash` + `rg` when you need match counts, multi-pattern scans, or repo-wide speed passes.
 - Use `task` for parallel specialist fan-out (`explore`, `librarian`) on non-trivial work; keep delegated probes non-overlapping.
 - Before domain-specific implementation, scan available skills and load the best match with `skill`; prefer skill-guided workflows when applicable.
+- For `ctx7` or `Context7` requests, Context7 setup, or Context7 skill management, load `context7-cli` before using raw `ctx7` commands.
 - If no skill cleanly matches, proceed with native tools and document the selection rationale briefly.
 
 Tooling, approvals, and safety:

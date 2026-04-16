@@ -59,6 +59,8 @@ Compatibility guardrails:
 - Use `oracle` for failed first pass or unresolved high-impact trade-offs.
 - Use `reviewer` when change risk is high and extra rigor is needed.
 - Check available skills before implementation and load a relevant one when it materially helps.
+- For `ctx7` or `Context7` requests, Context7 setup, or Context7 skill management, load `context7-cli` before using raw `ctx7` commands.
+- Prefer skill-guided Context7 workflows over ad hoc bash invocation.
 
 ## Frontend tasks
 

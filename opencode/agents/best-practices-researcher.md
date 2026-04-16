@@ -59,13 +59,14 @@ Before going online, check if curated knowledge already exists in skills:
 Only after checking skills AND verifying API availability, gather additional information:
 
 1. **Leverage External Sources**:
-   - Use Context7 MCP to access official documentation from GitHub, framework docs, and library references
+   - Load the matching Context7 skill first: prefer `context7-cli` for `ctx7`/Context7 CLI, setup, or skill-management work; use `context7-mcp` when MCP-backed docs access is the intended path
+   - Prefer skill-guided Context7 workflows over ad hoc raw `ctx7` commands
    - Search the web for recent articles, guides, and community discussions
    - Identify and analyze well-regarded open source projects that demonstrate the practices
    - Look for style guides, conventions, and standards from respected organizations
 
 2. **Online Research Methodology**:
-   - Start with official documentation using Context7 for the specific technology
+   - Start with official documentation using the appropriate Context7 skill for the specific technology
    - Search for "[technology] best practices [current year]" to find recent guides
    - Look for popular repositories on GitHub that exemplify good practices
    - Check for industry-standard style guides or conventions

@@ -4,27 +4,52 @@
     "check-pr": {
       "source": "greptileai/skills",
       "sourceType": "github",
-      "computedHash": "bcba47ce82fefb5b1a53040123920699fe830682e882a0c17ea238f51c796275"
+      "computedHash": "8b68db722eea14d7dc42c51bcc4cd8bae6b73ec5edb5c67310fc06f140c3e05b"
     },
     "context7-cli": {
       "source": "upstash/context7",
       "sourceType": "github",
-      "computedHash": "2c09d102a9a6c5e6a06e2cc8a5641947270aa977e8e37c7e532719badf1575e6"
+      "computedHash": "6077b3c638fb7efb31d9b2c815436650de4aef73e7b671edec2f1c63f6a1e105"
+    },
+    "context7-mcp": {
+      "source": "upstash/context7",
+      "sourceType": "github",
+      "computedHash": "6b02383f86f87e81a722b3b6c6d6e06efa5c72f23bc87bb02599e3d499ca2c58"
     },
     "deepen-codebase-design": {
       "source": "khoahyh/skills",
       "sourceType": "github",
       "computedHash": "81ccdc702ab33d21920ad76bfc5a1fd592fb2918db74612fc5fb65d1f117b493"
     },
+    "design-an-interface": {
+      "source": "mattpocock/skills",
+      "sourceType": "github",
+      "computedHash": "885b05367fb1cf61a1e27e0d50f14d2502a05c1fa276c6e9ea050ce6a90e7095"
+    },
     "dialectic": {
       "source": "kyleamathews/hegelian-dialectic-skill",
       "sourceType": "github",
-      "computedHash": "ea8927f97742394a9767934d1d3374b6fa41a935b6c7b7812401dfcf62b70869"
+      "computedHash": "44e8668f72fc6f9a392d02e9b15a1015037a55ef68b7028c4e9f4d66564eef9a"
+    },
+    "edit-article": {
+      "source": "mattpocock/skills",
+      "sourceType": "github",
+      "computedHash": "6d29872a4015fcbb4879fe1bddf1919995c477dcf7248885efb85722f50e6c4d"
     },
     "find-docs": {
       "source": "upstash/context7",
       "sourceType": "github",
-      "computedHash": "b631499b08026841fe535f17927d692fc37d29111032ee1991e55ecec1f937be"
+      "computedHash": "0210767e57873317edc8b91783a2f1b74eb9bbdd2139bd14e9129e9a0bbc2dd6"
+    },
+    "git-guardrails-claude-code": {
+      "source": "mattpocock/skills",
+      "sourceType": "github",
+      "computedHash": "53a1de29d2b76481202608376fa4a20a8bd7e65b0b8a907a8c9578e629cf313f"
+    },
+    "github-triage": {
+      "source": "mattpocock/skills",
+      "sourceType": "github",
+      "computedHash": "77dce6efff943f3adc845b1aabc8628de448c5dabbceee859aaa73a6cd06214e"
     },
     "graphite": {
       "source": "withgraphite/agent-skills",
@@ -34,7 +59,7 @@
     "greploop": {
       "source": "greptileai/skills",
       "sourceType": "github",
-      "computedHash": "ad757a3bc10a1998712566b4f4eb01115e166e6293724b9facd8d1db4642542f"
+      "computedHash": "33acdf1841dd5308420d72f433527db6be524ac2af8955b83fe42df94ce6d717"
     },
     "greptile-address": {
       "source": "khoahyh/skills",
@@ -46,6 +71,56 @@
       "sourceType": "github",
       "computedHash": "784f0dbb7403b0f00324bce9a112f715342777a0daee7bbb7385f9c6f0a170ea"
     },
+    "improve-codebase-architecture": {
+      "source": "mattpocock/skills",
+      "sourceType": "github",
+      "computedHash": "76d07c4c0bebc162cc76ca7494bfe7a90e279f35832f7ce6dfc4ce16518fd560"
+    },
+    "jujutsu-colocated": {
+      "source": "khoahyh/skills",
+      "sourceType": "github",
+      "computedHash": "b035125604902aa786fc4045ad9237a6e80612d37ca7a9734764f278ed8331e4"
+    },
+    "migrate-to-shoehorn": {
+      "source": "mattpocock/skills",
+      "sourceType": "github",
+      "computedHash": "8f1a623a019abca0ab5e22e8deaae375829368cc1344016010201cf650331d33"
+    },
+    "obsidian-vault": {
+      "source": "mattpocock/skills",
+      "sourceType": "github",
+      "computedHash": "960437c7c2febc15cf9d49964f0c8bd889d90a56e81b6eaa33f3ac5b594291c3"
+    },
+    "prd-to-issues": {
+      "source": "mattpocock/skills",
+      "sourceType": "github",
+      "computedHash": "32192340c1a14317b25741f5a0a38d162b387b6d4bfd09e0ed3859367321e98f"
+    },
+    "prd-to-plan": {
+      "source": "mattpocock/skills",
+      "sourceType": "github",
+      "computedHash": "b0fad4a6e8097a5095fe00bfc2ebd98827c2d599e8b0a974c9d3c50b59295ac8"
+    },
+    "qa": {
+      "source": "mattpocock/skills",
+      "sourceType": "github",
+      "computedHash": "20c63e29b268b1f0762cff524b5e321d5e1a773b4f61b90d84811b755948a66c"
+    },
+    "request-refactor-plan": {
+      "source": "mattpocock/skills",
+      "sourceType": "github",
+      "computedHash": "176cf1d0c4dc4fc4d958c4bc4ed67f222f2656bda2f3f15e3a3e98b2e5edaf2f"
+    },
+    "scaffold-exercises": {
+      "source": "mattpocock/skills",
+      "sourceType": "github",
+      "computedHash": "486d60a7e984b76850bd22b3b58b98d0063a3b9b3acf319e4d5a37bf1283ea02"
+    },
+    "setup-pre-commit": {
+      "source": "mattpocock/skills",
+      "sourceType": "github",
+      "computedHash": "f9aeedf0a1f560ec465c3939c54434c2d949ac8b958a0493db52216f688a0366"
+    },
     "sharingan": {
       "source": "khoahyh/skills",
       "sourceType": "github",
@@ -55,6 +130,26 @@
       "source": "mattpocock/skills",
       "sourceType": "github",
       "computedHash": "ad055544599481182d0079c4198e85da26677cb408a677be2da04915375f0427"
+    },
+    "triage-issue": {
+      "source": "mattpocock/skills",
+      "sourceType": "github",
+      "computedHash": "6834b87393bff8f529b3126b9f761c1c2b9706af8a784ad1061961c34bbdb4a9"
+    },
+    "ubiquitous-language": {
+      "source": "mattpocock/skills",
+      "sourceType": "github",
+      "computedHash": "32f8a3426cb2d2c3db05977369e70d793e342c38ea87f5447eb22108c03c8d7a"
+    },
+    "write-a-prd": {
+      "source": "mattpocock/skills",
+      "sourceType": "github",
+      "computedHash": "d03d51db8cfd3dd5c27f9b8e1ffe61686391fdbd62bf4cb2f47db7e62ee68cd2"
+    },
+    "write-a-skill": {
+      "source": "mattpocock/skills",
+      "sourceType": "github",
+      "computedHash": "b44d8aab2ead83c716e01af4c9a24ccc4575ce70ad58ec4f1749fb88c9cc82ba"
     }
   }
 }

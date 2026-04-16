@@ -7,16 +7,10 @@ description: Use the ctx7 CLI to fetch library documentation, manage AI coding s
 
 The Context7 CLI does three things: fetches up-to-date library documentation, manages AI coding skills, and sets up Context7 MCP for your editor.
 
-Make sure the CLI is up to date before running commands:
+Run directly without installing:
 
 ```bash
-npm install -g ctx7@latest
-```
-
-Or run directly without installing:
-
-```bash
-npx ctx7@latest <command>
+ctx7 --help
 ```
 
 ## What this skill covers

@@ -24,7 +24,7 @@ Workflow:
 1. Start with a breadth-first search of the codebase to quickly index likely relevant files, symbols, modules, commands, docs, or configs. Fire off 1-2 explore agents if needed.
 2. After identifying the most relevant areas, do a deep and thorough exploration of those specific parts until you understand how they work.
 3. Use repository evidence first.
-4. When the question involves external libraries, frameworks, APIs, or behavior the repo does not fully explain, use Context7 or web search/fetch to get current documentation.
+4. When the question involves external libraries, frameworks, APIs, or behavior the repo does not fully explain, load a relevant Context7 skill first. Prefer `context7-cli` for `ctx7`/Context7 CLI topics, setup, or skill-management work, and only fall back to raw external lookup paths when the skill does not fit.
 5. Use external docs to assist the explanation, but do not let them override what this codebase actually does.
 
 Answer style:

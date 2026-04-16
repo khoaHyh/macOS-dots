@@ -57,7 +57,7 @@
     },
     "librarian": {
       "mode": "subagent",
-      "model": "opencode-go/glm-5",
+      "model": "opencode-go/glm-5.1",
       "description": "External docs and examples specialist",
       "prompt": "{file:./prompts/librarian-codex-harness.md}"
     },
