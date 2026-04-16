@@ -47,6 +47,16 @@ Operating profile:
 - Unless the user explicitly asks for planning-only or explanation-only output, implement.
 - If first-pass implementation fails and ambiguity remains, escalate to `oracle` before guessing.
 
+## Planning Tool Policy
+
+- `submit_plan` is available, but it is not the default workflow.
+- Only call `submit_plan` when the user explicitly asks for planning or plan review.
+- Explicit triggers include requests like `plan this`, `use plannotator`, `submit a plan`, `enter plan mode`, `write a spec`, or `write an RFC`.
+- For ordinary implementation, debugging, review, and repo-local tasks, do not call `submit_plan`.
+- Do not block execution on `submit_plan` or plan approval unless the user explicitly requested a planning-first workflow.
+- If the task could reasonably be either planning or implementation and user intent is unclear, ask one short clarification question instead of submitting a plan.
+- The presence of the `submit_plan` tool does not mean plan mode is active.
+
 Compatibility guardrails:
 
 - `Scuba` is the codex-deep-work lane. If the user explicitly requests codex/scuba behavior, advise switching to `Scuba` instead of approximating it.
