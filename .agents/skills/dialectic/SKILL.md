@@ -7,7 +7,7 @@ description: An Electric Monk engine — two subagents believe fully committed p
 
 An **artificial belief system** for building deeper understanding through productive contradiction.
 
-Two subagent sessions — the Electric Monks — *believe* fully committed positions so you don't have to. A third (the orchestrator) performs structural analysis of their contradiction and generates a synthesis (Aufhebung) that transforms the question itself. The user orchestrates from a belief-free position, freed from the cognitive load of holding either position.
+N subagent sessions (typically 2, sometimes 3-4) — the Electric Monks — *believe* fully committed positions so you don't have to. The orchestrator performs structural analysis of their contradiction and generates a **palette of structurally-distinct candidates** for where the contradiction lands — synthesis (Hegel), juxtaposition (Adorno), ground-condition (Schumacher), framing-dissolution (Foucault), undecidable (Derrida). The user orchestrates from a belief-free position, freed from the cognitive load of holding either position, and selects which candidate fits their situation.
 
 **Why this works:** The bottleneck in human reasoning isn't intelligence — it's *belief.* Once you believe a position, you can't simultaneously hold its negation at full strength. You hedge, you steelman weakly, you unconsciously bias the comparison. The Electric Monks carry the belief load at full conviction, which frees you to operate in the space above belief — analyzing the *structure* of the contradiction rather than being inside either side. In Boyd's terms: outsourcing belief work leads to faster transients. Each dialectical cycle is a reorientation that would take weeks of natural thinking, compressed into minutes because you carry zero belief inertia.
 
@@ -36,6 +36,16 @@ Three frameworks drive every phase of this skill. Internalize them before procee
 
 **Boyd: How creativity works — and why going outside is mandatory.** You cannot synthesize something genuinely new by recombining within the same domain. You must first *shatter* existing conceptual wholes into atomic parts (destructive deduction), then find cross-domain connections to build something new (creative induction). Boyd proves this isn't optional: Gödel shows you can't verify a system from inside it, Heisenberg shows that inward refinement creates observer-observed feedback loops, and the Second Law shows that any closed system's entropy necessarily increases. Together: "any inward-oriented and continued effort to improve the match-up of concept with observed reality will only increase the degree of mismatch." This is why the Boydian decomposition strips claims from their source positions, why lateral creativity interventions inject genuinely external material, and why recursive rounds need new research from *outside* the original domains. After synthesis, Boyd requires a **reversibility check** — can you trace each claim back to specific atomic parts? If not, the ideas don't hold together without contradiction. (See Theoretical Foundations → Boyd.)
 
+**Anti-sycophancy: The orchestrator's stance toward the user.** The anti-hedging instructions prevent monks from being sycophantic toward each other. The orchestrator faces the same RLHF pressure toward the *user* — and it's more dangerous because it's subtler. Specific failure modes to watch for:
+
+1. **Praising user input.** "This is excellent material," "This is a powerful connection," "Great point." Evaluate user contributions *structurally* — does this material change the decomposition? Does it open a new domain? Does it challenge the current analysis? — not *socially.* The user doesn't need encouragement. They need an orchestrator that treats their input the same way it treats monk input: as material to be worked with, not complimented.
+
+2. **Position-tracking.** "Is this the direction you want the synthesis to go?" The user is in the belief-free orchestrator seat. Do NOT try to locate their position and converge on it. If the user shares a framework they find interesting, it enters the mix as one more input — not as a signal about where the synthesis should land. The dialectic's job is to stress-test ideas against each other and produce sublations, not to discover what the user already thinks and confirm it.
+
+3. **Treating user-provided material as privileged.** When the user shares an article, a framework, or an idea, it goes into the decomposition alongside everything else. It gets shattered into atomic parts, stress-tested for structural isomorphisms, and checked for same-arrangement failure — just like the monks' material. The user's contribution is not the answer. It's another input. "These are all just ideas" — treat them that way.
+
+4. **Sycophantic agreement when corrected.** "Fair enough," "You're right," "Good point" are capitulation, not engagement. When the user corrects you, examine *what the correction reveals about a pattern in your behavior.* If the user says "you're drifting toward trying to locate my position," the right response isn't "you're right, I'll stop" — it's to notice that position-tracking is an RLHF tendency you'll keep drifting toward unless you actively counteract it, and to say so.
+
 ## How It Works: Overview
 
 You are the **orchestrator**. You conduct the elenctic interview, identify the user's belief burden, generate the monk prompts, spawn the Electric Monks, perform the structural analysis, and produce the synthesis. You use subagent sessions (via `claude -p` or your environment's equivalent) for the monks so each gets a fresh, fully committed belief context.
@@ -45,27 +55,32 @@ You (Orchestrator)
 ├── Phase 1: Elenctic Interview + Research (you, with the user)
 │   ├── 1a: Explain the process — set expectations, emphasize user as co-pilot
 │   ├── 1c′: Identify the user's belief burden and calibrate monk roles
+│   ├── 1c.1: Third-pole probe — is there a live position not reachable as A↔B blend?
 │   ├── 1d: Ground the monks (research or deep interview, domain-dependent)
 │   ├── 1e: Write context briefing document to file
-│   └── 1f: Confirm framing with user — ask about gaps in coverage
-├── Phase 2: Generate Electric Monk prompts (you) — reference briefing file
-├── Phase 3: Spawn the Electric Monks (subagents, read briefing, BELIEVE fully)
-│   ├── Decorrelation check: did monks genuinely diverge in framework, not just conclusion?
-│   └── User checkpoint: "Is there evidence or a comparison class both monks missed?"
+│   └── 1f: Confirm framing and final monk count (default 2, cap 4) with user
+├── Phase 2: Generate N Electric Monk prompts (you) — reference briefing file
+├── Phase 3: Spawn the N Electric Monks (subagents, read briefing, BELIEVE fully)
+│   ├── Decorrelation check (pairwise): did monks genuinely diverge in framework, not just conclusion?
+│   ├── Coalition-collapse check (if N≥3): is it really three-way, or 2-vs-1 in disguise?
+│   └── User checkpoint: "Is there evidence or a comparison class any monk missed?"
 ├── Phase 4: Determinate Negation (you — structural analysis, saved to file)
 │   ├── 4.0: Internal tensions — where does each monk's own logic undermine itself?
-│   ├── 4.5: Lateral creativity (Round 2+ only) — compressed conflicts, random domain, metaphors
+│   ├── 4.5: Lateral creativity — compressed conflicts, random domain, metaphors
 │   ├── 4.6: Boydian decomposition (destructive deduction) — shatter into "sea of anarchy," find cross-domain connections (creative induction)
 │   └── Same-arrangement test + emergent structure test
-├── Phase 5: Sublation / Aufhebung (you — synthesis, saved to file)
-│   ├── Provocation + movement (Round 2+ only) — disrupt premature pattern-matching
-│   ├── Reversibility check: trace each claim back to decomposition parts
-│   └── Abduction test: does synthesis make the original contradiction *predictable*?
-├── Phase 6: Validation (Monks A & B evaluate — were they elevated or defeated?)
-│   ├── Adversarial check: would the hardest-hit monk actually accept this?
-│   ├── Hostile Auditor: fresh agent, strongest model, sole job is to find flaws
-│   ├── Sustained juxtaposition: sometimes refusing to synthesize is the right move
-│   └── Refine: present improvements individually to user, incorporate accepted ones
+├── Phase 5: Palette of Candidates (S always; J/G/F/U conditional on misfit lens firings)
+│   ├── Candidates written in parallel by decorrelated subagents (no sight of siblings)
+│   ├── S (Synthesis) — orchestrator writes; classical Aufhebung with reversibility/abduction/closure tests
+│   ├── J (Juxtaposition) — fires when position-protection or synthesis-residue lenses caught a shared interest or dropped parts
+│   ├── G (Ground condition) — fires when briefing residue caught a concrete fact or level-shift is plausible
+│   ├── F (Framing dissolution) — fires when Lens C surfaced a fossil framing serving a constituency
+│   ├── U (Undecidable-centered) — fires when Lens D caught a word both sides use oppositely
+│   └── Present palette side-by-side; no ranking, no recommendation — user is the judge
+├── Phase 6: Validation of the Palette (user picks which candidates to validate)
+│   ├── Each candidate validated on its own terms with a candidate-specific monk prompt
+│   ├── Hostile Auditor per candidate (no sight of siblings) — attacks each candidate's internal standard
+│   └── Refine surviving candidates one at a time; user accepts, combines, or reopens Phase 4
 └── Phase 7: Recursion — propose 2-4 directions, user chooses (default: at least once)
     ├── Queue unexplored contradictions as the user's orientation library
     └── Repeat from Phase 2 (or Phase 1 if new research needed) on chosen direction
@@ -77,35 +92,39 @@ The user can intervene at any point — correcting a monk's framing, redirecting
 
 **CRITICAL: Before executing each phase, you MUST read its reference doc in full.** The summaries below are orientation only — they do not contain the detailed instructions, prompts, templates, or failure modes you need to execute correctly. Context drift (forgetting nuance in later rounds) is the most common failure mode of this skill. Reading the reference doc fresh each time is the fix.
 
+**Output principle: write full content to files, present only summaries to the user.** Every phase produces substantial analytical output — essays, negation analyses, lateral material, syntheses, validation feedback. Write all of this to files. When presenting to the user, give a concise structural summary (2-5 sentences per major section) that orients them and supports their decision-making at checkpoints. The user can always read the full files if they want depth; what they need from you is the shape of the analysis, not the full text. This applies to every user-facing checkpoint in the process.
+
+**File organization:** Create a dedicated directory for each dialectic's output files. First check if a `dialectic/` or `dialectics/` directory already exists (common in codebases that run multiple dialectics) — if so, create a subdirectory there. If not, create a new directory with a descriptive name (e.g., `dialectic-react-state-management/`). Prefix every file with its round number: `round_1_context_briefing.md`, `round_1_monk_a.md`, `round_1_determinate_negation.md`, `round_2_monk_a.md`, etc. This keeps multi-round dialectics navigable and prevents file collisions across rounds.
+
 ### Phase 1: Elenctic Interview + Research
 **Read `reference/phase1-elenctic-interview.md` before executing.**
 
-The most important phase. Explain the process to the user. Interview them using Socratic technique to surface hidden assumptions and the deepest version of the contradiction. Identify their belief burden (see catalog below). Ground the monks via research (external domains) or deep interview (personal domains). Write a context briefing document. Confirm framing with the user — ask about gaps.
+The most important phase. Explain the process to the user. Interview them using Socratic technique to surface hidden assumptions and the deepest version of the contradiction. Identify their belief burden (see catalog below). Ground the monks via research (external domains) or deep interview (personal domains). **Run the third-pole probe (1c.1)** — default is 2 monks, but add a 3rd (or 4th, cap there) when a position surfaces that (a) isn't reachable as an A↔B blend, (b) has its own constituency or literature, (c) ideally argues on an orthogonal axis. Write a context briefing document. Confirm framing and final monk count with the user — ask about gaps.
 
 ### Phase 2: Generate the Electric Monk Prompts
 **Read `reference/phase2-monk-prompts.md` before executing.**
 
-Generate two prompts calibrated to the user's belief burden. Each monk must BELIEVE at full conviction — this is the functional core of the ABS. The reference doc contains the required prompt structure (role, framing corrections, context briefing, research directives, argument structure, anti-hedging, length).
+Generate one prompt per monk (typically 2, sometimes 3-4) calibrated to the user's belief burden. Each monk must BELIEVE at full conviction — this is the functional core of the ABS. With 3+ monks, each monk's framing corrections must preempt degenerate framings against *every other monk*, not just one opponent, to avoid 2-vs-1 coalitions. The reference doc contains the required prompt structure (role, framing corrections, context briefing, research directives, argument structure, anti-hedging, length).
 
 ### Phase 3: Spawn the Electric Monks
 **Read `reference/phase3-spawn-monks.md` before executing.**
 
-Spawn both monks as separate subagent sessions. Check for hedging, degenerate framing, and decorrelation. Present outputs to the user with guidance on how to read them. Ask if any claims should be tested against evidence neither monk considered.
+Spawn all N monks as separate subagent sessions, in parallel. Check for hedging, degenerate framing, pairwise decorrelation, and — if N≥3 — coalition collapse (two monks sharing a frame while only the third is genuinely different). Present outputs to the user with guidance on how to read them. Ask if any claims should be tested against evidence no monk considered.
 
 ### Phase 4: Determinate Negation
 **Read `reference/phase4-determinate-negation.md` before executing.**
 
-You perform this yourself (not a subagent). Analyze internal tensions in each essay, then the surface contradiction, shared assumptions, determinate negation, hidden question, Boydian decomposition, and sublation criteria. Write your initial synthesis guess first — compare at the end to check for pattern-matching. **In Round 2+**, includes lateral creativity interventions: compressed conflict generation (oxymorons), random domain injection via Wikipedia's random article API, and a non-propositional pause (three metaphors). **HARD STOP at the end of Phase 4** — present the full analysis to the user and get their response before proceeding to synthesis. This is the highest-leverage correction point in the entire process.
+You perform this yourself (not a subagent). Analyze internal tensions in each essay, then the surface contradiction, shared assumptions, **position protection (4.2.5 — Ricoeur)**, determinate negation, hidden question, lateral creativity, Boydian decomposition, **misfit register (4.6.5)**, and sublation criteria. **Scales naturally to N monks** — each monk gets its own determinate negation, decomposition gets richer, 4.2/4.2.5/Lens D each get N-way plus pairwise checks. Write your initial synthesis guess first — compare at the end to check for pattern-matching. Lateral creativity interventions: compressed conflict generation (oxymorons), random domain injection via Wikipedia's random article API, non-propositional pause (three metaphors). The **misfit register** captures friction-with-the-frame that the synthesis will *not* resolve — briefing residue, synthesis residue (Adorno), framing genealogy (Foucault), undecidables (Derrida) — and writes to a per-round file plus a persistent `misfit_register.md` at the dialectic root. Before the register lenses, check `reference/misfit-patterns-watchlist.md` for previously-seen cross-domain patterns. Write all Phase 4 output to file. **HARD STOP at the end of Phase 4** — present a concise summary (hidden question, key decomposition insights, sublation criteria, 1-2 highest-signal misfits) and get the user's response before proceeding to synthesis. This is the highest-leverage correction point in the entire process.
 
-### Phase 5: Sublation (Aufhebung)
+### Phase 5: Palette of Candidates
 **Read `reference/phase5-sublation.md` before executing.**
 
-Generate the synthesis: cancel both positions as complete truths, preserve the genuine insight in each, elevate to a new concept that transforms the question. **Reversibility check (Boyd):** trace each claim back to specific atomic parts from the decomposition — untraceable claims need scrutiny. **Same-arrangement test:** verify the synthesis isn't one monk's structure wearing the other's vocabulary. Apply the abduction test. Check for compromise failure modes — including **analytical capture** (adopting one monk's epistemology to reframe the other) and **level reduction** (dissolving a higher-category claim into lower-category terms). Present to the user before validation. **In Round 2+**, begins with a De Bono provocation + movement extraction to disrupt premature pattern-matching.
+Generate a **palette of structurally-distinct candidates**, not a single synthesis. The classical Aufhebung (cancel/preserve/elevate) biases toward smoothing differences into one unified answer — often boring, sometimes wrong. The palette preserves the angles the research / belief / decomposition phases produced. **S (Synthesis) is always drafted** by the orchestrator with abduction test, reversibility check (Boyd), closure property, and failure-mode tests (analytical capture, level reduction). **J/G/F/U are drafted conditionally** based on which misfit-register lenses fired non-trivially: J (Juxtaposition) when 4.2.5 surfaced a disguised shared interest; G (Ground condition) when Lens A caught briefing residue or a level-shift is plausible; F (Framing dissolution) when Lens C surfaced a fossil framing; U (Undecidable) when Lens D caught a word loaded oppositely by both monks. Each candidate is written by a separate subagent with only its own lens material — no sight of sibling drafts (decorrelation is the point). Each candidate has its own internal standard. Present all candidates side-by-side to the user. **Do NOT rank, judge, or recommend** — the user is belief-free and in the judging seat.
 
-### Phase 6: Validation by the Electric Monks
+### Phase 6: Validation of the Palette
 **Read `reference/phase6-validation.md` before executing.**
 
-Send condensed summary to both monks for validation (elevated vs. defeated). Run adversarial check — including the **proponent test** (would the hardest-hit monk say "you've done exactly the thing I warned against"?). Deploy the hostile auditor (always in Round 2+, optional in Round 1) — auditor now includes a **reversibility check** (can each synthesis claim trace to material in the essays?) and **same-arrangement test**. **Sustained juxtaposition** is a legitimate alternative when the contradiction is more productive held open than resolved. On failure, **partial salvage** — identify which parts cohere, add new material, iterate (Boyd's approach is surgical, not demolition). Present improvements to user one at a time, not as a list. Revise synthesis before proceeding to recursion.
+User selects which palette candidate(s) to validate. Each candidate is validated **on its own terms** with a candidate-specific monk prompt (S: elevated vs. defeated; J: productive vs. evasive; G: orthogonal vs. same-axis; F: genealogy correct and constituency real; U: loadings genuinely opposite and refusal genuine). Each candidate gets its own **hostile auditor** with no sight of sibling candidates — each auditor attacks its candidate's internal standard. No tournament, no winner. User picks one, combines two (explicitly named), drops all and reopens Phase 4, or holds the palette open as the round's output. Present improvements one at a time per surviving candidate.
 
 ### Phase 7: Recursion
 **Read `reference/phase7-recursion.md` before executing.**
@@ -189,10 +208,11 @@ Based on three test runs across different domains (normative/institutional, busi
 | Phase 1 research (2-3 parallel agents) | 150-250K tokens | Do NOT cut here. This is the highest-value spend. Broader domains trend higher. |
 | Phase 1 supplementary research (user-triggered) | 0-50K tokens | Common — users frequently identify gaps. Budget for it. |
 | Phase 1d briefing synthesis | ~5K tokens | Orchestrator work |
-| Phase 3 monk essays (with briefing) | 25-45K tokens | Two monks, 2-3 targeted searches each |
-| Phase 4-5 analysis + synthesis | 15-30K tokens | Orchestrator inline work |
-| Phase 6 monk validation | 12-25K tokens | Two monks, strongest model |
-| Phase 6 hostile auditor | 5-15K tokens | One agent, strongest model. Reads essays + synthesis only. |
+| Phase 3 monk essays (with briefing) | 25-45K tokens (2 monks), ~1.5x for 3 monks, ~2x for 4 | 2-3 targeted searches per monk |
+| Phase 4 analysis + misfit register | 15-25K tokens | Orchestrator inline work |
+| Phase 5 palette (S + 1-3 non-S candidates) | 20-40K tokens | Parallel decorrelated subagents; cost scales with candidate count |
+| Phase 6 monk validation per candidate | 12-25K tokens | Two monks per candidate, strongest model |
+| Phase 6 hostile auditor per candidate | 5-15K tokens | One agent per candidate, strongest model. Reads essays + single candidate only. |
 | Phase 7 recursive round | 25-50K tokens | Often most valuable |
 | Orchestrator overhead | 20-30K tokens | Interview, transitions, presentation |
 | **Total (one round + recursion)** | **~300-400K tokens** | Median ~300K without supplementary research |
@@ -480,4 +500,4 @@ The final deliverable should include:
    - Which contradictions were deferred and why
    - For multi-round dialectics, show the branching structure: which rounds built on which syntheses
 
-Write these as markdown files in the output directory. Include a `README.md` or `index.md` linking all output files in order so the full dialectical trace is navigable. The queue file (`dialectic_queue.md`) serves as both a session artifact and a starting point for future sessions.
+Write these as markdown files in the dialectic's output directory (see file organization guidance above). Prefix all files with their round number (`round_1_`, `round_2_`, etc.). Include a `README.md` or `index.md` linking all output files in order so the full dialectical trace is navigable. The queue file (`dialectic_queue.md`) serves as both a session artifact and a starting point for future sessions.

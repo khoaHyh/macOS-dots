@@ -1,25 +1,20 @@
 ---
 name: find-docs
 description: >-
-  Retrieves authoritative, up-to-date technical documentation, API references,
-  configuration details, and code examples for any developer technology.
+  Retrieves up-to-date documentation, API references, and code examples for any
+  developer technology. Use this skill whenever the user asks about a specific
+  library, framework, SDK, CLI tool, or cloud service -- even for well-known ones
+  like React, Next.js, Prisma, Express, Tailwind, Django, or Spring Boot. Your
+  training data may not reflect recent API changes or version updates.
 
-  Use this skill whenever answering technical questions or writing code that
-  interacts with external technologies. This includes libraries, frameworks,
-  programming languages, SDKs, APIs, CLI tools, cloud services, infrastructure
-  tools, and developer platforms.
+  Always use for: API syntax questions, configuration options, version migration
+  issues, "how do I" questions mentioning a library name, debugging that involves
+  library-specific behavior, setup instructions, and CLI tool usage.
 
-  Common scenarios:
-  - looking up API endpoints, classes, functions, or method parameters
-  - checking configuration options or CLI commands
-  - answering "how do I" technical questions
-  - generating code that uses a specific library or service
-  - debugging issues related to frameworks, SDKs, or APIs
-  - retrieving setup instructions, examples, or migration guides
-  - verifying version-specific behavior or breaking changes
-
-  Prefer this skill whenever documentation accuracy matters or when model
-  knowledge may be outdated.
+  Use even when you think you know the answer -- do not rely on training data
+  for API details, signatures, or configuration options as they are frequently
+  outdated. Always verify against current docs. Prefer this over web search for
+  library documentation and API details.
 ---
 
 # Documentation Lookup
@@ -32,12 +27,10 @@ Make sure the CLI is up to date before running commands:
 npm install -g ctx7@latest
 ```
 
-Prefer to use the globally installed CLI:
+Or run directly without installing:
 
 ```bash
-ctx7 library
-ctx7 docs
-ctx7 --help
+npx ctx7@latest <command>
 ```
 
 ## Workflow
@@ -121,12 +114,12 @@ ctx7 docs /prisma/prisma "How to define one-to-many relations with cascade delet
 
 The query directly affects the quality of results. Be specific and include relevant details. Do not include any sensitive or confidential information such as API keys, passwords, credentials, personal data, or proprietary code in your query.
 
-| Quality | Example                                                    |
-| ------- | ---------------------------------------------------------- |
-| Good    | `"How to set up authentication with JWT in Express.js"`    |
-| Good    | `"React useEffect cleanup function with async operations"` |
-| Bad     | `"auth"`                                                   |
-| Bad     | `"hooks"`                                                  |
+| Quality | Example |
+|---------|---------|
+| Good | `"How to set up authentication with JWT in Express.js"` |
+| Good | `"React useEffect cleanup function with async operations"` |
+| Bad | `"auth"` |
+| Bad | `"hooks"` |
 
 Use the user's full question as the query when possible, vague one-word queries return generic results.
 
@@ -147,7 +140,6 @@ ctx7 login
 ## Error Handling
 
 If a command fails with a quota error ("Monthly quota reached" or "quota exceeded"):
-
 1. Inform the user their Context7 quota is exhausted
 2. Suggest they authenticate for higher limits: `ctx7 login`
 3. If they cannot or choose not to authenticate, answer from training knowledge and clearly note it may be outdated

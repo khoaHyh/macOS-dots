@@ -1,14 +1,16 @@
 # Phase 3: Spawn the Electric Monks
 
-Spawn Monk A and Monk B as separate subagent sessions. Use `claude -p` (or your environment's equivalent for spawning an independent agent) so each gets a clean context with full belief commitment.
+Spawn each monk as a separate subagent session — **typically Monk A and B, sometimes also C or D** if Phase 1c.1 surfaced additional poles. Use `claude -p` (or your environment's equivalent for spawning an independent agent) so each gets a clean context with full belief commitment.
 
 ```bash
-# Example for Claude Code:
-echo "[MONK A PROMPT]" | claude -p --allowedTools web_search,web_fetch,read_file > monk_a_output.md
-echo "[MONK B PROMPT]" | claude -p --allowedTools web_search,web_fetch,read_file > monk_b_output.md
+# Example for Claude Code (scales to N monks):
+echo "[MONK A PROMPT]" | claude -p --allowedTools web_search,web_fetch,read_file > round_1_monk_a.md
+echo "[MONK B PROMPT]" | claude -p --allowedTools web_search,web_fetch,read_file > round_1_monk_b.md
+# If third-pole probe added a Monk C:
+echo "[MONK C PROMPT]" | claude -p --allowedTools web_search,web_fetch,read_file > round_1_monk_c.md
 ```
 
-These can run in parallel if your environment supports it.
+Run all monks in parallel if your environment supports it.
 
 **Efficiency note:** With the context briefing in place, monks need only 2-3 targeted searches each (vs. 15-25 without it). For personal/values domains, monks may need zero additional searches — the briefing contains the user's own material which is the primary evidence base.
 
@@ -19,28 +21,34 @@ These can run in parallel if your environment supports it.
 - Did the framing corrections work, or did a monk fall into the degenerate framing?
 - Are the arguments grounded in specific evidence (from the briefing or their own searches)?
 
-**Decorrelation check:** Verify the monks actually diverged. The skill's value comes from *structurally uncorrelated* exploration of the problem space. Check:
+**Decorrelation check:** Verify the monks actually diverged. The skill's value comes from *structurally uncorrelated* exploration of the problem space. Check pairwise across all monks:
 - Do the monks cite *different* evidence, or substantially overlapping sources?
 - Do they frame the problem using *different* conceptual vocabularies?
 - Do their unstated assumptions *diverge*, or do they share the same background framework?
 - Would a reader recognize these as genuinely *different perspectives,* or the same perspective with different conclusions bolted on?
 
+**With 3+ monks, check for coalition collapse.** The failure mode is two monks sharing a frame while only the third is genuinely different — this is a 2-vs-1 argument masquerading as three-way dialectic. If C is clearly orthogonal but A and B have collapsed onto the same axis, the third-pole probe worked but the A/B decorrelation didn't; reformulate A or B before proceeding. If any two monks' framings blur into each other, cut to 2 monks rather than ship degraded decorrelation.
+
 If decorrelation is low — the monks are in "same framework, different conclusions" mode — consider reformulating the belief burdens to force genuinely different conceptual frames, not just different positions within one frame.
 
 **If a monk's output hedges or is off-base:** Prefer restarting with a revised prompt over nudging. Fresh context with better instructions produces better results than correcting a monk that's lost its conviction.
 
-**Present both outputs to the user** with a brief re-explanation of what they're looking at and what to do with it:
+**Save each monk's essay to a file** (e.g., `round_1_monk_a.md`, `round_1_monk_b.md`, `round_1_monk_c.md`). **Present a structural summary to the user** — not the essays themselves. The essays are raw material for the orchestrator's decomposition; most users won't read them and shouldn't need to. Give the user a quick orientation instead (scale to N monks):
 
-> Here are two essays — each one fully committed to one side of the tension we've been discussing. They're called "Electric Monks" because their job is to *believe* these positions so you don't have to. That frees you to read both and notice the *structure* of the disagreement from the outside.
+> The monks have written their essays (saved to files if you want to read them). Here's the structural summary:
 >
-> **A few important things as you read:**
-> - **These will get things wrong.** The monks are working from what I told them, and I may have gotten your situation wrong, or they may have made assumptions that don't match your reality. That's expected — especially in this first round.
-> - **Correct them freely.** If a monk says something that's off-base, tell me. "That's not how it works" or "they're missing that..." — these corrections are the most valuable input in the entire process. The synthesis can only be as good as the positions it's built on.
-> - **The first round is the least insightful.** Think of it as calibration. Each subsequent round gets sharper, more specific, and more tuned to what you actually care about. The real breakthroughs usually come in rounds 2 and 3, once the process has dug past the obvious framing into the deeper tensions.
-> - **Add anything that occurs to you.** New ideas, things neither monk mentioned, gut feelings you can't fully articulate — all of it is useful. You know your situation better than any of us.
+> **Monk A** argued [2-3 sentence summary of the core claim, key evidence, and most interesting move].
+>
+> **Monk B** argued [2-3 sentence summary of the core claim, key evidence, and most interesting move].
+>
+> [**Monk C**, if present, argued ...]
+>
+> **Where they diverged:** [describe the structural differences pairwise — what conceptual frame each used. With 3+ monks, note which pair diverged most and which least — the pair that diverged least is a decorrelation risk].
+>
+> **Anything surprising:** [Note if a monk made an unexpected move, cited evidence you didn't anticipate, or took the position somewhere the user might not have expected].
 
 Then ask:
-1. Do these capture the positions accurately?
+1. Does this capture the positions accurately, or is either monk missing something important about how this actually works?
 2. **"Is there a claim either monk makes that should be tested against evidence neither has considered?"** — This is the second high-leverage intervention point. In testing, users identified claims that sounded plausible but collapsed under scrutiny when tested against comparison classes the monks didn't consider. Catching this before synthesis prevents the entire downstream analysis from being built on an untested assumption.
 
 If the user identifies a testable claim, run a targeted research agent to check it. This is cheap (~25-50K tokens) and can fundamentally change the quality of the synthesis.
