@@ -1,7 +1,6 @@
 ---
 description: Reviews planning documents for internal consistency -- contradictions between sections, terminology drift, structural issues, and ambiguity where readers would diverge. Spawned by the document-review skill.
 mode: subagent
-model: anthropic/claude-haiku-4-5
 temperature: 0.1
 ---
 
