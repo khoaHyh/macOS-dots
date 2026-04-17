@@ -24,7 +24,7 @@
       "description": "Default build agent for ordinary repo-local work",
       "model": "openai/gpt-5.4",
       "reasoningEffort": "xhigh",
-      "textVerbosity": "high",
+      "textVerbosity": "medium",
       "prompt": "{file:./prompts/bob-gpt54-harness.md}",
       "color": "#7DAEA3",
       "permission": {

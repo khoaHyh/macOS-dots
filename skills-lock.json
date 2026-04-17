@@ -31,6 +31,11 @@
       "sourceType": "github",
       "computedHash": "44e8668f72fc6f9a392d02e9b15a1015037a55ef68b7028c4e9f4d66564eef9a"
     },
+    "domain-model": {
+      "source": "mattpocock/skills",
+      "sourceType": "github",
+      "computedHash": "71fd7d7d8c96228d663fcc133843e06e16f211c1d4d1e781aabdc73a097a2d60"
+    },
     "edit-article": {
       "source": "mattpocock/skills",
       "sourceType": "github",
@@ -130,6 +135,11 @@
       "source": "mattpocock/skills",
       "sourceType": "github",
       "computedHash": "ad055544599481182d0079c4198e85da26677cb408a677be2da04915375f0427"
+    },
+    "to-prd": {
+      "source": "mattpocock/skills",
+      "sourceType": "github",
+      "computedHash": "8351452ad372ea4f839d3f7b951927b417851ffa49e7e6af28ea0f0ae111dca8"
     },
     "triage-issue": {
       "source": "mattpocock/skills",
