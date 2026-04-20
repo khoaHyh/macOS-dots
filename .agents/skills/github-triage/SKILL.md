@@ -108,7 +108,7 @@ The reproduction attempt informs the grilling session and the agent brief. A con
 
 ### Step 4: Grilling session (if needed)
 
-If the issue needs to be fleshed out before it's ready for an agent, interview the maintainer to build a complete specification. Follow the /grill-me pattern:
+If the issue needs to be fleshed out before it's ready for an agent, interview the maintainer to build a complete specification. Follow the /domain-model (skill) pattern:
 
 - Ask questions one at a time
 - Provide a recommended answer for each question
