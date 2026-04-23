@@ -1,6 +1,5 @@
 ---
 description: Structured code review using tiered persona agents
-agent: Bob
 argument-hint: "[blank to review current branch, or provide PR link]"
 ---
 

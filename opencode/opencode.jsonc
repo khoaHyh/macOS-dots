@@ -22,7 +22,7 @@
     "Bob": {
       "mode": "primary",
       "description": "Default build agent for ordinary repo-local work",
-      "model": "openai/gpt-5.4",
+      "model": "openai/gpt-5.5",
       "reasoningEffort": "xhigh",
       "textVerbosity": "medium",
       "prompt": "{file:./prompts/bob-gpt54-harness.md}",
@@ -71,16 +71,9 @@
     "oracle": {
       "mode": "subagent",
       "description": "Strategic consultation specialist",
-      "model": "openai/gpt-5.4",
+      "model": "openai/gpt-5.5",
       "reasoningEffort": "xhigh",
       "prompt": "{file:./prompts/oracle-codex-harness.md}"
-    },
-    "reviewer": {
-      "mode": "subagent",
-      "description": "Higher-rigor review specialist",
-      "model": "openai/gpt-5.4",
-      "reasoningEffort": "xhigh",
-      "prompt": "{file:./prompts/reviewer-codex-harness.md}"
     }
   },
   "mcp": {

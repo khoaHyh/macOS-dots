@@ -1,6 +1,6 @@
 {
   "defaultProvider": "openai-codex",
-  "defaultModel": "gpt-5.4",
+  "defaultModel": "gpt-5.5",
   "defaultThinkingLevel": "high",
   "hideThinkingBlock": true,
   "theme": "rose-pine-dawn",
@@ -13,7 +13,6 @@
     "weeklyLimitTokens": 50000000
   },
   "lastChangelogVersion": "0.64.0",
-  "packages": [
-    "npm:@plannotator/pi-extension"
-  ]
+  "packages": ["npm:@plannotator/pi-extension"]
 }
+

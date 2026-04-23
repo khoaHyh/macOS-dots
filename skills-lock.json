@@ -160,6 +160,11 @@
       "source": "mattpocock/skills",
       "sourceType": "github",
       "computedHash": "b44d8aab2ead83c716e01af4c9a24ccc4575ce70ad58ec4f1749fb88c9cc82ba"
+    },
+    "write-effect-ts": {
+      "source": "khoahyh/skills",
+      "sourceType": "github",
+      "computedHash": "8e04225af03f2b58942f571405eb3ea6a0f21d27ea7d62aed5fdbb69350523f7"
     }
   }
 }
