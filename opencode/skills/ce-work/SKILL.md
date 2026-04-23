@@ -1,5 +1,5 @@
 ---
-name: ce:work
+name: ce-work
 description: Execute work efficiently while maintaining quality and finishing features
 argument-hint: "[Plan doc path or description of work. Blank to auto use latest plan doc]"
 ---
@@ -10,7 +10,7 @@ Execute work efficiently while maintaining quality and finishing features.
 
 ## Introduction
 
-This command takes a work document (plan, specification, or todo file) or a bare prompt describing the work, and executes it systematically. The focus is on **shipping complete features** by understanding requirements quickly, following existing patterns, and maintaining quality throughout.
+This command takes a work document (plan or specification) or a bare prompt describing the work, and executes it systematically. The focus is on **shipping complete features** by understanding requirements quickly, following existing patterns, and maintaining quality throughout.
 
 ## Input Document
 
@@ -22,7 +22,7 @@ This command takes a work document (plan, specification, or todo file) or a bare
 
 Determine how to proceed based on what was provided in `<input_document>`.
 
-**Plan document** (input is a file path to an existing plan, specification, or todo file) → skip to Phase 1.
+**Plan document** (input is a file path to an existing plan or specification) → skip to Phase 1.
 
 **Bare prompt** (input is a description of work, not a file path):
 
@@ -38,7 +38,7 @@ Determine how to proceed based on what was provided in `<input_document>`.
    |-----------|---------|--------|
    | **Trivial** | 1-2 files, no behavioral change (typo, config, rename) | Proceed to Phase 1 step 2 (environment setup), then implement directly — no task list, no execution loop. Apply Test Discovery if the change touches behavior-bearing code |
    | **Small / Medium** | Clear scope, under ~10 files | Build a task list from discovery. Proceed to Phase 1 step 2 |
-   | **Large** | Cross-cutting, architectural decisions, 10+ files, touches auth/payments/migrations | Inform the user this would benefit from `/ce:brainstorm` or `/ce:plan` to surface edge cases and scope boundaries. Honor their choice. If proceeding, build a task list and continue to Phase 1 step 2 |
+   | **Large** | Cross-cutting, architectural decisions, 10+ files, touches auth/payments/migrations | Inform the user this would benefit from `/ce-brainstorm` or `/ce-plan` to surface edge cases and scope boundaries. Honor their choice. If proceeding, build a task list and continue to Phase 1 step 2 |
 
 ---
 
@@ -55,7 +55,7 @@ Determine how to proceed based on what was provided in `<input_document>`.
    - Review any references or links provided in the plan
    - If the user explicitly asks for TDD, test-first, or characterization-first execution in this session, honor that request even if the plan has no `Execution note`
    - If anything is unclear or ambiguous, ask clarifying questions now
-   - Get user approval to proceed
+   - If clarifying questions were needed above, get user approval on the resolved answers. If no clarifications were needed, proceed without a separate approval step — plan scope is the plan's authority, not something to renegotiate
    - **Do not skip this** - better to ask questions now than build the wrong thing
 
 2. **Setup Environment**
@@ -97,7 +97,7 @@ Determine how to proceed based on what was provided in `<input_document>`.
 
    **Option B: Use a worktree (recommended for parallel development)**
    ```bash
-   skill: git-worktree
+   skill: ce-worktree
    # The skill will create a new branch from the default branch in an isolated worktree
    ```
 
@@ -111,9 +111,10 @@ Determine how to proceed based on what was provided in `<input_document>`.
    - You want to keep the default branch clean while experimenting
    - You plan to switch between branches frequently
 
-3. **Create Todo List** _(skip if Phase 0 already built one, or if Phase 0 routed as Trivial)_
-   - Use your available task tracking tool (e.g., TodoWrite, task lists) to break the plan into actionable tasks
+3. **Create Task List** _(skip if Phase 0 already built one, or if Phase 0 routed as Trivial)_
+   - Use the platform's task tracking tool (`TaskCreate`/`TaskUpdate`/`TaskList` in Claude Code, `update_plan` in Codex, or the equivalent on other harnesses) to break the plan into actionable tasks
    - Derive tasks from the plan's implementation units, dependencies, files, test targets, and verification criteria
+   - When the plan defines U-IDs for Implementation Units, preserve the unit's U-ID as a prefix in the task subject (e.g., "U3: Add parser coverage"). This keeps blocker references, deferred-work notes, and final summaries anchored to the same identifier the plan uses, so progress and traceability remain unambiguous across plan edits
    - Carry each unit's `Execution note` into the task when present
    - For each unit, read the `Patterns to follow` field before implementing — these point to specific files or conventions to mirror
    - Use each unit's `Verification` field as the primary "done" signal for that task
@@ -285,7 +286,7 @@ Determine how to proceed based on what was provided in `<input_document>`.
    For UI work with Figma designs:
 
    - Implement components following design specs
-   - Use figma-design-sync agent iteratively to compare
+   - Use ce-figma-design-sync agent iteratively to compare
    - Fix visual differences identified
    - Repeat until implementation matches design
 
@@ -294,6 +295,7 @@ Determine how to proceed based on what was provided in `<input_document>`.
    - Note any blockers or unexpected discoveries
    - Create new tasks if scope expands
    - Keep user informed of major milestones
+   - When the plan defines U-IDs for Implementation Units, or the plan or origin document carries stable R-IDs (and optionally A/F/AE IDs), reference them in blockers, deferred-work notes, task summaries, and final verification — not routine status updates. U-IDs anchor units across plan edits; R/A/F/AE anchor product intent across the brainstorm-plan handoff. Use the IDs the plan supplies and do not invent ones it does not. This preserves traceability without burying signal under noise.
 
 ### Phase 3-4: Quality Check and Ship It
 
@@ -341,3 +343,4 @@ When all Phase 2 tasks are complete and execution transitions to quality check, 
 - **Forgetting to track progress** - Update task status as you go or lose track of what's done
 - **80% done syndrome** - Finish the feature, don't move on early
 - **Skipping review** - Every change gets reviewed; only the depth varies
+- **Re-scoping the plan into human-time phases** - The plan's Implementation Units define the scope of execution. Do not estimate human-hours per unit, propose multi-day breakdowns, or ask the user to pick a subset of units for "this session". Agents execute at agent speed, and context-window pressure is addressed by subagent dispatch (Phase 1 Step 4), not by phased sessions. If a plan-file input is genuinely too large for a single execution, say so plainly and suggest the user return to `/ce-plan` to reduce scope — don't invent session phases as a workaround. For bare-prompt input, Phase 0's Large routing already handles oversized work

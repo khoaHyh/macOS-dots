@@ -4,12 +4,12 @@ agent: Bob
 argument-hint: "[feature, focus area, or constraint]"
 ---
 
-Generate grounded improvement ideas with the `ce:ideate` skill.
+Generate grounded improvement ideas with the `ce-ideate` skill.
 
 First, invoke the skill tool to load the workflow:
 
 ```text
-skill({ name: 'ce:ideate' })
+skill({ name: 'ce-ideate' })
 ```
 
 Then follow the skill instructions exactly.
