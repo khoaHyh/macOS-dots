@@ -25,7 +25,7 @@
       "model": "openai/gpt-5.5",
       "reasoningEffort": "xhigh",
       "textVerbosity": "medium",
-      "prompt": "{file:./prompts/bob-gpt54-harness.md}",
+      "prompt": "{file:./prompts/bob-gpt55-harness.md}",
       "color": "#7DAEA3",
       "permission": {
         "question": "allow"
@@ -46,34 +46,34 @@
       "mode": "subagent",
       "description": "Focused codebase search specialist",
       "model": "opencode-go/minimax-m2.7",
-      "prompt": "{file:./prompts/explore-codex-harness.md}"
+      "prompt": "{file:./prompts/explore-harness.md}"
     },
     "explore-openai-fallback": {
       "mode": "subagent",
-      "description": "Fallback codebase search specialist when Kimi is unavailable",
+      "description": "Fallback codebase search specialist when the primary model is unavailable",
       "model": "openai/gpt-5.4-mini",
       "reasoningEffort": "none",
-      "prompt": "{file:./prompts/explore-codex-harness.md}"
+      "prompt": "{file:./prompts/explore-harness.md}"
     },
     "librarian": {
       "mode": "subagent",
-      "model": "opencode-go/glm-5.1",
+      "model": "opencode-go/deepseek-v4-pro",
       "description": "External docs and examples specialist",
-      "prompt": "{file:./prompts/librarian-codex-harness.md}"
+      "prompt": "{file:./prompts/librarian-harness.md}"
     },
     "librarian-openai-fallback": {
       "mode": "subagent",
-      "description": "Fallback docs specialist when Kimi is unavailable",
+      "description": "Fallback docs specialist when the primary model is unavailable",
       "model": "openai/gpt-5.4-mini",
       "reasoningEffort": "none",
-      "prompt": "{file:./prompts/librarian-codex-harness.md}"
+      "prompt": "{file:./prompts/librarian-harness.md}"
     },
     "oracle": {
       "mode": "subagent",
       "description": "Strategic consultation specialist",
       "model": "openai/gpt-5.5",
       "reasoningEffort": "xhigh",
-      "prompt": "{file:./prompts/oracle-codex-harness.md}"
+      "prompt": "{file:./prompts/oracle-harness.md}"
     }
   },
   "mcp": {
