@@ -15,16 +15,12 @@
   "permission": {
     "websearch": "allow"
   },
-  "tools": {
-    "submit_plan": true
-  },
   "agent": {
     "Bob": {
       "mode": "primary",
       "description": "Default build agent for ordinary repo-local work",
       "model": "openai/gpt-5.5",
       "reasoningEffort": "xhigh",
-      "textVerbosity": "medium",
       "prompt": "{file:./prompts/bob-gpt55-harness.md}",
       "color": "#7DAEA3",
       "permission": {
@@ -37,10 +33,7 @@
       "model": "openai/gpt-5.3-codex",
       "reasoningEffort": "xhigh",
       "prompt": "{file:./prompts/scuba-codex-harness.md}",
-      "color": "#8A7DFF",
-      "tools": {
-        "submit_plan": false
-      }
+      "color": "#8A7DFF"
     },
     "explore": {
       "mode": "subagent",

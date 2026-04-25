@@ -3,9 +3,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "test": "bun test",
-    "eval:run": "bun run evals/run.ts",
-    "eval:roi": "bun run evals/roi.ts"
+    "test": "bun test"
   },
   "dependencies": {
     "@opencode-ai/plugin": "1.4.6",

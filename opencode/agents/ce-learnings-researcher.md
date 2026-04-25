@@ -209,7 +209,7 @@ Structure findings as follows:
 - [Past mis-steps worth avoiding, where applicable]
 ```
 
-When no relevant learnings are found, say so explicitly, include the search context so the caller can see what was looked for, and note that the caller's work may be worth capturing with `/ce-compound` after it lands — the absence is itself useful signal.
+When no relevant learnings are found, say so explicitly and include the search context so the caller can see what was looked for. The absence is itself useful signal.
 
 ## Efficiency Guidelines
 
@@ -242,8 +242,7 @@ When no relevant learnings are found, say so explicitly, include the search cont
 
 This agent is invoked by:
 
-- `/ce-plan` — to inform planning with institutional knowledge and add depth during confidence checking
-- `/ce-code-review`, `/ce-optimize`, `/ce-ideate` — to surface prior learnings relevant to the change, optimization target, or ideation topic
+- `/ce-review` — to surface prior learnings relevant to the reviewed change
 - Standalone invocation before starting work in a documented area
 
 Output is consumed as prose — no downstream caller parses specific field labels out of it — so prioritize distilled, actionable takeaways over structural rigor.
