@@ -25,6 +25,12 @@
         "sidebar": true,
         "tips": true
       }
+    ],
+    [
+      "@ishaksebsib/opencode-tree",
+      {
+        "storageScope": "global"
+      }
     ]
   ]
 }
