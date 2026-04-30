@@ -31,6 +31,13 @@
       {
         "storageScope": "global"
       }
+    ],
+    [
+      "oc-plugin-gitgud",
+      {
+        "commit_model": "openai/gpt-5.4-mini-fast",
+        "commit_agent": "build"
+      }
     ]
   ]
 }
