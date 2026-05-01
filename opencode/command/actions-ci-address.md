@@ -1,6 +1,5 @@
 ---
 description: Address GitHub Actions CI failures once for the current PR/branch
-agent: Scuba
 ---
 
 Run a single GitHub Actions CI remediation pass for the target PR/branch.
