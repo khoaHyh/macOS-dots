@@ -7,7 +7,7 @@ description: Use the ctx7 CLI to fetch library documentation, manage AI coding s
 
 The Context7 CLI does three things: fetches up-to-date library documentation, manages AI coding skills, and sets up Context7 MCP for your editor.
 
-Run directly without installing:
+To run:
 
 ```bash
 ctx7 --help
@@ -25,6 +25,7 @@ ctx7 --help
 # Documentation
 ctx7 library <name> <query>           # Step 1: resolve library ID
 ctx7 docs <libraryId> <query>         # Step 2: fetch docs
+ctx7 docs <libraryId> <query> --research  # Retry with deep research if the default answer didn't satisfy
 
 # Skills
 ctx7 skills install /owner/repo       # Install from a repo (interactive)

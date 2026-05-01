@@ -9,12 +9,14 @@
     "context7-cli": {
       "source": "upstash/context7",
       "sourceType": "github",
-      "computedHash": "6077b3c638fb7efb31d9b2c815436650de4aef73e7b671edec2f1c63f6a1e105"
+      "skillPath": "skills/context7-cli/SKILL.md",
+      "computedHash": "525bfb31161c3f8866920a28fb2d9a3003a23b449aa8619b1b1add0da2cc3300"
     },
     "context7-mcp": {
       "source": "upstash/context7",
       "sourceType": "github",
-      "computedHash": "6b02383f86f87e81a722b3b6c6d6e06efa5c72f23bc87bb02599e3d499ca2c58"
+      "skillPath": "skills/context7-mcp/SKILL.md",
+      "computedHash": "a4b485790d6ab03a95110bbda5fe269210faa01c1c171b44412ddc77ecabd18b"
     },
     "deepen-codebase-design": {
       "source": "khoahyh/skills",
@@ -50,7 +52,8 @@
     "find-docs": {
       "source": "upstash/context7",
       "sourceType": "github",
-      "computedHash": "0210767e57873317edc8b91783a2f1b74eb9bbdd2139bd14e9129e9a0bbc2dd6"
+      "skillPath": "skills/find-docs/SKILL.md",
+      "computedHash": "a977bd7ad9159d251376c71357dd6243879fba19a75c8dcda2fc001ba5e25164"
     },
     "git-guardrails-claude-code": {
       "source": "mattpocock/skills",
@@ -75,7 +78,8 @@
     "greptile-address": {
       "source": "khoahyh/skills",
       "sourceType": "github",
-      "computedHash": "1d71f00365ec0bbdeb74a5e84420b441ac18f38c5cc132e6123cfa8581641c19"
+      "skillPath": "greptile-address/SKILL.md",
+      "computedHash": "cbf11436639485be44849161c528bc4c19202fc45d12bd5a04205d430bbc9728"
     },
     "grill-me": {
       "source": "mattpocock/skills",
@@ -87,7 +91,7 @@
       "source": "mattpocock/skills",
       "sourceType": "github",
       "skillPath": "skills/engineering/grill-with-docs/SKILL.md",
-      "computedHash": "ea225e10406dbb6a18ba97af34e4e9313424438195cd16e657635f841b6e7a2f"
+      "computedHash": "31a5b1ae116558bf7d3f633f442835f54bd7645923d4f45c7823e52a97317666"
     },
     "improve-codebase-architecture": {
       "source": "mattpocock/skills",
@@ -150,7 +154,7 @@
       "source": "mattpocock/skills",
       "sourceType": "github",
       "skillPath": "skills/engineering/setup-matt-pocock-skills/SKILL.md",
-      "computedHash": "bc82760857bc933047d1b2bd87008aa21c402414beb63f1b009087d651e2fb90"
+      "computedHash": "3a32f8f1ed8160c9d286a2aabe88ee9b884c6f3f88a7a6c47b7d5d552c959587"
     },
     "setup-pre-commit": {
       "source": "mattpocock/skills",
