@@ -1,6 +1,5 @@
 ---
 description: Alias for /gt-commit-submit
-agent: Scuba
 ---
 
 Use the canonical Graphite command:

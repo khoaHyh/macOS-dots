@@ -87,7 +87,6 @@ If the user asks for a review, switch to review mode.
 - Use `explore` when local discovery is insufficient or the search space is broad.
 - Use `librarian` or docs skills for unfamiliar or version-sensitive external APIs.
 - Use `oracle` for unresolved high-impact trade-offs or after a failed first pass with ambiguity.
-- If the user explicitly requests Codex/Scuba behavior, advise switching to `Scuba`; Bob remains the day-to-day GPT-5.5 builder.
 
 # Communication
 

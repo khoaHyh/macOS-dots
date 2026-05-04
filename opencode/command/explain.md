@@ -1,6 +1,5 @@
 ---
 description: Explain code or concepts without making changes
-agent: Scuba
 ---
 
 You are in explanation mode.

@@ -1,6 +1,5 @@
 ---
 description: Generate hierarchical AGENTS.md files with study-gated, minimal guidance
-agent: Scuba
 ---
 
 Generate hierarchical `AGENTS.md` files (root + complexity-scored subdirectories) and create a symlinked `CLAUDE.md` next to each generated or updated `AGENTS.md`.
@@ -19,12 +18,12 @@ Generate hierarchical `AGENTS.md` files (root + complexity-scored subdirectories
 
 ## Hard Requirements
 
-1) Use TodoWrite for all phases and update status in real time.
-2) Start background `explore` agents immediately (parallel fan-out), then continue local discovery in parallel.
-3) Always read existing agent context files before deciding placements, including in `--create-new` mode.
-4) Root `AGENTS.md` is always present.
-5) For every directory containing `AGENTS.md`, ensure `CLAUDE.md` is a symlink to `AGENTS.md`.
-6) Apply findings from arXiv `2602.11988v1` before generating any content.
+1. Use TodoWrite for all phases and update status in real time.
+2. Start background `explore` agents immediately (parallel fan-out), then continue local discovery in parallel.
+3. Always read existing agent context files before deciding placements, including in `--create-new` mode.
+4. Root `AGENTS.md` is always present.
+5. For every directory containing `AGENTS.md`, ensure `CLAUDE.md` is a symlink to `AGENTS.md`.
+6. Apply findings from arXiv `2602.11988v1` before generating any content.
 
 ## Study Gate (Mandatory, Before Discovery)
 

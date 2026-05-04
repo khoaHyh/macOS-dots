@@ -1,6 +1,5 @@
 ---
 description: Commit the current branch with Graphite and submit it safely
-agent: Scuba
 ---
 
 Commit the current Git branch with Graphite and submit the current branch or stack for review.
