@@ -10,13 +10,13 @@
       "source": "upstash/context7",
       "sourceType": "github",
       "skillPath": "skills/context7-cli/SKILL.md",
-      "computedHash": "525bfb31161c3f8866920a28fb2d9a3003a23b449aa8619b1b1add0da2cc3300"
+      "computedHash": "6077b3c638fb7efb31d9b2c815436650de4aef73e7b671edec2f1c63f6a1e105"
     },
     "context7-mcp": {
       "source": "upstash/context7",
       "sourceType": "github",
       "skillPath": "skills/context7-mcp/SKILL.md",
-      "computedHash": "a4b485790d6ab03a95110bbda5fe269210faa01c1c171b44412ddc77ecabd18b"
+      "computedHash": "6b02383f86f87e81a722b3b6c6d6e06efa5c72f23bc87bb02599e3d499ca2c58"
     },
     "deepen-codebase-design": {
       "source": "khoahyh/skills",
@@ -37,6 +37,7 @@
     "dialectic": {
       "source": "kyleamathews/hegelian-dialectic-skill",
       "sourceType": "github",
+      "skillPath": "SKILL.md",
       "computedHash": "44e8668f72fc6f9a392d02e9b15a1015037a55ef68b7028c4e9f4d66564eef9a"
     },
     "domain-model": {
@@ -53,7 +54,7 @@
       "source": "upstash/context7",
       "sourceType": "github",
       "skillPath": "skills/find-docs/SKILL.md",
-      "computedHash": "a977bd7ad9159d251376c71357dd6243879fba19a75c8dcda2fc001ba5e25164"
+      "computedHash": "0210767e57873317edc8b91783a2f1b74eb9bbdd2139bd14e9129e9a0bbc2dd6"
     },
     "git-guardrails-claude-code": {
       "source": "mattpocock/skills",
@@ -68,6 +69,7 @@
     "graphite": {
       "source": "withgraphite/agent-skills",
       "sourceType": "github",
+      "skillPath": "skills/graphite/SKILL.md",
       "computedHash": "9315b842df6de2a23216a2e72033fa99337398a8d62c11d6c320e55a6b810339"
     },
     "greploop": {
@@ -176,13 +178,13 @@
       "source": "mattpocock/skills",
       "sourceType": "github",
       "skillPath": "skills/engineering/to-issues/SKILL.md",
-      "computedHash": "73a91f30784523aa59ec9b02769576ebfc738e2cd5ad8f6441076031f0a5d5ac"
+      "computedHash": "47f648f3414848ccfc62cb41d2828b7e575fb5e7cbd6c4bdf630c063b5dc5e82"
     },
     "to-prd": {
       "source": "mattpocock/skills",
       "sourceType": "github",
       "skillPath": "skills/engineering/to-prd/SKILL.md",
-      "computedHash": "fd8c259f9c44eff08e29a1a2fc71a806a3568d279a55387a361f78620b10f2aa"
+      "computedHash": "6d741474efd4bc3db55fabc2722ed78ca9c374cabcb6212936d79d4fd4a30fcb"
     },
     "triage": {
       "source": "mattpocock/skills",
@@ -213,6 +215,7 @@
     "write-effect-ts": {
       "source": "khoahyh/skills",
       "sourceType": "github",
+      "skillPath": "write-effect-ts/SKILL.md",
       "computedHash": "8e04225af03f2b58942f571405eb3ea6a0f21d27ea7d62aed5fdbb69350523f7"
     }
   }
