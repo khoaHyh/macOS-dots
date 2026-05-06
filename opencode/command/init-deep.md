@@ -1,260 +1,149 @@
 ---
-description: Generate hierarchical AGENTS.md files with study-gated, minimal guidance
+description: Create/update root and justified nested AGENTS.md guidance
 ---
 
-Generate hierarchical `AGENTS.md` files (root + complexity-scored subdirectories) and create a symlinked `CLAUDE.md` next to each generated or updated `AGENTS.md`.
+Create or update a root `AGENTS.md` and only those nested `AGENTS.md` files whose subtrees have materially different agent guidance. Optionally create a symlinked `CLAUDE.md` next to each created or updated `AGENTS.md`, but never overwrite an existing real `CLAUDE.md`.
 
-## Usage
+The goal is compact instruction files that help future OpenCode sessions avoid mistakes and ramp up quickly. Every line should answer: "Would an agent likely miss this without help?" If not, leave it out.
 
-```text
-/init-deep
-/init-deep --create-new
-/init-deep --max-depth=2
-```
-
-- Default mode is update-in-place: modify existing `AGENTS.md` files and add new ones where warranted.
-- `--create-new` means: read all existing `AGENTS.md` and `CLAUDE.md` first, then regenerate hierarchy from scratch.
-- Default max depth is `3` when `--max-depth` is omitted.
-
-## Hard Requirements
-
-1. Use TodoWrite for all phases and update status in real time.
-2. Start background `explore` agents immediately (parallel fan-out), then continue local discovery in parallel.
-3. Always read existing agent context files before deciding placements, including in `--create-new` mode.
-4. Root `AGENTS.md` is always present.
-5. For every directory containing `AGENTS.md`, ensure `CLAUDE.md` is a symlink to `AGENTS.md`.
-6. Apply findings from arXiv `2602.11988v1` before generating any content.
-
-## Study Gate (Mandatory, Before Discovery)
-
-Before writing any `AGENTS.md`, fetch and study:
-
-`https://arxiv.org/html/2602.11988v1`
-
-Extract and explicitly apply these findings while drafting files:
-
-- LLM-generated context files often reduce success and increase cost.
-- Context files tend to trigger broader exploration and more tool usage.
-- Human-written files are only marginally better, and still increase cost.
-- Minimal, high-signal, task-relevant requirements are preferred.
-- Avoid redundant overviews and generic advice.
-
-If the generated content does not reflect these findings, revise before file writes.
-
-## Todo Setup
-
-Create and maintain this list throughout execution:
-
-- discovery: Fire explore probes + local structural analysis + read existing files
-- scoring: Score directories and choose `AGENTS.md` locations
-- generate: Generate/update `AGENTS.md` and create `CLAUDE.md` symlinks
-- review: Deduplicate, trim, validate, and emit final report
-
-Keep exactly one item `in_progress` at a time.
-
-## Phase 1: Discovery + Analysis (Concurrent)
-
-Mark `discovery` as `in_progress`.
-
-### A) Launch parallel explore probes immediately
-
-Run these in parallel using the `task` tool with `subagent_type="explore"`:
-
-- Project structure: predict standard layout and report deviations only.
-- Entry points: find main entry paths and non-standard organization.
-- Conventions: detect config/tooling conventions and local rules.
-- Anti-patterns: find explicit do-not rules (`DO NOT`, `NEVER`, `ALWAYS`, `DEPRECATED`).
-- Build/CI: detect workflows and repository-specific build patterns.
-- Test patterns: detect test structure, commands, and unusual practices.
-
-### B) Dynamic additional fan-out based on project scale
-
-Measure scale (exclude `node_modules`, `.git`, common build dirs). Compute:
-
-- total files
-- total lines in code files
-- max directory depth
-- count of files over 500 lines
-- monorepo package/workspace count
-- language count
-
-Spawn additional explore probes using this policy:
-
-- +1 explore probe per 100 files above 100
-- +1 explore probe per 10k lines above 10k
-- +2 probes if max depth >= 4
-- +1 probe if large files > 10
-- +1 probe per workspace/package in monorepo
-- +1 probe per language beyond the first
-
-Keep probes non-overlapping (hotspots, deep modules, shared utilities, boundaries, etc.).
-
-### C) Main-session analysis while probes run
-
-In parallel with probes:
-
-- Perform structural analysis (dir depth distribution, file density, extension concentration).
-- Locate all existing `AGENTS.md` and `CLAUDE.md`.
-- Read all existing `AGENTS.md` and capture constraints, conventions, anti-patterns.
-- If `--create-new`: preserve insights first, then remove old generated hierarchy after reading.
-- If symbol tooling is available, collect codemap signals (symbols, exports, references).
-- If symbol tooling is unavailable, use grep-based symbol density heuristics.
-
-### D) Merge findings
-
-Collect all probe outputs and merge with local analysis into one location model.
-
-Mark `discovery` as `completed`.
-
-## Phase 2: Scoring + Placement Decision
-
-Mark `scoring` as `in_progress`.
-
-Use this matrix:
-
-- File count (3x), high if >20
-- Subdir count (2x), high if >5
-- Code ratio (2x), high if >70%
-- Unique local patterns/config (1x)
-- Module boundary signals (2x)
-- Symbol density (2x), high if >30 symbols
-- Export count (2x), high if >10 exports
-- Reference centrality (3x), high if >20 refs
-
-Decision rules:
-
-- `.` root: always create/update
-- Score >15: create/update `AGENTS.md`
-- Score 8-15: create/update only if domain is distinct
-- Score <8: skip (covered by parent)
-
-Produce:
-
-`AGENTS_LOCATIONS = [{ path, type, score, reason }]`
-
-Mark `scoring` as `completed`.
-
-## Phase 3: Generate Files
-
-Mark `generate` as `in_progress`.
-
-### File write rule
-
-- If target `AGENTS.md` exists, use `Edit`.
-- If target `AGENTS.md` does not exist, use `Write`.
-- Never overwrite an existing file with `Write`.
-
-### Content strategy (study-driven)
-
-Given arXiv findings, optimize for minimal high-value context:
-
-- Keep only repository-specific instructions that materially change agent behavior.
-- Prefer concrete commands, boundaries, and gotchas.
-- Avoid broad directory tours unless they are non-obvious and actionable.
-- Remove generic best practices that apply to all repositories.
-- Keep child files focused on local deltas from parent instructions.
-
-### Root `AGENTS.md`
-
-Generate first with sections:
-
-- Overview (1-2 lines)
-- Structure (only non-obvious layout)
-- Where to look (task -> path mapping)
-- Conventions (project-specific deviations)
-- Anti-patterns (explicitly forbidden patterns)
-- Commands (dev/test/build)
-- Notes (critical gotchas)
-
-Size target: 50-150 lines.
-
-### Subdirectory `AGENTS.md` files
-
-Generate in parallel for non-root locations.
-
-Each child file:
-
-- 30-80 lines
-- never duplicates parent guidance
-- includes only local conventions/constraints
-- omits sections with no local signal
-
-### CLAUDE symlink for each AGENTS file
-
-For every directory that now has `AGENTS.md`, ensure `CLAUDE.md` symlinks to it.
-
-Safe policy:
-
-- If `CLAUDE.md` is already a symlink to `AGENTS.md`, keep it.
-- If `CLAUDE.md` exists as a non-symlink file, back it up (`CLAUDE.md.bak.<timestamp>`), then create symlink.
-- If `CLAUDE.md` is a symlink with wrong target, repoint it to `AGENTS.md`.
-
-Recommended commands per directory:
-
-```bash
-if [ -e "CLAUDE.md" ] && [ ! -L "CLAUDE.md" ]; then
-  mv "CLAUDE.md" "CLAUDE.md.bak.$(date +%Y%m%d%H%M%S)"
-fi
-ln -sfn "AGENTS.md" "CLAUDE.md"
-```
-
-Mark `generate` as `completed`.
-
-## Phase 4: Review + Deduplicate
-
-Mark `review` as `in_progress`.
-
-For each generated/updated file:
-
-- remove generic advice
-- remove parent duplicates
-- verify concise, telegraphic style
-- verify section usefulness (drop empty/obvious sections)
-- verify line-budget constraints
-
-For each `CLAUDE.md`:
-
-- verify it is a symlink
-- verify target resolves to sibling `AGENTS.md`
-
-Mark `review` as `completed`.
-
-## Final Report Format
-
-```text
-=== init-deep Complete ===
-
-Mode: {update | create-new}
-Study: arXiv 2602.11988v1 applied
-
-Files:
-  [OK] ./AGENTS.md (root, {N} lines)
-  [OK] ./CLAUDE.md -> AGENTS.md
-  [OK] ./path/AGENTS.md ({N} lines)
-  [OK] ./path/CLAUDE.md -> AGENTS.md
-
-Dirs analyzed: {N}
-AGENTS created: {N}
-AGENTS updated: {N}
-CLAUDE symlinks created: {N}
-CLAUDE symlinks updated: {N}
-
-Hierarchy:
-  ./AGENTS.md
-  ./CLAUDE.md -> AGENTS.md
-  ./path/AGENTS.md
-  ./path/CLAUDE.md -> AGENTS.md
-```
-
-## Anti-Patterns (Reject)
-
-- static agent count independent of project complexity
-- sequential-only discovery when work is parallelizable
-- generating files before reading existing context
-- skipping arXiv study gate or not applying its findings
-- verbose generic content and duplicated parent material
-- creating `AGENTS.md` without paired `CLAUDE.md` symlink
-
-<user-request>
+User-provided focus or constraints (honor these):
 $ARGUMENTS
-</user-request>
+
+## Evidence gate
+
+Apply these findings from AGENTS.md studies, including arXiv:2602.11988 and arXiv:2601.20404:
+
+- Broad LLM-generated context files can reduce success and increase cost.
+- Context files tend to trigger more exploration, testing, and tool use.
+- Developer-written guidance helps most when it is minimal, specific, and actionable.
+- Repository overviews are often redundant and do not reliably improve file discovery.
+- Concise root `AGENTS.md` files can improve efficiency when they encode actionable project context.
+
+Do not create or expand an `AGENTS.md` unless it adds high-signal guidance that is not already obvious from filenames, scripts, or existing docs.
+
+If the user explicitly asks to refresh the research, fetch the latest paper/docs before writing.
+
+## How to investigate
+
+Read the highest-value sources first:
+
+- `README*`, root manifests, workspace config, lockfiles
+- build, test, lint, formatter, typecheck, and codegen config
+- CI workflows and pre-commit / task runner config
+- existing instruction files (`AGENTS.md`, `CLAUDE.md`, `.cursor/rules/`, `.cursorrules`, `.github/copilot-instructions.md`)
+- repo-local OpenCode config such as `opencode.json`
+
+If architecture is still unclear after reading config and docs, inspect a small number of representative code files to find the real entrypoints, package boundaries, and execution flow. Prefer reading the files that explain how the system is wired together over random leaf files.
+
+Prefer executable sources of truth over prose. If docs conflict with config or scripts, trust the executable source and only keep what you can verify.
+
+## Hierarchy planning
+
+Before writing files, build a candidate `AGENTS.md` map.
+
+Create or update a nested `AGENTS.md` only for a subtree that has at least one of:
+
+- its own manifest or task runner (`package.json`, `pyproject.toml`, `Cargo.toml`, `go.mod`, `Makefile`, `Justfile`, etc.)
+- different build, test, lint, format, deploy, or verification commands
+- different language/framework conventions from the repo root
+- generated files, migrations, fixtures, secrets, hardware, or external-service risks specific to that subtree
+- an existing nested instruction file worth preserving or correcting
+- a nested README/config that establishes a real subproject boundary
+
+Do not create nested files merely because a directory exists.
+
+Skip generated/vendor/cache/build directories such as `.git`, `node_modules`, `dist`, `build`, `target`, `coverage`, `.next`, `.turbo`, vendored dependencies, lockfile-only directories, and archive/output folders.
+
+Use this map internally and include it in the final report:
+
+| path | action | why this boundary exists | evidence read | notes |
+| --- | --- | --- | --- | --- |
+
+## What to extract
+
+Look for the highest-signal facts for an agent working in each target scope:
+
+- exact developer commands, especially non-obvious ones
+- how to run a single test, a single package, or a focused verification step
+- required command order when it matters, such as `lint -> typecheck -> test`
+- monorepo or multi-package boundaries, ownership of major directories, and the real app/library entrypoints
+- framework or toolchain quirks: generated code, migrations, codegen, build artifacts, special env loading, dev servers, infra deploy flow
+- repo-specific style or workflow conventions that differ from defaults
+- testing quirks: fixtures, integration test prerequisites, snapshot workflows, required services, flaky or expensive suites
+- important constraints from existing instruction files worth preserving
+
+Good `AGENTS.md` content is usually hard-earned context that took reading multiple files to infer.
+
+## Questions
+
+Only ask the user questions if the repo cannot answer something important and the answer would materially change which files are written or what safety guidance they contain. Use the `question` tool for one short batch at most.
+
+Good questions:
+
+- undocumented team conventions
+- branch / PR / release expectations
+- missing setup or test prerequisites that are known but not written down
+- whether to replace a real `CLAUDE.md` with a symlink when a compatibility conflict exists
+
+Do not ask about anything the repo already makes clear.
+
+## Writing rules
+
+Include only high-signal, repo-specific guidance such as:
+
+- exact commands and shortcuts the agent would otherwise guess wrong
+- architecture notes that are not obvious from filenames
+- conventions that differ from language or framework defaults
+- setup requirements, environment quirks, and operational gotchas
+- references to existing instruction sources that matter
+
+Exclude:
+
+- generic software advice
+- long tutorials or exhaustive file trees
+- obvious language conventions
+- speculative claims or anything you could not verify
+- content better stored in another file referenced via `opencode.json` `instructions`
+
+When in doubt, omit.
+
+Prefer short sections and bullets. If the repo is simple, keep the file simple. If the repo is large, summarize the few structural facts that actually change how an agent should work.
+
+If an `AGENTS.md` already exists at a target path, improve it in place rather than rewriting blindly. Preserve verified useful guidance, delete fluff or stale claims, and reconcile it with the current codebase.
+
+## Root vs nested content contract
+
+Root `AGENTS.md`:
+
+- Contains repository-wide safety rules, workflow rules, and common validation guidance.
+- Avoids detailed per-subtree instructions unless they apply globally.
+
+Nested `AGENTS.md`:
+
+- Starts with a clear scope statement.
+- Includes a short ancestor note with the relative path to the nearest ancestor `AGENTS.md`, for example: `Also follow ../AGENTS.md; read it before edits if it is not already in context.`
+- Lists only local differences, stricter rules, or subtree-specific commands.
+- Must not weaken ancestor safety, security, or destructive-operation rules.
+- Must be self-contained enough that an agent starting in this subtree will not miss critical constraints.
+
+Recommended nested opening:
+
+`These instructions apply to <path>/ and inherit <relative-path-to-ancestor>/AGENTS.md. Local rules below override only where they are stricter or more specific.`
+
+## CLAUDE.md compatibility symlinks
+
+For each created or updated `AGENTS.md`:
+
+- If `CLAUDE.md` does not exist next to it, create a relative symlink `CLAUDE.md -> AGENTS.md`.
+- If `CLAUDE.md` is already a symlink to `AGENTS.md`, leave it alone.
+- If `CLAUDE.md` exists as a real file or points elsewhere, do not overwrite it; report the conflict and ask before changing it.
+
+## Final report
+
+After writing, report:
+
+- files created, updated, skipped, and why
+- the candidate `AGENTS.md` map
+- any `CLAUDE.md` symlinks created or conflicts left unresolved
+- validation commands run and any checks intentionally skipped
+- a concise diff summary
