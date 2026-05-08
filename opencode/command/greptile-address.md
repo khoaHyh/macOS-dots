@@ -1,5 +1,5 @@
 ---
-description: Address Greptile PR feedback once without looping
+description: Address Greptile PR feedback
 ---
 
 Run a single Greptile feedback pass for the target PR.

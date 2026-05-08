@@ -11,7 +11,7 @@ First, invoke the skill tool to load the workflow:
 skill({ name: 'grill-me' })
 ```
 
-Then follow the skill instructions exactly.
+Then follow the skill instructions exactly. Use the question tool where it makes sense to.
 
 <user-request>
 $ARGUMENTS
