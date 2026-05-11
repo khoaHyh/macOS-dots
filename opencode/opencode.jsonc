@@ -11,34 +11,21 @@
     // ]
   ],
   "small_model": "openai/gpt-5.4-mini",
-  "default_agent": "Bob",
   "permission": {
-    "websearch": "allow"
+    "websearch": "allow",
+    "question": "allow"
   },
   "agent": {
-    "Bob": {
-      "mode": "primary",
-      "description": "Default build agent for ordinary repo-local work",
-      "model": "openai/gpt-5.5",
-      "reasoningEffort": "xhigh",
-      "prompt": "{file:./prompts/bob-gpt55-harness.md}",
-      "color": "#7DAEA3",
-      "permission": {
-        "question": "allow"
-      }
-    },
     "explore": {
       "mode": "subagent",
       "description": "Focused codebase search specialist",
-      "model": "opencode-go/minimax-m2.7",
-      "prompt": "{file:./prompts/explore-harness.md}"
+      "model": "opencode-go/minimax-m2.7"
     },
     "explore-openai-fallback": {
       "mode": "subagent",
       "description": "Fallback codebase search specialist when the primary model is unavailable",
       "model": "openai/gpt-5.4-mini",
-      "reasoningEffort": "none",
-      "prompt": "{file:./prompts/explore-harness.md}"
+      "reasoningEffort": "none"
     },
     "librarian": {
       "mode": "subagent",
