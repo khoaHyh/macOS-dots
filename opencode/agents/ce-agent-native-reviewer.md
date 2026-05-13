@@ -1,5 +1,5 @@
 ---
-description: Reviews code to ensure agent-native parity -- any action a user can take, an agent can also take. Use after adding UI features, agent tools, or system prompts.
+description: "Reviews code to ensure agent-native parity -- any action a user can take, an agent can also take. Use after adding UI features, agent tools, or system prompts."
 mode: subagent
 temperature: 0.1
 ---
@@ -33,7 +33,7 @@ Before diving in, answer three questions:
 | Vercel AI SDK (Next.js) | `onClick`, `onSubmit`, form actions in React components | `tool()` in route handlers, `tools` param in `streamText`/`generateText` |
 | LangChain / LangGraph | Frontend framework varies | `@tool` decorators, `StructuredTool` subclasses, `tools` arrays |
 | OpenAI Assistants | Frontend framework varies | `tools` array in assistant config, function definitions |
-| Agent-harness plugins | N/A (CLI) | `agents/*.md`, `skills/*/SKILL.md`, tool lists in frontmatter |
+| Claude Code plugins | N/A (CLI) | `agents/*.md`, `skills/*/SKILL.md`, tool lists in frontmatter |
 | Rails + MCP | `button_to`, `form_with`, Turbo/Stimulus actions | `tool()` in MCP server definitions, `.mcp.json` |
 | Generic | Grep for `onClick`, `onSubmit`, `onTap`, `Button`, `onPressed`, form actions | Grep for `tool(`, `function_call`, `tools:`, tool registration patterns |
 

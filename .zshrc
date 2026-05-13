@@ -50,7 +50,8 @@ ocenv() {
   fi
 
   local env_output line key value loaded=0
-  local -a slack_vars=(
+  local -a opencode_vars=(
+    EXECUTOR_MCP_AUTHORIZATION
     SLACK_MCP_XOXP_TOKEN
     SLACK_MCP_XOXB_TOKEN
     SLACK_MCP_XOXC_TOKEN
@@ -67,7 +68,7 @@ ocenv() {
     fi
   fi
 
-  for key in "${slack_vars[@]}"; do
+  for key in "${opencode_vars[@]}"; do
     unset "$key"
   done
 
@@ -77,7 +78,7 @@ ocenv() {
     value=${line#*=}
 
     case "$key" in
-      SLACK_MCP_XOXP_TOKEN|SLACK_MCP_XOXB_TOKEN|SLACK_MCP_XOXC_TOKEN|SLACK_MCP_XOXD_TOKEN)
+      EXECUTOR_MCP_AUTHORIZATION|SLACK_MCP_XOXP_TOKEN|SLACK_MCP_XOXB_TOKEN|SLACK_MCP_XOXC_TOKEN|SLACK_MCP_XOXD_TOKEN)
         export "$key=$value"
         loaded=1
         ;;
@@ -85,13 +86,13 @@ ocenv() {
   done <<< "$env_output"
 
   if (( ! loaded )); then
-    print -u2 "No Slack MCP variables were loaded from 1Password."
+    print -u2 "No OpenCode MCP variables were loaded from 1Password."
     return 1
   fi
 }
 
 occlear() {
-  unset SLACK_MCP_XOXP_TOKEN SLACK_MCP_XOXB_TOKEN SLACK_MCP_XOXC_TOKEN SLACK_MCP_XOXD_TOKEN
+  unset EXECUTOR_MCP_AUTHORIZATION SLACK_MCP_XOXP_TOKEN SLACK_MCP_XOXB_TOKEN SLACK_MCP_XOXC_TOKEN SLACK_MCP_XOXD_TOKEN
 }
 
 oc() {
@@ -149,3 +150,5 @@ zlastmod() {
 }
 
 export GREPTILE_API_KEY="op://Employee/GREPTILE_API_KEY/credential"
+# CF CLI completions
+[[ -f "/Users/khuynh/.config/cf/completions/_cf.zsh" ]] && source "/Users/khuynh/.config/cf/completions/_cf.zsh"

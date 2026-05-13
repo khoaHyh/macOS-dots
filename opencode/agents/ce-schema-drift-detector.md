@@ -1,5 +1,5 @@
 ---
-description: Detects unrelated schema.rb changes in PRs by cross-referencing against included migrations. Use when reviewing PRs with database schema changes.
+description: "Detects unrelated schema.rb changes in PRs by cross-referencing against included migrations. Use when reviewing PRs with database schema changes."
 mode: subagent
 temperature: 0.1
 ---

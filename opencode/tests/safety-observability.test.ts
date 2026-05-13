@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { EnvProtection } from "../plugin/env-protection";
+import { EnvProtection } from "../plugins/env-protection";
 
 describe("safety and observability", () => {
   test("blocks reading .env files", async () => {

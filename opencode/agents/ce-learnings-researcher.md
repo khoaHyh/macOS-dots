@@ -1,5 +1,5 @@
 ---
-description: Searches docs/solutions/ for applicable past learnings by frontmatter metadata. Use before implementing features, making decisions, or starting work in a documented area — surfaces prior bugs, architecture patterns, design patterns, tooling decisions, conventions, and workflow learnings so institutional knowledge carries forward.
+description: "Searches docs/solutions/ for applicable past learnings via frontmatter metadata (bugs, architecture, design patterns, conventions, workflow learnings). Use before implementing features, making decisions, or starting work in a documented area so institutional knowledge carries forward."
 mode: subagent
 temperature: 0.2
 ---
@@ -55,7 +55,7 @@ The caller's context determines which dimensions carry weight. A code-bug query 
 
 ### Step 2: Probe Discovered Subdirectories
 
-Use the native file-search/glob tool to discover which subdirectories actually exist under `docs/solutions/` at invocation time. Do not assume a fixed list — subdirectory names are per-repo convention and may include any of:
+Use the native file-search/glob tool (e.g., Glob in Claude Code) to discover which subdirectories actually exist under `docs/solutions/` at invocation time. Do not assume a fixed list — subdirectory names are per-repo convention and may include any of:
 
 - Bug-shaped: `build-errors/`, `test-failures/`, `runtime-errors/`, `performance-issues/`, `database-issues/`, `security-issues/`, `ui-bugs/`, `integration-issues/`, `logic-errors/`
 - Knowledge-shaped: `architecture-patterns/`, `design-patterns/`, `tooling-decisions/`, `conventions/`, `workflow/`, `workflow-issues/`, `developer-experience/`, `documentation-gaps/`, `best-practices/`, `skill-design/`, `integrations/`
@@ -65,7 +65,7 @@ Narrow the search to the discovered subdirectories that match the caller's Domai
 
 ### Step 3: Content-Search Pre-Filter (Critical for Efficiency)
 
-**Use the native content-search tool to find candidate files BEFORE reading any content.** Run multiple searches in parallel, case-insensitive, returning only matching file paths:
+**Use the native content-search tool (e.g., Grep in Claude Code) to find candidate files BEFORE reading any content.** Run multiple searches in parallel, case-insensitive, returning only matching file paths:
 
 ```
 # Search for keyword matches in frontmatter fields (run in PARALLEL, case-insensitive).
@@ -209,7 +209,7 @@ Structure findings as follows:
 - [Past mis-steps worth avoiding, where applicable]
 ```
 
-When no relevant learnings are found, say so explicitly and include the search context so the caller can see what was looked for. The absence is itself useful signal.
+When no relevant learnings are found, say so explicitly, include the search context so the caller can see what was looked for, and note that the caller's work may be worth capturing with `/ce-compound` after it lands — the absence is itself useful signal.
 
 ## Efficiency Guidelines
 
@@ -242,7 +242,8 @@ When no relevant learnings are found, say so explicitly and include the search c
 
 This agent is invoked by:
 
-- `/ce-review` — to surface prior learnings relevant to the reviewed change
+- `/ce-plan` — to inform planning with institutional knowledge and add depth during confidence checking
+- `/ce-code-review`, `/ce-optimize`, `/ce-ideate` — to surface prior learnings relevant to the change, optimization target, or ideation topic
 - Standalone invocation before starting work in a documented area
 
 Output is consumed as prose — no downstream caller parses specific field labels out of it — so prioritize distilled, actionable takeaways over structural rigor.

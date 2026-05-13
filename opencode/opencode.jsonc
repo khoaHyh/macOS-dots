@@ -49,32 +49,24 @@
     }
   },
   "mcp": {
-    "terraform": {
-      "type": "local",
-      "command": [
-        "docker",
-        "run",
-        "-i",
-        "--rm",
-        "hashicorp/terraform-mcp-server"
-      ]
-    },
-    "aws-terraform": {
-      "type": "local",
-      "command": [
-        "uvx",
-        "awslabs.terraform-mcp-server@latest"
-      ]
-    },
-    "notion": {
+    "executor": {
       "type": "remote",
-      "url": "https://mcp.notion.com/mcp"
+      "url": "http://127.0.0.1:4789/mcp",
+      "enabled": true,
+      "timeout": 30000,
+      "headers": {
+        "Authorization": "{env:EXECUTOR_MCP_AUTHORIZATION}"
+      }
     },
-    "linear": {
-      "type": "remote",
-      "url": "https://mcp.linear.app/mcp",
-      "enabled": true
-    },
+    // "notion": {
+    //   "type": "remote",
+    //   "url": "https://mcp.notion.com/mcp"
+    // },
+    // "linear": {
+    //   "type": "remote",
+    //   "url": "https://mcp.linear.app/mcp",
+    //   "enabled": true
+    // },
     "greptile": {
       "type": "remote",
       "url": "https://api.greptile.com/mcp",
