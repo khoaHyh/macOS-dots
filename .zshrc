@@ -135,7 +135,7 @@ bindkey '^e' autosuggest-accept
 
 export PYENV_ROOT="$HOME/.pyenv"
 export PATH="$PYENV_ROOT/bin:$PATH"
-eval "$(pyenv init -)"
+eval "$(pyenv init - --no-rehash)"
 
 export PATH=$PATH:/Users/khuynh/.spicetify
 export PATH="$HOME/.bun/bin:$PATH"
