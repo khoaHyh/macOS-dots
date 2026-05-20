@@ -143,6 +143,12 @@
       "sourceType": "github",
       "computedHash": "b0fad4a6e8097a5095fe00bfc2ebd98827c2d599e8b0a974c9d3c50b59295ac8"
     },
+    "prototype": {
+      "source": "mattpocock/skills",
+      "sourceType": "github",
+      "skillPath": "skills/engineering/prototype/SKILL.md",
+      "computedHash": "e4d0c8f8cb3fc096ee99405a15491da466545cf4a3694bee5a0c9db2fa621a43"
+    },
     "qa": {
       "source": "mattpocock/skills",
       "sourceType": "github",
