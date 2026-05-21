@@ -32,8 +32,13 @@
     {
       "filePattern": [
         "~/.pi/agent/auth.json",
+        "~/.pi/agent/mcp-auth.json",
+        "~/.pi/agent/mcp-oauth/**",
         "**/.pi/agent/auth.json",
-        "**/auth.json"
+        "**/.pi/agent/mcp-auth.json",
+        "**/.pi/agent/mcp-oauth/**",
+        "**/auth.json",
+        "**/mcp-auth.json"
       ],
       "cloakPattern": [
         {

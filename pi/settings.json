@@ -18,6 +18,7 @@
       "source": "npm:@plannotator/pi-extension",
       "skills": []
     },
+    "npm:pi-mcp-adapter",
     "npm:pi-autoresearch"
   ]
 }

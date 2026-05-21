@@ -1,8 +1,28 @@
 {
   "mcpServers": {
-    "grep_app": {
-      "url": "https://mcp.grep.app",
-      "lifecycle": "eager"
+    "executor": {
+      "url": "http://127.0.0.1:4789/mcp",
+      "headers": {
+        "Authorization": "${EXECUTOR_MCP_AUTHORIZATION}"
+      },
+      "lifecycle": "lazy"
+    },
+    "slack": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "slack-mcp-server@latest",
+        "--transport",
+        "stdio"
+      ],
+      "env": {
+        "SLACK_MCP_ENABLED_TOOLS": "channels_list,conversations_history,conversations_replies,conversations_search_messages,usergroups_list,usergroups_me",
+        "SLACK_MCP_XOXP_TOKEN": "${SLACK_MCP_XOXP_TOKEN}",
+        "SLACK_MCP_XOXB_TOKEN": "${SLACK_MCP_XOXB_TOKEN}",
+        "SLACK_MCP_XOXC_TOKEN": "${SLACK_MCP_XOXC_TOKEN}",
+        "SLACK_MCP_XOXD_TOKEN": "${SLACK_MCP_XOXD_TOKEN}"
+      },
+      "lifecycle": "lazy"
     }
   }
 }
