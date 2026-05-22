@@ -20,6 +20,10 @@ pi/sessions/
 pi/bin/
 pi/git/
 pi/npm/
+pi/mcp-oauth/
+pi/mcp-cache.json
+pi/mcp-npx-cache.json
+pi/mcp-auth.json
 
 # file-backed todo extension state
 .pi/todos/

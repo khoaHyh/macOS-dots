@@ -1,4 +1,4 @@
-import type { ContextUsage } from "@mariozechner/pi-coding-agent";
+import type { ContextUsage } from "@earendil-works/pi-coding-agent";
 
 export type GlyphPreference = "auto" | "nerd" | "ascii";
 export type GlyphMode = "nerd" | "ascii";
