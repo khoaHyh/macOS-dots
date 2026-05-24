@@ -8,15 +8,15 @@ Personal macOS setup for shell, terminal, window management, and CLI tooling.
 - `.tmux.conf`: custom keybinds, TPM plugins, `tmux-gruvbox` theme
 - `.gitconfig` + `themes.gitconfig`: git aliases and delta theme presets
 - `starship.toml`: prompt config
-- `yabai/yabairc` + `skhd/skhdrc`: tiling and keyboard shortcuts
-- `ghostty/config`: terminal defaults used by the `alt + return` shortcut
+- `aerospace/aerospace.toml`: tiling and keyboard shortcuts
+- `ghostty/config`: terminal defaults used by the `alt + enter` shortcut
 - `scripts/open_iterm2.sh`: optional iTerm2 launcher script
 - `opencode/`: local OpenCode agent/tool config
 - `pi/`: global pi coding agent config (`settings.json`, `AGENTS.md`, prompts/skills/extensions/themes)
 
 ## Requirements
 
-- macOS (Sonoma/Sequoia)
+- macOS (Sonoma/Sequoia/Tahoe)
 - Homebrew
 
 ## TODOs
@@ -42,7 +42,7 @@ cd ~/dev/macOS-dots
 brew install zsh git vim neovim tmux starship bat fzf direnv git-delta thefuck pyenv rbenv go chruby jq
 
 # Window management
-brew install koekeishiya/formulae/yabai koekeishiya/formulae/skhd koekeishiya/formulae/limelight
+brew install --cask nikitabobko/tap/aerospace
 
 # Terminal apps
 brew install --cask ghostty iterm2
@@ -61,43 +61,55 @@ curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.3/install.sh | bash
 ### 3) Symlink configs
 
 ```bash
-mkdir -p ~/.config/yabai ~/.config/skhd ~/.config/scripts ~/.pi
+mkdir -p ~/.config/aerospace ~/.config/scripts ~/.pi
 
 ln -sf ~/dev/macOS-dots/.zshrc ~/.zshrc
 ln -sf ~/dev/macOS-dots/.tmux.conf ~/.tmux.conf
 ln -sf ~/dev/macOS-dots/.gitconfig ~/.gitconfig
 ln -sf ~/dev/macOS-dots/starship.toml ~/.config/starship.toml
-ln -sf ~/dev/macOS-dots/yabai/yabairc ~/.config/yabai/yabairc
-ln -sf ~/dev/macOS-dots/skhd/skhdrc ~/.config/skhd/skhdrc
+ln -sf ~/dev/macOS-dots/aerospace/aerospace.toml ~/.config/aerospace/aerospace.toml
 ln -sf ~/dev/macOS-dots/scripts/open_iterm2.sh ~/.config/scripts/open_iterm2.sh
+ln -sf ~/dev/macOS-dots/scripts/refresh_simple_bar.sh ~/.config/scripts/refresh_simple_bar.sh
 [ -d ~/.pi/agent ] && [ ! -L ~/.pi/agent ] && mv ~/.pi/agent ~/.pi/agent.backup.$(date +%Y%m%d-%H%M%S)
 ln -sfn ~/dev/macOS-dots/pi ~/.pi/agent
-chmod +x ~/.config/scripts/open_iterm2.sh
+chmod +x ~/.config/scripts/open_iterm2.sh ~/.config/scripts/refresh_simple_bar.sh
 ```
 
-### 4) Start services and finalize
+### 4) Start AeroSpace and finalize
 
 ```bash
-brew services start yabai
-brew services start skhd
+# If migrating from the previous yabai/skhd setup, stop the old services.
+brew services stop yabai || true
+brew services stop skhd || true
+open -a AeroSpace
+aerospace reload-config
 
 exec zsh
 ```
+
+Grant AeroSpace Accessibility permission in System Settings when prompted. The config sets `start-at-login = true`; `aerospace reload-config` applies that setting to the running app.
 
 Open tmux and press `prefix + I` to install plugins.
 
 ## Quick shortcuts
 
-### skhd / yabai
+### AeroSpace
 
-| Shortcut                | Action                |
-| ----------------------- | --------------------- |
-| `alt + return`          | Open Ghostty          |
-| `alt + h/j/k/l`         | Focus window          |
-| `shift + alt + h/j/k/l` | Move window           |
-| `lctrl + alt + h/j/k/l` | Resize window         |
-| `shift + alt + space`   | Toggle float          |
-| `ctrl + alt + cmd + r`  | Restart yabai service |
+| Shortcut                  | Action                   |
+| ------------------------- | ------------------------ |
+| `alt + enter`             | Open Ghostty             |
+| `alt + j/k/l/;`           | Focus window             |
+| `shift + alt + j/k/l/;`   | Move window              |
+| `alt + h/v`               | Split horizontal/vertical |
+| `alt + s/w/e`             | Stacked/tabbed/tile layout |
+| `alt + 1..0`              | Switch workspace         |
+| `shift + alt + 1..0`      | Move window to workspace |
+| `alt + r`, then `h/j/k/l` | Resize window            |
+| `shift + alt + space`     | Toggle float             |
+| `alt + f`                 | Toggle fullscreen        |
+| `shift + alt + f`         | Toggle macOS fullscreen  |
+| `shift + alt + c`         | Reload AeroSpace config  |
+| `ctrl + alt + cmd + r`    | Reload AeroSpace config  |
 
 ### tmux
 
@@ -113,19 +125,25 @@ Open tmux and press `prefix + I` to install plugins.
 ## Verify setup
 
 ```bash
-ls -l ~/.zshrc ~/.tmux.conf ~/.gitconfig ~/.config/starship.toml ~/.config/yabai/yabairc ~/.config/skhd/skhdrc
+ls -l ~/.zshrc ~/.tmux.conf ~/.gitconfig ~/.config/starship.toml ~/.config/aerospace/aerospace.toml
 ls -ld ~/.pi/agent
-brew services list | grep -E 'yabai|skhd'
+pgrep -x AeroSpace
 ls -la ~/.tmux/plugins/tpm
 ```
 
 ## Notes
 
-- `skhdrc` currently opens Ghostty (`alt + return`).
+- AeroSpace opens Ghostty with `alt + enter` and handles window-manager shortcuts without `skhd`.
+- `scripts/refresh_simple_bar.sh` keeps Übersicht/simple-bar in sync with AeroSpace focus/workspace changes.
+- AeroSpace workspaces are separate from macOS Mission Control Spaces; simple-bar reflects AeroSpace workspaces in this setup.
+- Mission Control's `Option + 1..6` desktop shortcuts should stay disabled so AeroSpace owns `alt + number`.
+- Prefer using a single native macOS Desktop per display; use AeroSpace workspaces for day-to-day workspace switching.
+- AeroSpace uses the docs' i3-like bindings, but keeps workspaces `1..10` persistent so simple-bar stays stable.
+- Legacy `yabai/` and `skhd/` configs remain in the repo for rollback but are no longer installed.
 - `open_iterm2.sh` is optional and can be bound if you prefer iTerm2.
 - `.tmux.conf` currently uses `egel/tmux-gruvbox`; Catppuccin lines are commented out.
 - `~/.pi/agent -> ~/dev/macOS-dots/pi` keeps pi config in this repo; runtime files (`auth.json`, sessions, package installs) are gitignored.
-- Yabai may require SIP adjustments for full functionality: <https://github.com/koekeishiya/yabai/wiki/Disabling-System-Integrity-Protection>
+- AeroSpace needs Accessibility permission in System Settings -> Privacy & Security -> Accessibility.
 
 ## Update
 
