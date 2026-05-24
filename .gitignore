@@ -15,6 +15,7 @@ specs/
 PLAN.md
 
 # pi runtime/state files
+pi/.cache/
 pi/auth.json
 pi/sessions/
 pi/bin/
