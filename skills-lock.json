@@ -26,6 +26,7 @@
     "design-an-interface": {
       "source": "mattpocock/skills",
       "sourceType": "github",
+      "skillPath": "skills/deprecated/design-an-interface/SKILL.md",
       "computedHash": "885b05367fb1cf61a1e27e0d50f14d2502a05c1fa276c6e9ea050ce6a90e7095"
     },
     "diagnose": {
@@ -48,6 +49,7 @@
     "edit-article": {
       "source": "mattpocock/skills",
       "sourceType": "github",
+      "skillPath": "skills/personal/edit-article/SKILL.md",
       "computedHash": "6d29872a4015fcbb4879fe1bddf1919995c477dcf7248885efb85722f50e6c4d"
     },
     "find-docs": {
@@ -93,7 +95,7 @@
       "source": "mattpocock/skills",
       "sourceType": "github",
       "skillPath": "skills/engineering/grill-with-docs/SKILL.md",
-      "computedHash": "a5c65e76275008b469962f7bee8b34866f1c9b0709f4886e71c8e731735640e4"
+      "computedHash": "eb0e91e84277283dc2b23ed544399e53afd6b5287e5b6929f25fe8aa608e164b"
     },
     "handoff": {
       "source": "mattpocock/skills",
@@ -120,6 +122,7 @@
     "motel-debug": {
       "source": "kitlangton/motel",
       "sourceType": "github",
+      "skillPath": "skills/motel-debug/SKILL.md",
       "computedHash": "94acc52fed666636f9d4c4a58c00a483fa627e86b0eeaa422771dba5a105101d"
     },
     "obsidian-vault": {
@@ -196,6 +199,7 @@
     "sharingan": {
       "source": "khoahyh/skills",
       "sourceType": "github",
+      "skillPath": "sharingan/SKILL.md",
       "computedHash": "f8034b9364951736a9e82a9dc3c5e1cc4e339a4d3fa52cec6af50c3c0b32cb7f"
     },
     "tdd": {
@@ -214,7 +218,7 @@
       "source": "mattpocock/skills",
       "sourceType": "github",
       "skillPath": "skills/engineering/to-prd/SKILL.md",
-      "computedHash": "6d741474efd4bc3db55fabc2722ed78ca9c374cabcb6212936d79d4fd4a30fcb"
+      "computedHash": "a6d6d475f1d01c201937fa0c306e55b7056b02023ad615bc92f57514e831dd31"
     },
     "triage": {
       "source": "mattpocock/skills",

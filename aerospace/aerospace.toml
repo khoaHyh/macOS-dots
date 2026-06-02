@@ -36,8 +36,9 @@ run = [
     inner.vertical = 10
     outer.left = 10
     outer.bottom = 10
-    # Matches the old yabai external_bar top reservation for the menu/status bar.
-    outer.top = 40
+    # Built-in notched displays already reserve the macOS menu bar/notch area in
+    # AeroSpace's visible frame, so keep only the simple-bar breathing room there.
+    outer.top = [{ monitor."built-in" = 10 }, 40]
     outer.right = 10
 
 [mode.main.binding]
@@ -61,6 +62,16 @@ run = [
     alt-shift-k = 'move down'
     alt-shift-l = 'move up'
     alt-shift-semicolon = 'move right'
+
+    # Move focus/windows between monitors.
+    alt-ctrl-j = 'focus-monitor --wrap-around left'
+    alt-ctrl-k = 'focus-monitor --wrap-around down'
+    alt-ctrl-l = 'focus-monitor --wrap-around up'
+    alt-ctrl-semicolon = 'focus-monitor --wrap-around right'
+    alt-ctrl-shift-j = 'move-node-to-monitor --focus-follows-window --wrap-around left'
+    alt-ctrl-shift-k = 'move-node-to-monitor --focus-follows-window --wrap-around down'
+    alt-ctrl-shift-l = 'move-node-to-monitor --focus-follows-window --wrap-around up'
+    alt-ctrl-shift-semicolon = 'move-node-to-monitor --focus-follows-window --wrap-around right'
 
     # Split and layout controls from AeroSpace's i3-like example.
     alt-h = 'split horizontal'
@@ -111,5 +122,16 @@ run = [
     j = 'resize height +50'
     k = 'resize height -50'
     l = 'resize width +50'
+    # Keep workspace switching available if resize mode is active.
+    alt-1 = 'workspace 1'
+    alt-2 = 'workspace 2'
+    alt-3 = 'workspace 3'
+    alt-4 = 'workspace 4'
+    alt-5 = 'workspace 5'
+    alt-6 = 'workspace 6'
+    alt-7 = 'workspace 7'
+    alt-8 = 'workspace 8'
+    alt-9 = 'workspace 9'
+    alt-0 = 'workspace 10'
     enter = 'mode main'
     esc = 'mode main'
