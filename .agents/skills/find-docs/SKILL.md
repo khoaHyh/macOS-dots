@@ -133,7 +133,6 @@ ctx7 login
 ## Error Handling
 
 If a command fails with a quota error ("Monthly quota reached" or "quota exceeded"):
-
 1. Inform the user their Context7 quota is exhausted
 2. Suggest they authenticate for higher limits: `ctx7 login`
 3. If they cannot or choose not to authenticate, answer from training knowledge and clearly note it may be outdated

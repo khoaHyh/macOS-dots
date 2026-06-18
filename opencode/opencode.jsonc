@@ -12,6 +12,16 @@
   ],
   "small_model": "openai/gpt-5.4-mini",
   "lsp": true,
+  "references": {
+    "effect-src": {
+      "path": "~/.local/share/effect-solutions/effect",
+      "description": "Use when writing or reviewing Effect code, especially runtime orchestration, typed errors, services, layers, config, and tests."
+    },
+    "opencode-src": {
+      "repository": "anomalyco/opencode",
+      "description": "Use when you need good examples of architecture, design, patterns, practices and style guide in Typescript repos"
+    }
+  },
   "permission": {
     "websearch": "allow",
     "question": "allow"
