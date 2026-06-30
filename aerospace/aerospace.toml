@@ -21,13 +21,6 @@ automatically-unhide-macos-hidden-apps = false
 
 persistent-workspaces = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10']
 
-[[on-window-detected]]
-if.app-id = 'com.mitchellh.ghostty'
-run = [
-    # Ghostty uses macOS native tabs, which AeroSpace sees as separate AX windows.
-    'layout floating',
-]
-
 [key-mapping]
     preset = 'qwerty'
 

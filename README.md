@@ -100,6 +100,8 @@ Open tmux and press `prefix + I` to install plugins.
 | `alt + enter`             | Open Ghostty             |
 | `alt + j/k/l/;`           | Focus window             |
 | `shift + alt + j/k/l/;`   | Move window              |
+| `ctrl + alt + j/k/l/;`    | Focus monitor            |
+| `ctrl + shift + alt + j/k/l/;` | Move window to monitor |
 | `alt + h/v`               | Split horizontal/vertical |
 | `alt + s/w/e`             | Stacked/tabbed/tile layout |
 | `alt + 1..0`              | Switch workspace         |
@@ -138,6 +140,8 @@ ls -la ~/.tmux/plugins/tpm
 - AeroSpace workspaces are separate from macOS Mission Control Spaces; simple-bar reflects AeroSpace workspaces in this setup.
 - Mission Control's `Option + 1..6` desktop shortcuts should stay disabled so AeroSpace owns `alt + number`.
 - Prefer using a single native macOS Desktop per display; use AeroSpace workspaces for day-to-day workspace switching.
+- AeroSpace's docs recommend disabling `Displays have separate Spaces` for multi-monitor stability; this requires logging out before it takes effect.
+- AeroSpace uses a smaller built-in-display top gap because notched MacBook screens already reserve the menu bar/notch area before `gaps.outer.top` is applied; external displays keep the larger simple-bar reservation.
 - AeroSpace uses the docs' i3-like bindings, but keeps workspaces `1..10` persistent so simple-bar stays stable.
 - Legacy `yabai/` and `skhd/` configs remain in the repo for rollback but are no longer installed.
 - `open_iterm2.sh` is optional and can be bound if you prefer iTerm2.

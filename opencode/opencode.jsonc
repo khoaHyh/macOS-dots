@@ -78,13 +78,6 @@
     //   "url": "https://mcp.linear.app/mcp",
     //   "enabled": true
     // },
-    "greptile": {
-      "type": "remote",
-      "url": "https://api.greptile.com/mcp",
-      "headers": {
-        "Authorization": "Bearer ${env:GREPTILE_API_KEY}"
-      }
-    },
     "slack": {
       "type": "local",
       "command": [

@@ -51,6 +51,17 @@ typeset -ga _MCP_AGENT_ENV_VARS=(
   SLACK_MCP_XOXD_TOKEN
 )
 
+_executor_mcp_env() {
+  local auth_file="$HOME/.executor/server-control/auth.json"
+  local token
+
+  [[ -r "$auth_file" ]] || return 1
+  token=$(/usr/bin/plutil -extract token raw -o - "$auth_file" 2>/dev/null) || return 1
+  [[ -n "$token" ]] || return 1
+
+  export EXECUTOR_MCP_AUTHORIZATION="Bearer $token"
+}
+
 mcpenv() {
   local env_id="${MCP_1P_ENV_ID:-${OPENCODE_1P_ENV_ID:-}}"
 
@@ -89,6 +100,9 @@ mcpenv() {
     done
   done <<< "$env_output"
 
+  # Executor's desktop daemon keeps its current bearer token in local state.
+  _executor_mcp_env && loaded=1
+
   if (( ! loaded )); then
     print -u2 "No MCP variables were loaded from 1Password."
     return 1
@@ -112,11 +126,17 @@ occlear() {
 }
 
 oc() {
-  opencode "$@"
+  (
+    _executor_mcp_env 2>/dev/null || true
+    opencode "$@"
+  )
 }
 
 occ() {
-  caffeinate -id -- opencode "$@"
+  (
+    _executor_mcp_env 2>/dev/null || true
+    caffeinate -id -- opencode "$@"
+  )
 }
 
 ocs() {
@@ -183,6 +203,5 @@ zlastmod() {
   printf '%s\n' "${latest[1]}"
 }
 
-export GREPTILE_API_KEY="op://Employee/GREPTILE_API_KEY/credential"
 # CF CLI completions
 [[ -f "/Users/khuynh/.config/cf/completions/_cf.zsh" ]] && source "/Users/khuynh/.config/cf/completions/_cf.zsh"
