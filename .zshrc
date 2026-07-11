@@ -34,6 +34,7 @@ alias vim=/usr/local/bin/vim
 
 ## opencode
 export OPENCODE_ENABLE_EXA=1
+export OPENCODE_EXPERIMENTAL_BACKGROUND_SUBAGENTS=1
 
 # Local-only shell overrides (not tracked in dotfiles)
 if [[ -f "$HOME/.zshrc.private" ]]; then

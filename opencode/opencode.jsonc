@@ -10,7 +10,8 @@
     //   }
     // ]
   ],
-  "small_model": "openai/gpt-5.6-luna-fast",
+  "instructions": ["prompts/pstack-compatibility.md"],
+  "small_model": "openai/gpt-5.4-mini",
   "lsp": true,
   "references": {
     "effect-src": {
@@ -24,7 +25,46 @@
   },
   "permission": {
     "websearch": "allow",
-    "question": "allow"
+    "question": "allow",
+    "skill": {
+      "*": "allow",
+      "architect": "deny",
+      "arena": "deny",
+      "automate-me": "deny",
+      "blast-radius": "deny",
+      "figure-it-out": "deny",
+      "how": "deny",
+      "interrogate": "deny",
+      "poteto-mode": "deny",
+      "principle-boundary-discipline": "deny",
+      "principle-build-the-lever": "deny",
+      "principle-encode-lessons-in-structure": "deny",
+      "principle-exhaust-the-design-space": "deny",
+      "principle-experience-first": "deny",
+      "principle-fix-root-causes": "deny",
+      "principle-foundational-thinking": "deny",
+      "principle-guard-the-context-window": "deny",
+      "principle-laziness-protocol": "deny",
+      "principle-make-operations-idempotent": "deny",
+      "principle-migrate-callers-then-delete-legacy-apis": "deny",
+      "principle-minimize-reader-load": "deny",
+      "principle-never-block-on-the-human": "deny",
+      "principle-outcome-oriented-execution": "deny",
+      "principle-prove-it-works": "deny",
+      "principle-redesign-from-first-principles": "deny",
+      "principle-separate-before-serializing-shared-state": "deny",
+      "principle-sequence-verifiable-units": "deny",
+      "principle-subtract-before-you-add": "deny",
+      "principle-type-system-discipline": "deny",
+      "recall": "deny",
+      "reflect": "deny",
+      "setup-pstack": "deny",
+      "show-me-your-work": "deny",
+      "thermo-nuclear-code-quality-review": "deny",
+      "typescript-best-practices": "deny",
+      "unslop": "deny",
+      "why": "deny"
+    }
   },
   "agent": {
     "explore": {
@@ -56,13 +96,13 @@
     "oracle": {
       "mode": "subagent",
       "description": "Strategic consultation specialist",
-      "model": "openai/gpt-5.6-sol-pro",
+      "model": "openai/gpt-5.6-sol",
       "variant": "xhigh",
       "prompt": "{file:./prompts/oracle-harness.md}"
     },
     "general": {
       "model": "openai/gpt-5.6-sol",
-      "variant": "high"
+      "variant": "medium"
     },
     "minion": {
       "model": "openai/gpt-5.6-sol-fast",
