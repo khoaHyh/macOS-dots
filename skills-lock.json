@@ -25,6 +25,12 @@
       "skillPath": "pstack/skills/automate-me/SKILL.md",
       "computedHash": "2e4f53d8b01771a0f59250664d1ea3c52c4a70e49038933920e749715ab08a3a"
     },
+    "autoreview": {
+      "source": "openclaw/agent-skills",
+      "sourceType": "github",
+      "skillPath": "skills/autoreview/SKILL.md",
+      "computedHash": "3172a19e357b2fa15bf70774cb753c4cc32c2b4a819dcd677a901050fe115a44"
+    },
     "blast-radius": {
       "source": "cursor/plugins",
       "sourceType": "github",
