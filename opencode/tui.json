@@ -1,4 +1,11 @@
 {
+  "$schema": "https://opencode.ai/tui.json",
+  "attention": {
+    "enabled": true,
+    "notifications": true,
+    "sound": true,
+    "volume": 0.0
+  },
   "plugin": [
     [
       "oc-plugin-rainbow",

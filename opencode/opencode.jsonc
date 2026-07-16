@@ -12,14 +12,29 @@
   ],
   "instructions": ["prompts/pstack-compatibility.md"],
   "small_model": "openai/gpt-5.4-mini",
+  "provider": {
+    "openai": {
+      "models": {
+        "gpt-5.6-sol": {
+          "options": {
+            "textVerbosity": "low"
+          }
+        }
+      }
+    }
+  },
   "lsp": true,
   "references": {
     "effect-src": {
-      "path": "~/.local/share/effect-solutions/effect",
-      "description": "Use when writing or reviewing Effect code, especially runtime orchestration, typed errors, services, layers, config, and tests."
+      "repository": "Effect-TS/effect",
+      "description": "Use when writing or reviewing Effect code"
     },
     "opencode-src": {
       "repository": "anomalyco/opencode",
+      "description": "Use when you need good examples of architecture, design, patterns, practices and style guide in Typescript/Effect repos"
+    },
+    "pi-src": {
+      "repository": "earendil-works/pi",
       "description": "Use when you need good examples of architecture, design, patterns, practices and style guide in Typescript repos"
     }
   },
@@ -60,7 +75,6 @@
       "reflect": "deny",
       "setup-pstack": "deny",
       "show-me-your-work": "deny",
-      "thermo-nuclear-code-quality-review": "deny",
       "typescript-best-practices": "deny",
       "unslop": "deny",
       "why": "deny"
