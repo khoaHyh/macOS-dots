@@ -60,7 +60,7 @@ Completion: the intended behavior is implemented, local checks pass, and the dif
 
 ### 4. Published
 
-1. Stage only intended files and create or update the scoped commit using the chosen VCS workflow.
+1. Stage only intended files. Apply the commit history policy, then create a new commit or amend the unpublished current commit using the chosen VCS workflow.
 2. Submit only the current diff with the repository-supported Graphite command, or push the current Git branch. Do not use stack-wide submission.
 3. Create or update the PR description with Summary, Why, Design, Validation, and Follow-up/Risk.
 4. Move a draft PR to ready-for-review state.
@@ -71,7 +71,7 @@ Completion: the open PR points at the recorded SHA, is ready for review, and tar
 ### 5. Initial CI Green
 
 1. Wait for required checks on the recorded SHA.
-2. If an attributable check fails, invoke `fix-ci`, apply the smallest root-cause fix, run risk-matched local verification, commit, publish, record the new SHA, and wait again.
+2. If an attributable check fails, invoke `fix-ci`, apply the smallest root-cause fix, run risk-matched local verification, commit the remediation as a new commit when the current SHA was already published, publish, record the new SHA, and wait again.
 3. Treat external outages and unavailable required infrastructure as blockers.
 4. Stop for no-progress when two consecutive cycles produce no new evidence, diagnosis, code change, or check-state change. Report the repeated failure and attempted remedies.
 
@@ -91,7 +91,7 @@ After selecting an existing review or attempting the one allowed request:
 2. For an existing review, invoke `greptile-address` once with its review ID. For a requested review, wait for the bot review attributable to the recorded request and invoke `greptile-address` once with the PR, request time, and reviewed SHA.
 3. For a newly requested review, if no attributable review arrives or attribution is ambiguous, stop with a blocker rather than consuming an older review or retrying the request.
 4. Treat the score as metadata, not an exit condition. The gate is whether every actionable finding in that one review snapshot is fixed or rejected with evidence; an unresolved finding is a blocker to report to the user.
-5. Resolve addressed Greptile threads, run local verification, commit, publish, and record the new SHA when remediation changed files.
+5. Resolve addressed Greptile threads, run local verification, commit the remediation as a new commit when the current SHA was already published, publish, and record the new SHA when remediation changed files.
 6. Ignore later automatic or manually requested Greptile reviews for this run. Never transition back to this state.
 
 Completion: Greptile was skipped because no review existed and the diff was ineligible by size, or one existing or newly requested review snapshot was consumed and has zero unaccounted actionable findings.

@@ -373,7 +373,7 @@ Prerequisite commit:
 2. Choose the commit workflow before staging. Use plain Git on `main` or trunk, or when no branch, PR, or stack workflow is active. Use Graphite when the work is already in a Graphite branch or stack, when the review is for branch/PR work and Graphite is available or preferred, or when the user asks for Graphite.
 3. If the workflow choice is ambiguous, or unrelated or unsafe changes are present, stop and ask which workflow and files to include. Otherwise stage only the intended staged, unstaged, and untracked changes.
 4. Generate a Conventional Commit message from the diff using `<type>(<scope>): <description>`.
-5. Commit or update the current change before running reviewers. In Git, create a normal commit. In Graphite, use the appropriate `gt create` or `gt modify` flow for the current branch or stack.
+5. Apply the commit history policy, then commit the current change before running reviewers. In Git, create a normal commit or amend the unpublished current commit as appropriate. In Graphite, use `gt create`, `gt modify --commit`, or the amend form of `gt modify` as appropriate.
 6. Reviewers must target committed changes, normally `HEAD^..HEAD` for a Git commit or the current Graphite branch/stack slice under review.
 7. If there are no staged, unstaged, or untracked changes, skip the commit and identify the committed diff under review.
 8. Do not push unless explicitly requested.
@@ -475,6 +475,16 @@ Auto-choose defaults when the choice is spec-only, reversible, narrows scope, de
 Ask the user when the decision changes product direction, affects public API shape, changes production behavior, touches auth, security, secrets, money, data deletion, deployments, team process, ownership, or cannot be observed.
 
 Do not ask before checking facts discoverable from code, git history, existing docs, config, issue trackers, Slack, or connected MCPs.
+
+## Commit history policy
+
+Treat each published commit as an append-only checkpoint. Before committing, inspect the local and remote or PR state to determine whether the current `HEAD` has already been pushed or submitted.
+
+- If `HEAD` is published, create a new commit for every independently verified batch of implementation, CI remediation, or review feedback.
+- If `HEAD` is unpublished and the changes only complete or correct the same reviewable slice, amend it.
+- Create a new commit when the changes represent a distinct reviewable slice, even before publication.
+- Rewrite published commits only when the user explicitly requests a squash, fixup, or history cleanup, or when synchronization requires rebasing. Do not collapse content commits merely because Graphite manages the branch.
+- For Graphite, create a new commit with `gt modify --commit --message "<message>"`; amend an unpublished commit with `gt modify --message "<message>"` or `gt modify --no-edit`.
 
 ## Verification gate
 

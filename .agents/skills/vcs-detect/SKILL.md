@@ -45,7 +45,8 @@ fi
 | Log | `git log --oneline -10` | `gt ls` for stack shape, `git log --oneline -10` for commits |
 | Diff | `git diff` | `git diff` |
 | Create branch | `git checkout -b <name>` | `gt create -am "<type>(<scope>): <description>" [branch-name]` |
-| Update current branch | `git add -A && git commit -m "<type>(<scope>): <description>"` | `gt modify -a` or `gt modify --commit -am "<type>(<scope>): <description>"` |
+| Add commit to current branch | `git add -A && git commit -m "<type>(<scope>): <description>"` | `gt modify --commit -am "<type>(<scope>): <description>"` |
+| Amend unpublished commit | `git add -A && git commit --amend --no-edit` | `gt modify -a --no-edit` |
 | Submit PRs | `gh pr create` | `gt submit` / `gt submit --stack` |
 | Sync with trunk | `git fetch && git rebase origin/main` | `gt sync` or `gt restack` |
 | Set stack parent | N/A | `gt track --parent <branch>` |

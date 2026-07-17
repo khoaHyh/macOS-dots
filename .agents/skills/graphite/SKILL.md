@@ -23,7 +23,8 @@ Work with Graphite (`gt`) for creating, navigating, and managing stacked pull re
 | I want to... | Command |
 |--------------|---------|
 | Create a new branch/PR | `gt create branch-name -m "message"` |
-| Amend current branch | `gt modify -m "message"` |
+| Add a commit to current branch | `gt modify --commit --message "message"` |
+| Amend unpublished commit | `gt modify --message "message"` |
 | Navigate up the stack | `gt up` |
 | Navigate down the stack | `gt down` |
 | Jump to top of stack | `gt top` |
@@ -131,6 +132,15 @@ gt ls
 
 ## Modifying a Stack
 
+### Choose New Commit or Amend
+
+Treat each published commit as an append-only checkpoint.
+
+- If the current commit has been pushed or submitted, use `gt modify --commit --message "message"` to preserve it and add a new commit.
+- Use a new commit for a distinct reviewable change, CI remediation, or review feedback.
+- Amend only when the current commit is unpublished and the changes complete or correct the same reviewable slice.
+- Rewrite published commits only when the user explicitly requests history cleanup or synchronization requires rebasing.
+
 ### Amend Current Branch
 
 ```bash
@@ -204,7 +214,8 @@ gt restack
 After creating each PR, run appropriate linting, building, and testing:
 
 1. Refer to the project's CLAUDE.md for specific commands
-2. If validation fails, fix the issue, stage changes, and use `gt modify`
+2. If validation fails before publication, fix the issue, stage changes, and amend with `gt modify`
+3. If validation fails after publication, fix the issue and add a commit with `gt modify --commit --message "message"`
 
 ---
 
