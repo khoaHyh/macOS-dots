@@ -5,7 +5,7 @@ description: "Pre-commit/ship code review: Codex default; optional Claude or Pi.
 
 # Auto Review
 
-Run the bundled structured review helper as a closeout check. This is code review, not Guardian `auto_review` approval routing.
+Use helper mode for the normal structured closeout check. Use direct reviewer mode only when an enclosing orchestrator explicitly launches this agent as one independent reviewer. This is code review, not Guardian `auto_review` approval routing.
 
 Codex review is the default when no engine is set. It uses `gpt-5.6-sol` with `high` reasoning by default, then retries once with `gpt-5.6-terra` only when the account cannot access Sol. Claude review is optional and uses `claude-fable-5` by default.
 
@@ -16,6 +16,18 @@ Use when:
 - user asks for Codex review / Claude review / Pi review / autoreview / second-model review
 - after non-trivial code edits, before final/commit/ship
 - reviewing a local branch or PR branch after fixes
+
+## Direct Reviewer Mode
+
+Enter this mode only when the caller explicitly says `direct reviewer mode` and supplies one fixed review target plus its review context. In this mode, perform the review in the current agent session. The bundled helper remains the default for every other invocation.
+
+1. Resolve the supplied fixed point and target, then inspect that committed diff and only the directly relevant tracked code needed to understand it. Do not inspect ignored or unrelated untracked files.
+2. Use read-only inspection commands. Do not edit files, run mutating commands, commit, push, create a PR, or comment remotely.
+3. Apply the Contract and Scope Governor below. Report only concrete defects introduced or exposed by the target, including concrete security regressions. Complete one full pass over the target before returning.
+4. Return findings only, ordered by priority. Each finding must include `P0`-`P3`; one category from `bug`, `security`, `regression`, `test_gap`, or `maintainability`; path and line; concrete failure mode; execution path or reproduction scenario; smallest safe fix direction; and whether a test is needed. If there are no findings, return `No findings.`
+5. Stop after the report. The enclosing orchestrator owns validation, remediation, retries, and consolidation.
+
+Direct reviewer mode is a leaf review: do not invoke the bundled autoreview helper, `codex review`, reviewer panels, or nested reviewers.
 
 ## Contract
 
