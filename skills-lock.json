@@ -64,7 +64,7 @@
       "source": "khoahyh/skills",
       "sourceType": "github",
       "skillPath": "computa-please/SKILL.md",
-      "computedHash": "389382b9ac26513d946c44d2070bef2187659df1db5713e06a758554fac953d6"
+      "computedHash": "6176965d5685444fc1c3c3d8859316bedf80e0e131da043cac8a342ed292a77c"
     },
     "context7-cli": {
       "source": "upstash/context7",
@@ -146,7 +146,7 @@
       "source": "khoahyh/skills",
       "sourceType": "github",
       "skillPath": "greptile-address/SKILL.md",
-      "computedHash": "ca5984c55b85e9d2c3614f4dcb97a1840907f629adec72bcfbeb05345087c53d"
+      "computedHash": "5f75a164e6f1ea4cf740e3003ff07166d0ebb3caf1d5e4f2b3546daa6421a4d2"
     },
     "grill-me": {
       "source": "mattpocock/skills",

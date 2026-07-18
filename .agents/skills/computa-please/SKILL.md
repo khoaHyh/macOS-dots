@@ -30,7 +30,6 @@ It is inspired by pstack, but it is not a pstack clone. Keep this skill as a com
 - Contract before wiring: make the schema, protocol, domain type, or service interface own the shape before spreading behavior through callers.
 - Tracer bullets before platforms: ship one observable vertical slice before broad horizontal scaffolding.
 - Foundations first: fix data shape, seams, interfaces, observability, and test loops before polish.
-- More with less: prefer deletion, narrower interfaces, and deep modules over new scaffolding.
 - Small verifiable units: every implementation slice ends in a concrete check.
 - Bounded loops: automate only against observable state, persist each transition, and stop on completion, a real decision fork, or repeated no-progress.
 - Structure over reminders: repeated corrections become tests, lints, scripts, review agents, or proposed skill edits.
@@ -169,6 +168,7 @@ Rules:
 - Do not create artifacts.
 - Do not create a task directory.
 - Use web, codebase, trace, or tool research when needed, but keep the output in chat.
+- When deciding how to sequence an addition, refactor, or rewrite, load and apply `principle-subtract-before-you-add` before recommending a direction.
 - End with a recommendation, options, tradeoffs, or a clear next decision.
 - Ask whether to promote the discussion into a spec or implementation only when the user has not already decided.
 
@@ -183,14 +183,15 @@ Use when the user asks for a tech spec, PRD, durable plan, implementation phases
 Steps:
 
 1. Create or locate the task artifact directory and select the existing or new tech spec path.
-2. Load and run `tech-spec` with the available context and selected artifact path, following its branch selection through an implementation-ready artifact.
-3. Check every slice-checklist item for app-code work and update the artifact for any missing applicable item.
-4. Append `handoff.md`.
-5. Run Spec checkpoint.
+2. When the spec sequences an addition, refactor, or rewrite, load and apply `principle-subtract-before-you-add` before fixing the implementation order.
+3. Load and run `tech-spec` with the available context and selected artifact path, following its branch selection through an implementation-ready artifact.
+4. Check every slice-checklist item for app-code work and update the artifact for any missing applicable item.
+5. Append `handoff.md`.
+6. Run Spec checkpoint.
 
 Output: draft tech spec and updated handoff. Do not change production code.
 
-Completion criterion: the tech spec is concrete enough that a fresh session can identify the contract, slice boundaries, verification loop, and open questions without redoing discovery.
+Completion criterion: the tech spec is concrete enough that a fresh session can identify the contract, slice boundaries, verification loop, and open questions without redoing discovery; when subtraction applies, it sequences safe removal before construction.
 
 ### Spec checkpoint
 
@@ -246,6 +247,7 @@ First load:
 
 - the tech spec, if implementing a persisted spec.
 - `handoff.md`, if it exists.
+- `principle-subtract-before-you-add` when the change adds, refactors, or rewrites behavior.
 - `tdd`.
 - `coding-standards`.
 - `codebase-design` for nontrivial module seams.
@@ -257,7 +259,6 @@ Also load when relevant:
 - `typescript-magician`.
 - `diagnosing-bugs`.
 - `feedback-loop`.
-- `reducing-entropy` only when the user explicitly asks to minimize or delete code.
 
 Rules:
 
@@ -268,14 +269,14 @@ Rules:
 - Implement one tracer-bullet slice at a time.
 - Prefer contract-first changes before wiring callers.
 - Keep lifecycle/status/outcome vocabulary explicit.
-- Prefer deletion.
+- For applicable work, complete the `principle-subtract-before-you-add` subtraction pass before constructing the first slice.
 - Do not preserve compatibility unless persisted data, shipped behavior, external consumers, or the user require it.
 - For every new seam, name what it hides and why deleting it would spread complexity into callers.
 - Keep expected failures typed and boundary translation local.
 - Verify with real commands.
 - Append implementation status, slice checklist decisions, commands, results, and PR-ready narrative to `handoff.md`.
 
-Completion criterion: the slice has a failing-then-passing or otherwise risk-matched verification loop, the diff is inspectable as one coherent behavior, and remaining risks are named.
+Completion criterion: the slice has a failing-then-passing or otherwise risk-matched verification loop, the diff is inspectable as one coherent behavior, remaining risks are named, and applicable subtraction is visible in the diff or explicitly ruled out from observed usage.
 
 ### Finish Loop
 
@@ -312,10 +313,11 @@ Steps:
 4. Generate 3-5 ranked falsifiable hypotheses when the cause is not obvious from the evidence.
 5. Instrument one variable at a time. Tag temporary debug logs and remove them before completion.
 6. Decide whether a regression test has a correct seam. If yes, use `tdd` and make the bug red before fixing. If no seam exists, document that as a testability finding.
-7. Apply the smallest root-cause fix. Do not paper over the symptom unless explicitly marking a contained mitigation.
-8. Verify the original repro, the regression test if added, and relevant broader checks.
-9. Remove temporary instrumentation and prototypes.
-10. Record root cause, fix, verification, and remaining risk in `handoff.md` when a task artifact exists.
+7. When the root-cause fix adds, refactors, or rewrites behavior, load and apply `principle-subtract-before-you-add` before implementation.
+8. Apply the smallest root-cause fix. Do not paper over the symptom unless explicitly marking a contained mitigation.
+9. Verify the original repro, the regression test if added, and relevant broader checks.
+10. Remove temporary instrumentation and prototypes.
+11. Record root cause, fix, verification, and remaining risk in `handoff.md` when a task artifact exists.
 
 No implementation until the root cause is understood or explicitly marked unknown with a contained mitigation.
 
@@ -373,7 +375,7 @@ Prerequisite commit:
 2. Choose the commit workflow before staging. Use plain Git on `main` or trunk, or when no branch, PR, or stack workflow is active. Use Graphite when the work is already in a Graphite branch or stack, when the review is for branch/PR work and Graphite is available or preferred, or when the user asks for Graphite.
 3. If the workflow choice is ambiguous, or unrelated or unsafe changes are present, stop and ask which workflow and files to include. Otherwise stage only the intended staged, unstaged, and untracked changes.
 4. Generate a Conventional Commit message from the diff using `<type>(<scope>): <description>`.
-5. Apply the commit history policy, then commit the current change before running reviewers. In Git, create a normal commit or amend the unpublished current commit as appropriate. In Graphite, use `gt create`, `gt modify --commit`, or the amend form of `gt modify` as appropriate.
+5. Commit or update the current change before running reviewers. In Git, create a normal commit. In Graphite, use the appropriate `gt create` or `gt modify` flow for the current branch or stack.
 6. Reviewers must target committed changes, normally `HEAD^..HEAD` for a Git commit or the current Graphite branch/stack slice under review.
 7. If there are no staged, unstaged, or untracked changes, skip the commit and identify the committed diff under review.
 8. Do not push unless explicitly requested.
@@ -385,15 +387,16 @@ Parallel reviewers:
 3. Compose a separate prompt for each reviewer by adding a reviewer-specific wrapper around the shared context. The wrapper must mention only that reviewer's toolchain, skill, rubric, and safety constraints. Do not pass the shared context alone as the full reviewer prompt.
 4. Each reviewer-specific wrapper must apply the shared context, inspect only the committed target and directly relevant existing code, forbid edits, mutating commands, commits, pushes, PRs, and remote comments, request findings-only output, and defer the finding scale and output shape to that reviewer's own review skill.
 5. The gate has four independent reviewers against the same committed diff and repository state: one Cursor CLI reviewer, one Codex CLI reviewer, one OpenCode `thermo-nuclear-code-quality-review` reviewer, and one OpenCode `code-review` reviewer. Do not let any reviewer's output shape another's prompt.
-6. The two OpenCode reviewers must be separate fresh Task calls with no `task_id`, using a review-capable subagent type that has no effective model or variant override. Prefer built-in `general` only when it is model-unpinned. Do not add or pass a model or variant: OpenCode then inherits both from the invoking parent agent. For example, a parent running `openai/gpt-5.6-sol` with the `xhigh` variant yields two OpenCode reviewers on that same model and variant. If no model-unpinned review-capable subagent is available, mark both OpenCode reviews incomplete instead of silently using another model.
-7. Cursor CLI reviewer: use the Cursor Agent documented print/headless mode with the Cursor Team Kit plugin, only the `thermo-nuclear-code-quality-review` skill, a Cursor-only prompt, default Agent execution mode, and the Auto model. Pass `--model auto` and omit `--mode`, because Cursor documents Agent as the default when no mode is specified. `--auto-review` controls approvals, not model selection, and is not a substitute for `--model auto`. Locate the plugin before giving up: first check `~/.cursor/plugins/cache/cursor-public/cursor-team-kit/*`, then other local Cursor/agent plugin directories. The plugin directory is the hash directory that contains `skills/thermo-nuclear-code-quality-review/SKILL.md`, not the skill directory itself. If no Cursor Team Kit plugin directory containing the thermo-nuclear skill can be found after those searches, mark the Cursor review incomplete.
+6. Autoreview exclusivity: only the Codex CLI reviewer may load or use `autoreview`. The Cursor reviewer and both OpenCode reviewers, including subagents nested by `code-review`, must use only their assigned review workflow and must not load `autoreview`, invoke its helper or scripts, or spawn a Codex/autoreview reviewer. Carry this guardrail in every non-Codex reviewer prompt and in every nested prompt created by the OpenCode `code-review` reviewer.
+7. The two OpenCode reviewers must be separate fresh Task calls with no `task_id`, using a review-capable subagent type that has no effective model or variant override. Prefer built-in `general` only when it is model-unpinned. Do not add or pass a model or variant: OpenCode then inherits both from the invoking parent agent. For example, a parent running `openai/gpt-5.6-sol` with the `xhigh` variant yields two OpenCode reviewers on that same model and variant. If no model-unpinned review-capable subagent is available, mark both OpenCode reviews incomplete instead of silently using another model.
+8. Cursor CLI reviewer: use the Cursor Agent documented print/headless mode with the Cursor Team Kit plugin, only the `thermo-nuclear-code-quality-review` skill, a Cursor-only prompt, default Agent execution mode, and the Auto model. Pass `--model auto` and omit `--mode`, because Cursor documents Agent as the default when no mode is specified. `--auto-review` controls approvals, not model selection, and is not a substitute for `--model auto`. Locate the plugin before giving up: first check `~/.cursor/plugins/cache/cursor-public/cursor-team-kit/*`, then other local Cursor/agent plugin directories. The plugin directory is the hash directory that contains `skills/thermo-nuclear-code-quality-review/SKILL.md`, not the skill directory itself. If no Cursor Team Kit plugin directory containing the thermo-nuclear skill can be found after those searches, mark the Cursor review incomplete.
 
 Cursor-only prompt shape:
 
 ```text
 Perform a local adversarial review using `thermo-nuclear-code-quality-review`.
 
-Apply the shared review context below. Inspect only the committed review target and directly relevant existing code needed to understand it. Do not edit files, run mutating commands, commit, push, create PRs, or comment remotely. Findings only. Follow the review scale and output expectations from `thermo-nuclear-code-quality-review`.
+Apply the shared review context below. Inspect only the committed review target and directly relevant existing code needed to understand it. Use only `thermo-nuclear-code-quality-review`; do not load `autoreview`, invoke its helper or scripts, or spawn a Codex/autoreview reviewer. Do not edit files, run mutating commands, commit, push, create PRs, or comment remotely. Findings only. Follow the review scale and output expectations from `thermo-nuclear-code-quality-review`.
 
 Shared review context:
 <shared-review-context>
@@ -407,7 +410,7 @@ cursor-agent --print --output-format text --trust \
   "<cursor-review-prompt>"
 ```
 
-8. Codex CLI reviewer: use the OpenAI-documented non-interactive `codex exec` shape below. Pin the fixed point and target to their resolved commit SHAs before launch so branch movement cannot change the reviewed diff. The prompt must load `autoreview` in direct reviewer mode, apply the shared context, and contain no other review skill or reviewer-specific instructions. Direct reviewer mode makes this Codex session the leaf reviewer; it must not invoke the bundled helper or another reviewer. Keep the sandbox read-only and use `high` reasoning. If the installed `autoreview` skill does not expose direct reviewer mode, mark the Codex review incomplete.
+9. Codex CLI reviewer: use the OpenAI-documented non-interactive `codex exec` shape below. Pin the fixed point and target to their resolved commit SHAs before launch so branch movement cannot change the reviewed diff. The prompt must load `autoreview` in direct reviewer mode, apply the shared context, and contain no other review skill or reviewer-specific instructions. Direct reviewer mode makes this Codex session the leaf reviewer; it must not invoke the bundled helper or another reviewer. Keep the sandbox read-only and use `high` reasoning. If the installed `autoreview` skill does not expose direct reviewer mode, mark the Codex review incomplete.
 
 Codex-only prompt shape:
 
@@ -432,31 +435,31 @@ codex --ask-for-approval never \
   "<codex-review-prompt>"
 ```
 
-9. OpenCode thermo-nuclear reviewer prompt shape:
+10. OpenCode thermo-nuclear reviewer prompt shape:
 
 ```text
 Load and use `thermo-nuclear-code-quality-review` for a local adversarial review.
 
-Apply the shared review context below. Inspect only the committed review target and directly relevant existing code needed to understand it. Do not edit files, run mutating commands, commit, push, create PRs, or comment remotely. Findings only. Follow the review scale and output expectations from `thermo-nuclear-code-quality-review`.
+Apply the shared review context below. Inspect only the committed review target and directly relevant existing code needed to understand it. Use only `thermo-nuclear-code-quality-review`; do not load `autoreview`, invoke its helper or scripts, or spawn a Codex/autoreview reviewer. Do not edit files, run mutating commands, commit, push, create PRs, or comment remotely. Findings only. Follow the review scale and output expectations from `thermo-nuclear-code-quality-review`.
 
 Shared review context:
 <shared-review-context>
 ```
 
-10. OpenCode code-review reviewer prompt shape:
+11. OpenCode code-review reviewer prompt shape:
 
 ```text
 Load and use `code-review` for a local adversarial review.
 
-Use the review fixed point from the shared context as the skill's fixed point. Follow the skill's Standards and Spec workflow, including its nested Standards and Spec reviewers when required. Preserve the skill's separate `Standards` and `Spec` reports and summary. Apply the shared review context below. Inspect only the committed review target and directly relevant existing code needed to understand it. Do not edit files, run mutating commands, commit, push, create PRs, or comment remotely. Findings only. Follow the remaining review rubric and output expectations from `code-review`.
+Use the review fixed point from the shared context as the skill's fixed point. Follow the skill's Standards and Spec workflow, including its nested Standards and Spec reviewers when required. Use only `code-review` and the workflows it explicitly requires. Neither this reviewer nor its nested reviewers may load `autoreview`, invoke its helper or scripts, or spawn a Codex/autoreview reviewer; include this guardrail in both nested reviewer prompts. Preserve the skill's separate `Standards` and `Spec` reports and summary. Apply the shared review context below. Inspect only the committed review target and directly relevant existing code needed to understand it. Do not edit files, run mutating commands, commit, push, create PRs, or comment remotely. Findings only. Follow the remaining review rubric and output expectations from `code-review`.
 
 Shared review context:
 <shared-review-context>
 ```
 
-11. Launch the two Task calls and both CLI calls through the harness's parallel tool facility so all four receive their prompts before any reviewer returns. Set every Cursor CLI Bash timeout, including its retry, to exactly 600000 milliseconds (ten minutes). Set every Codex CLI Bash timeout, including its retry, to exactly 1800000 milliseconds (thirty minutes).
-12. Let each reviewer produce its authentic review output. If Cursor cannot inspect the diff because its permissions block shell execution, keep its output but note that limitation during consolidation instead of treating it as a full diff review.
-13. If a reviewer fails because of local or transient tooling, retry only that reviewer once with the documented shape above. If it still fails, record a blocker as that reviewer's terminal outcome and mark the local adversarial review incomplete instead of pretending the review passed.
+12. Launch the two Task calls and both CLI calls through the harness's parallel tool facility so all four receive their prompts before any reviewer returns. Set every Cursor CLI Bash timeout, including its retry, to exactly 600000 milliseconds (ten minutes). Set every Codex CLI Bash timeout, including its retry, to exactly 1800000 milliseconds (thirty minutes).
+13. Let each reviewer produce its authentic review output. If Cursor cannot inspect the diff because its permissions block shell execution, keep its output but note that limitation during consolidation instead of treating it as a full diff review.
+14. If a reviewer fails because of local or transient tooling, retry only that reviewer once with the documented shape above. If it still fails, record a blocker as that reviewer's terminal outcome and mark the local adversarial review incomplete instead of pretending the review passed.
 
 Aggregation and consolidation:
 
@@ -475,16 +478,6 @@ Auto-choose defaults when the choice is spec-only, reversible, narrows scope, de
 Ask the user when the decision changes product direction, affects public API shape, changes production behavior, touches auth, security, secrets, money, data deletion, deployments, team process, ownership, or cannot be observed.
 
 Do not ask before checking facts discoverable from code, git history, existing docs, config, issue trackers, Slack, or connected MCPs.
-
-## Commit history policy
-
-Treat each published commit as an append-only checkpoint. Before committing, inspect the local and remote or PR state to determine whether the current `HEAD` has already been pushed or submitted.
-
-- If `HEAD` is published, create a new commit for every independently verified batch of implementation, CI remediation, or review feedback.
-- If `HEAD` is unpublished and the changes only complete or correct the same reviewable slice, amend it.
-- Create a new commit when the changes represent a distinct reviewable slice, even before publication.
-- Rewrite published commits only when the user explicitly requests a squash, fixup, or history cleanup, or when synchronization requires rebasing. Do not collapse content commits merely because Graphite manages the branch.
-- For Graphite, create a new commit with `gt modify --commit --message "<message>"`; amend an unpublished commit with `gt modify --message "<message>"` or `gt modify --no-edit`.
 
 ## Verification gate
 

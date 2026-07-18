@@ -5,6 +5,7 @@ permission:
   skill:
     "*": deny
     actions-ci-address: allow
+    autoreview: allow
     breh: allow
     code-review: allow
     codebase-design: allow
@@ -21,19 +22,24 @@ permission:
     find-docs: allow
     fix-ci: allow
     fix-merge-conflicts: allow
+    graphite: allow
     greptile-address: allow
     grill-with-docs: allow
     grilling: allow
     handoff: allow
+    motel-debug: allow
     plannotator-annotate: allow
     plannotator-compund: allow
     plannotator-last: allow
     plannotator-review: allow
     plannotator-visual-explainer: allow
+    playwright-cli: allow
+    principle-subtract-before-you-add: allow
     prototype: allow
     reducing-entropy: allow
     subtract: allow
     tdd: allow
+    teach: allow
     tech-spec: allow
     thermo-nuclear-code-quality-review: allow
     to-spec: allow
