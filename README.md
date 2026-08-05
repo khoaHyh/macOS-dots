@@ -10,6 +10,7 @@ Personal macOS setup for shell, terminal, window management, and CLI tooling.
 - `starship.toml`: prompt config
 - `aerospace/aerospace.toml`: tiling and keyboard shortcuts
 - `ghostty/config`: terminal defaults used by the `alt + enter` shortcut
+- `herdr/config.toml`: Herdr UI, notification, and theme config
 - `scripts/open_iterm2.sh`: optional iTerm2 launcher script
 - `opencode/`: local OpenCode agent/tool config
 - `pi/`: global pi coding agent config (`settings.json`, `AGENTS.md`, prompts/skills/extensions/themes)
@@ -61,13 +62,15 @@ curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.3/install.sh | bash
 ### 3) Symlink configs
 
 ```bash
-mkdir -p ~/.config/aerospace ~/.config/scripts ~/.pi
+mkdir -p ~/.config/aerospace ~/.config/herdr ~/.config/scripts ~/.pi
 
 ln -sf ~/dev/macOS-dots/.zshrc ~/.zshrc
 ln -sf ~/dev/macOS-dots/.tmux.conf ~/.tmux.conf
 ln -sf ~/dev/macOS-dots/.gitconfig ~/.gitconfig
 ln -sf ~/dev/macOS-dots/starship.toml ~/.config/starship.toml
 ln -sf ~/dev/macOS-dots/aerospace/aerospace.toml ~/.config/aerospace/aerospace.toml
+[ -f ~/.config/herdr/config.toml ] && [ ! -L ~/.config/herdr/config.toml ] && mv ~/.config/herdr/config.toml ~/.config/herdr/config.toml.backup.$(date +%Y%m%d-%H%M%S)
+ln -sf ~/dev/macOS-dots/herdr/config.toml ~/.config/herdr/config.toml
 ln -sf ~/dev/macOS-dots/scripts/open_iterm2.sh ~/.config/scripts/open_iterm2.sh
 ln -sf ~/dev/macOS-dots/scripts/refresh_simple_bar.sh ~/.config/scripts/refresh_simple_bar.sh
 [ -d ~/.pi/agent ] && [ ! -L ~/.pi/agent ] && mv ~/.pi/agent ~/.pi/agent.backup.$(date +%Y%m%d-%H%M%S)
@@ -127,7 +130,7 @@ Open tmux and press `prefix + I` to install plugins.
 ## Verify setup
 
 ```bash
-ls -l ~/.zshrc ~/.tmux.conf ~/.gitconfig ~/.config/starship.toml ~/.config/aerospace/aerospace.toml
+ls -l ~/.zshrc ~/.tmux.conf ~/.gitconfig ~/.config/starship.toml ~/.config/aerospace/aerospace.toml ~/.config/herdr/config.toml
 ls -ld ~/.pi/agent
 pgrep -x AeroSpace
 ls -la ~/.tmux/plugins/tpm
@@ -147,6 +150,7 @@ ls -la ~/.tmux/plugins/tpm
 - `open_iterm2.sh` is optional and can be bound if you prefer iTerm2.
 - `.tmux.conf` currently uses `egel/tmux-gruvbox`; Catppuccin lines are commented out.
 - `~/.pi/agent -> ~/dev/macOS-dots/pi` keeps pi config in this repo; runtime files (`auth.json`, sessions, package installs) are gitignored.
+- `~/.config/herdr/config.toml` points into this repo; Herdr's session state, logs, and sockets remain local in `~/.config/herdr`.
 - AeroSpace needs Accessibility permission in System Settings -> Privacy & Security -> Accessibility.
 
 ## Update

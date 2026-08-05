@@ -15,7 +15,7 @@ permission:
     context7-mcp: allow
     design-an-interface: allow
     diagnosing-bugs: allow
-    dialectic: allow
+    field-lab: allow
     documentation: allow
     domain-modeling: allow
     feedback-loop: allow
@@ -27,6 +27,7 @@ permission:
     grill-with-docs: allow
     grilling: allow
     handoff: allow
+    local-adversarial-review-gauntlet: allow
     motel-debug: allow
     plannotator-annotate: allow
     plannotator-compund: allow
@@ -37,6 +38,7 @@ permission:
     principle-subtract-before-you-add: allow
     prototype: allow
     reducing-entropy: allow
+    remotion-best-practices: allow
     subtract: allow
     tdd: allow
     teach: allow

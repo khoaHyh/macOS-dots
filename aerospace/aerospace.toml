@@ -3,7 +3,10 @@
 
 config-version = 2
 
-after-startup-command = ['exec-and-forget $HOME/dev/macOS-dots/scripts/refresh_simple_bar.sh']
+after-startup-command = [
+    'exec-and-forget $HOME/dev/macOS-dots/scripts/refresh_simple_bar.sh',
+    'layout --workspace 2 --root h_tiles',
+]
 start-at-login = true
 
 enable-normalization-flatten-containers = false

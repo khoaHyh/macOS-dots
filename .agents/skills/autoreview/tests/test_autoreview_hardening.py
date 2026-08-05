@@ -21,6 +21,9 @@ from pathlib import Path
 
 
 SCRIPT = Path(__file__).resolve().parents[1] / "scripts" / "autoreview"
+FIXTURES = Path(__file__).with_name("fixtures")
+PRIVATE_KEY_BEGIN_TEXT = "BEGIN " + "PRIVATE KEY"
+RSA_PRIVATE_KEY_BEGIN_TEXT = "BEGIN RSA " + "PRIVATE KEY"
 
 
 def load_helper() -> dict[str, object]:
@@ -62,31 +65,663 @@ def realistic_secret_value() -> str:
     return "A7f9K2m4Q8v6" + "N3x5R1p0T9z8"
 
 
-def markerless_private_key_fixture() -> str:
-    return "MIIE" + "vQIB" + "ADAN" + "Bgkq" + "hkiG" + "9w0B" + "AQEF" + "AASC" + "1234" + "5678" + "90ab" + "cdef"
+def installed_java() -> str | None:
+    java = shutil.which("java")
+    if java is None:
+        return None
+    try:
+        probe = subprocess.run(
+            [java, "-version"],
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+            check=False,
+        )
+    except OSError:
+        return None
+    return java if probe.returncode == 0 else None
+
+
+def add_fake_trufflehog(
+    helper: dict[str, object],
+    root: Path,
+    env: dict[str, str],
+) -> None:
+    helper["write_executable"](
+        root / "trufflehog",
+        "#!/usr/bin/env python3\nraise SystemExit(0)\n",
+    )
+    env["PATH"] = f"{root}{os.pathsep}{env.get('PATH', '')}"
 
 
 class AutoreviewHardeningTests(unittest.TestCase):
     def setUp(self) -> None:
         self.helper = load_helper()
 
+    def test_trufflehog_missing_binary_has_platform_neutral_guidance(self) -> None:
+        with tempfile.TemporaryDirectory() as tempdir:
+            repo = init_repo(Path(tempdir))
+            with mock.patch.dict(
+                self.helper["run_trufflehog_preflight"].__globals__,
+                {"find_command": lambda _name, _repo: None},
+            ):
+                with self.assertRaises(SystemExit) as error:
+                    self.helper["run_trufflehog_preflight"](
+                        repo,
+                        "local",
+                        None,
+                        "HEAD",
+                    )
+
+        message = str(error.exception)
+        self.assertIn("TruffleHog is required but was not found", message)
+        self.assertIn(self.helper["TRUFFLEHOG_INSTALL_URL"], message)
+        self.assertNotIn("brew", message.casefold())
+
+    def test_trufflehog_scans_staged_and_working_versions_separately(self) -> None:
+        with tempfile.TemporaryDirectory() as tempdir:
+            repo = init_repo(Path(tempdir))
+            source = repo / "runtime.txt"
+            source.write_text("base\n", encoding="utf-8")
+            git(repo, "add", "runtime.txt")
+            git(repo, "commit", "-q", "-m", "base")
+            source.write_text("staged version\n", encoding="utf-8")
+            git(repo, "add", "runtime.txt")
+            source.write_text("working version\n", encoding="utf-8")
+
+            original_find_command = self.helper["find_command"]
+            original_run = self.helper["run"]
+            scanned: dict[str, str] = {}
+
+            def find_command(name: str, checkout: Path) -> str | None:
+                if name == "trufflehog":
+                    return "/trusted/trufflehog"
+                return original_find_command(name, checkout)
+
+            def run_scanner(
+                command: list[str],
+                cwd: Path,
+                **_kwargs: object,
+            ) -> subprocess.CompletedProcess[str]:
+                if command[0] != "/trusted/trufflehog":
+                    return original_run(command, cwd, **_kwargs)
+                self.assertEqual(
+                    command[0:2],
+                    [
+                        "/trusted/trufflehog",
+                        "git",
+                    ],
+                )
+                self.assertEqual(command[3], "--since-commit")
+                self.assertEqual(command[5:7], ["--branch", "HEAD"])
+                self.assertEqual(
+                    command[7:],
+                    [
+                        "--no-update",
+                        "--no-color",
+                        "--results=verified,unknown",
+                        "--fail",
+                        "--fail-on-scan-errors",
+                    ],
+                )
+                scan_path = command[2].removeprefix("file://")
+                if os.name == "nt":
+                    scan_path = scan_path.lstrip("/")
+                scan_repo = Path(scan_path)
+                commits = git(
+                    scan_repo,
+                    "log",
+                    "--reverse",
+                    "--format=%H",
+                ).splitlines()
+                scanned["staged"] = git(
+                    scan_repo,
+                    "show",
+                    f"{commits[1]}:runtime.txt",
+                )
+                scanned["working"] = git(
+                    scan_repo,
+                    "show",
+                    f"{commits[2]}:runtime.txt",
+                )
+                return subprocess.CompletedProcess(command, 0, "", "")
+
+            with mock.patch.dict(
+                self.helper["run_trufflehog_preflight"].__globals__,
+                {
+                    "find_command": find_command,
+                    "run": run_scanner,
+                },
+            ):
+                self.helper["run_trufflehog_preflight"](
+                    repo,
+                    "local",
+                    None,
+                    "HEAD",
+                )
+
+        self.assertEqual(
+            scanned,
+            {
+                "staged": "staged version\n",
+                "working": "working version\n",
+            },
+        )
+
+    def test_trufflehog_scans_only_changed_content_at_reviewed_ref(self) -> None:
+        with tempfile.TemporaryDirectory() as tempdir:
+            repo = init_repo(Path(tempdir))
+            unchanged = repo / "unchanged.txt"
+            changed = repo / "changed.txt"
+            unchanged.write_text("unchanged\n", encoding="utf-8")
+            changed.write_text("base\n", encoding="utf-8")
+            git(repo, "add", "unchanged.txt", "changed.txt")
+            git(repo, "commit", "-q", "-m", "base")
+            base = git(repo, "rev-parse", "HEAD").strip()
+            changed.write_text("reviewed version\n", encoding="utf-8")
+            git(repo, "add", "changed.txt")
+            git(repo, "commit", "-q", "-m", "change")
+            reviewed_commit = git(repo, "rev-parse", "HEAD").strip()
+            changed.write_text("later working version\n", encoding="utf-8")
+
+            for target, target_ref, commit_ref in (
+                ("branch", base, "HEAD"),
+                ("commit", None, reviewed_commit),
+            ):
+                with self.subTest(target=target), tempfile.TemporaryDirectory() as scan_dir:
+                    scan_repo = Path(scan_dir)
+                    base_commit = self.helper["prepare_trufflehog_history"](
+                        repo,
+                        target,
+                        target_ref,
+                        commit_ref,
+                        scan_repo,
+                    )
+
+                    commits = git(
+                        scan_repo,
+                        "log",
+                        "--reverse",
+                        "--format=%H",
+                    ).splitlines()
+                    self.assertEqual(commits[0], base_commit)
+                    self.assertEqual(len(commits), 3)
+                    self.assertEqual(
+                        git(
+                            scan_repo,
+                            "show",
+                            f"{commits[1]}:changed.txt",
+                        ),
+                        "reviewed version\n",
+                    )
+                    with self.assertRaises(subprocess.CalledProcessError):
+                        subprocess.run(
+                            [
+                                "git",
+                                "show",
+                                f"{commits[1]}:unchanged.txt",
+                            ],
+                            cwd=scan_repo,
+                            check=True,
+                            stdout=subprocess.PIPE,
+                            stderr=subprocess.PIPE,
+                            text=True,
+                        )
+
+    def test_trufflehog_history_scans_deleted_content_in_reverse_commit(self) -> None:
+        with tempfile.TemporaryDirectory() as tempdir:
+            repo = init_repo(Path(tempdir))
+            source = repo / "removed.txt"
+            source.write_text("removed baseline content\n", encoding="utf-8")
+            git(repo, "add", "removed.txt")
+            git(repo, "commit", "-q", "-m", "base")
+            base = git(repo, "rev-parse", "HEAD").strip()
+            source.unlink()
+            git(repo, "add", "removed.txt")
+            git(repo, "commit", "-q", "-m", "remove credential")
+
+            with tempfile.TemporaryDirectory() as scan_dir:
+                scan_repo = Path(scan_dir)
+                scan_base = self.helper["prepare_trufflehog_history"](
+                    repo,
+                    "branch",
+                    base,
+                    "HEAD",
+                    scan_repo,
+                )
+                commits = git(
+                    scan_repo,
+                    "log",
+                    "--reverse",
+                    "--format=%H",
+                ).splitlines()
+
+                self.assertEqual(commits[0], scan_base)
+                self.assertEqual(len(commits), 3)
+                self.assertEqual(
+                    git(scan_repo, "show", f"{commits[2]}:removed.txt"),
+                    "removed baseline content\n",
+                )
+                with self.assertRaises(subprocess.CalledProcessError):
+                    subprocess.run(
+                        ["git", "show", f"{commits[1]}:removed.txt"],
+                        cwd=scan_repo,
+                        check=True,
+                        stdout=subprocess.PIPE,
+                        stderr=subprocess.PIPE,
+                        text=True,
+                    )
+
+    def test_trufflehog_history_still_scans_deletions_from_modified_files(self) -> None:
+        with tempfile.TemporaryDirectory() as tempdir:
+            repo = init_repo(Path(tempdir))
+            source = repo / "modified.txt"
+            source.write_text("removed baseline content\nretained\n", encoding="utf-8")
+            git(repo, "add", source.name)
+            git(repo, "commit", "-q", "-m", "base")
+            base = git(repo, "rev-parse", "HEAD").strip()
+            source.write_text("retained\n", encoding="utf-8")
+            git(repo, "add", source.name)
+            git(repo, "commit", "-q", "-m", "remove line")
+
+            with tempfile.TemporaryDirectory() as scan_dir:
+                scan_repo = Path(scan_dir)
+                self.helper["prepare_trufflehog_history"](
+                    repo,
+                    "branch",
+                    base,
+                    "HEAD",
+                    scan_repo,
+                )
+                commits = git(
+                    scan_repo,
+                    "log",
+                    "--reverse",
+                    "--format=%H",
+                ).splitlines()
+
+                self.assertEqual(len(commits), 3)
+                self.assertEqual(
+                    git(scan_repo, "show", f"{commits[2]}:modified.txt"),
+                    "removed baseline content\nretained\n",
+                )
+
+    def test_trufflehog_local_mixed_layers_are_not_deletion_only(self) -> None:
+        with tempfile.TemporaryDirectory() as tempdir:
+            repo = init_repo(Path(tempdir))
+            source = repo / "mixed.txt"
+            source.write_text("removed line\nretained\n", encoding="utf-8")
+            git(repo, "add", source.name)
+            git(repo, "commit", "-q", "-m", "base")
+            source.write_text("retained\n", encoding="utf-8")
+            git(repo, "add", source.name)
+            source.unlink()
+
+            deletion_only_paths = self.helper["review_deletion_only_paths"](
+                repo,
+                "local",
+                None,
+                "HEAD",
+            )
+            self.assertEqual(deletion_only_paths, set())
+
+            with tempfile.TemporaryDirectory() as scan_dir:
+                scan_repo = Path(scan_dir)
+                self.helper["prepare_trufflehog_history"](
+                    repo,
+                    "local",
+                    None,
+                    "HEAD",
+                    scan_repo,
+                )
+                commits = git(
+                    scan_repo,
+                    "log",
+                    "--reverse",
+                    "--format=%H",
+                ).splitlines()
+
+                self.assertEqual(
+                    git(scan_repo, "show", f"{commits[4]}:mixed.txt"),
+                    "removed line\nretained\n",
+                )
+
+    def test_local_bundle_refuses_secret_in_mixed_deletion_layers(self) -> None:
+        value = realistic_secret_value()
+        with tempfile.TemporaryDirectory() as tempdir:
+            repo = init_repo(Path(tempdir))
+            source = repo / "mixed.ts"
+            source.write_text(
+                f'const apiKey = "{value}";\nretained();\n',
+                encoding="utf-8",
+            )
+            git(repo, "add", source.name)
+            git(repo, "commit", "-q", "-m", "base")
+            source.write_text("retained();\n", encoding="utf-8")
+            git(repo, "add", source.name)
+            source.unlink()
+
+            with self.assertRaisesRegex(SystemExit, "known secret-like value"):
+                self.helper["local_bundle"](repo)
+
+    def test_local_bundle_refuses_deleted_secret_repeated_in_other_layers(self) -> None:
+        for other_layer in ("unstaged", "untracked"):
+            with self.subTest(other_layer=other_layer), tempfile.TemporaryDirectory() as tempdir:
+                value = realistic_secret_value()
+                repo = init_repo(Path(tempdir))
+                removed = repo / "removed.ts"
+                runtime = repo / "runtime.ts"
+                removed.write_text(
+                    f'const apiKey = "{value}";\n',
+                    encoding="utf-8",
+                )
+                runtime.write_text("before();\n", encoding="utf-8")
+                git(repo, "add", removed.name, runtime.name)
+                git(repo, "commit", "-q", "-m", "base")
+                removed.unlink()
+                git(repo, "add", removed.name)
+                if other_layer == "unstaged":
+                    runtime.write_text(f'log("{value}");\n', encoding="utf-8")
+                else:
+                    (repo / "untracked.ts").write_text(
+                        f'log("{value}");\n',
+                        encoding="utf-8",
+                    )
+
+                with self.assertRaisesRegex(SystemExit, "known secret-like value"):
+                    self.helper["local_bundle"](repo)
+
+    def test_local_bundle_redacts_secret_in_entirely_deleted_file(self) -> None:
+        value = realistic_secret_value()
+        with tempfile.TemporaryDirectory() as tempdir:
+            repo = init_repo(Path(tempdir))
+            removed = repo / "removed.ts"
+            removed.write_text(
+                f'const apiKey = "{value}";\nrunFixture();\n',
+                encoding="utf-8",
+            )
+            git(repo, "add", removed.name)
+            git(repo, "commit", "-q", "-m", "base")
+            removed.unlink()
+
+            bundle, truncated = self.helper["local_bundle"](repo)
+
+            self.assertNotIn(value, bundle)
+            self.assertIn('-const apiKey = "redacted";', bundle)
+            self.assertIn("-runFixture();", bundle)
+            self.assertFalse(truncated)
+
+    def test_local_bundle_preserves_boundary_when_sensitive_diff_is_omitted(self) -> None:
+        with tempfile.TemporaryDirectory() as tempdir:
+            repo = init_repo(Path(tempdir))
+            path = repo / ".env"
+            path.write_text("TOKEN=placeholder\n", encoding="utf-8")
+            git(repo, "add", path.name)
+            git(repo, "commit", "-q", "-m", "base")
+            path.write_text("TOKEN=changed-placeholder\n", encoding="utf-8")
+            git(repo, "add", path.name)
+
+            bundle, truncated = self.helper["local_bundle"](repo)
+
+            self.assertIn(self.helper["REVIEW_SECURITY_REDACTION"], bundle)
+            self.assertFalse(truncated)
+
+    def test_commit_bundle_refuses_deleted_secret_repeated_in_message(self) -> None:
+        value = realistic_secret_value()
+        with tempfile.TemporaryDirectory() as tempdir:
+            repo = init_repo(Path(tempdir))
+            removed = repo / "removed.ts"
+            removed.write_text(
+                f'const apiKey = "{value}";\n',
+                encoding="utf-8",
+            )
+            git(repo, "add", removed.name)
+            git(repo, "commit", "-q", "-m", "base")
+            removed.unlink()
+            git(repo, "add", removed.name)
+            git(repo, "commit", "-q", "-m", value)
+
+            with self.assertRaisesRegex(SystemExit, "known secret-like value"):
+                self.helper["commit_bundle"](repo, "HEAD")
+
+    def test_trufflehog_snapshot_supports_directory_to_file_transition(self) -> None:
+        with tempfile.TemporaryDirectory() as tempdir:
+            repo = init_repo(Path(tempdir))
+            nested = repo / "entry" / "nested.txt"
+            nested.parent.mkdir()
+            nested.write_text("nested\n", encoding="utf-8")
+            git(repo, "add", "entry/nested.txt")
+            git(repo, "commit", "-q", "-m", "directory")
+            base = git(repo, "rev-parse", "HEAD").strip()
+            nested.unlink()
+            nested.parent.rmdir()
+            (repo / "entry").write_text("file\n", encoding="utf-8")
+            git(repo, "add", "-A")
+            git(repo, "commit", "-q", "-m", "file")
+
+            with tempfile.TemporaryDirectory() as scan_dir:
+                scan_repo = Path(scan_dir)
+                self.helper["prepare_trufflehog_history"](
+                    repo,
+                    "branch",
+                    base,
+                    "HEAD",
+                    scan_repo,
+                )
+                commits = git(
+                    scan_repo,
+                    "log",
+                    "--reverse",
+                    "--format=%H",
+                ).splitlines()
+                self.assertEqual(
+                    git(scan_repo, "show", f"{commits[1]}:entry"),
+                    "file\n",
+                )
+
+    @unittest.skipIf(os.name == "nt", "Windows filenames cannot use Git pathspec magic prefixes")
+    def test_trufflehog_snapshot_treats_git_paths_as_literals(self) -> None:
+        with tempfile.TemporaryDirectory() as tempdir:
+            repo = init_repo(Path(tempdir))
+            rel = ":(exclude).txt"
+            source = repo / rel
+            source.write_text("base\n", encoding="utf-8")
+            git(repo, "--literal-pathspecs", "add", "--", rel)
+            git(repo, "commit", "-q", "-m", "base")
+            source.write_text("staged\n", encoding="utf-8")
+            git(repo, "--literal-pathspecs", "add", "--", rel)
+
+            with tempfile.TemporaryDirectory() as index_dir:
+                index_root = Path(index_dir)
+                self.helper["materialize_index_snapshot"](
+                    repo,
+                    index_root,
+                    [rel],
+                )
+                self.assertEqual(
+                    (index_root / rel).read_text(encoding="utf-8"),
+                    "staged\n",
+                )
+
+            git(repo, "commit", "-q", "-m", "staged")
+            with tempfile.TemporaryDirectory() as tree_dir:
+                tree_root = Path(tree_dir)
+                self.helper["materialize_tree_snapshot"](
+                    repo,
+                    tree_root,
+                    "HEAD",
+                    [rel],
+                )
+                self.assertEqual(
+                    (tree_root / rel).read_text(encoding="utf-8"),
+                    "staged\n",
+                )
+
+    def test_trufflehog_snapshot_force_stages_ignored_materialized_files(self) -> None:
+        with tempfile.TemporaryDirectory() as tempdir:
+            repo = init_repo(Path(tempdir))
+            (repo / ".gitignore").write_text("ignored.txt\n", encoding="utf-8")
+            (repo / "ignored.txt").write_text("review me\n", encoding="utf-8")
+
+            commit = self.helper["commit_snapshot"](repo, "snapshot")
+
+            self.assertEqual(
+                git(repo, "show", f"{commit}:ignored.txt"),
+                "review me\n",
+            )
+
+    def test_trufflehog_snapshot_rejects_symlinked_parent_directories(self) -> None:
+        with tempfile.TemporaryDirectory() as tempdir:
+            root = Path(tempdir)
+            repo = init_repo(root)
+            outside = root / "outside"
+            outside.mkdir()
+            (outside / "review.txt").write_text("outside\n", encoding="utf-8")
+            parent = repo / "nested"
+            try:
+                parent.symlink_to(outside, target_is_directory=True)
+            except OSError as exc:
+                if os.name == "nt" and getattr(exc, "winerror", None) == 1314:
+                    self.skipTest("Windows symlink privilege is not available")
+                raise
+
+            with tempfile.TemporaryDirectory() as snapshot_dir:
+                with self.assertRaisesRegex(SystemExit, "symlinked parent"):
+                    self.helper["copy_worktree_file"](
+                        repo,
+                        Path(snapshot_dir),
+                        "nested/review.txt",
+                    )
+
+    def test_local_trufflehog_snapshot_supports_path_type_transitions(self) -> None:
+        for transition in ("directory-to-file", "file-to-directory"):
+            with self.subTest(transition=transition), tempfile.TemporaryDirectory() as tempdir:
+                repo = init_repo(Path(tempdir))
+                entry = repo / "entry"
+                nested = entry / "nested.txt"
+                if transition == "directory-to-file":
+                    entry.mkdir()
+                    nested.write_text("nested\n", encoding="utf-8")
+                    git(repo, "add", "entry/nested.txt")
+                else:
+                    entry.write_text("file\n", encoding="utf-8")
+                    git(repo, "add", "entry")
+                git(repo, "commit", "-q", "-m", "base")
+
+                if transition == "directory-to-file":
+                    nested.unlink()
+                    entry.rmdir()
+                    entry.write_text("file\n", encoding="utf-8")
+                    expected_path = "entry"
+                    expected_content = "file\n"
+                else:
+                    entry.unlink()
+                    entry.mkdir()
+                    nested.write_text("nested\n", encoding="utf-8")
+                    expected_path = "entry/nested.txt"
+                    expected_content = "nested\n"
+
+                with tempfile.TemporaryDirectory() as scan_dir:
+                    scan_repo = Path(scan_dir)
+                    self.helper["prepare_trufflehog_history"](
+                        repo,
+                        "local",
+                        None,
+                        "HEAD",
+                        scan_repo,
+                    )
+                    commits = git(
+                        scan_repo,
+                        "log",
+                        "--reverse",
+                        "--format=%H",
+                    ).splitlines()
+                    self.assertEqual(
+                        git(scan_repo, "show", f"{commits[2]}:{expected_path}"),
+                        expected_content,
+                    )
+
+    def test_trufflehog_findings_and_errors_do_not_leak_scanner_output(self) -> None:
+        for returncode, expected in (
+            (
+                self.helper["TRUFFLEHOG_FINDINGS_EXIT_CODE"],
+                "found verified or unknown credentials",
+            ),
+            (1, "could not complete the credential scan"),
+        ):
+            with self.subTest(returncode=returncode), tempfile.TemporaryDirectory() as tempdir:
+                repo = init_repo(Path(tempdir))
+                (repo / "runtime.txt").write_text("review me\n", encoding="utf-8")
+                original_find_command = self.helper["find_command"]
+                original_run = self.helper["run"]
+                scanner_output = "detected-value-that-must-not-leak"
+
+                def find_command(name: str, checkout: Path) -> str | None:
+                    if name == "trufflehog":
+                        return "/trusted/trufflehog"
+                    return original_find_command(name, checkout)
+
+                def run_scanner(
+                    command: list[str],
+                    cwd: Path,
+                    **_kwargs: object,
+                ) -> subprocess.CompletedProcess[str]:
+                    if command[0] != "/trusted/trufflehog":
+                        return original_run(command, cwd, **_kwargs)
+                    return subprocess.CompletedProcess(
+                        command,
+                        returncode,
+                        scanner_output,
+                        scanner_output,
+                    )
+
+                output = io.StringIO()
+                with (
+                    mock.patch.dict(
+                        self.helper["run_trufflehog_preflight"].__globals__,
+                        {
+                            "find_command": find_command,
+                            "run": run_scanner,
+                        },
+                    ),
+                    contextlib.redirect_stdout(output),
+                    contextlib.redirect_stderr(output),
+                    self.assertRaises(SystemExit) as error,
+                ):
+                    self.helper["run_trufflehog_preflight"](
+                        repo,
+                        "local",
+                        None,
+                        "HEAD",
+                    )
+
+                combined = output.getvalue() + str(error.exception)
+                self.assertIn(expected, combined)
+                self.assertNotIn(scanner_output, combined)
+
     def test_powershell_harness_exposes_runnable_engines_only(self) -> None:
         harness = SCRIPT.with_name("test-review-harness.ps1").read_text(encoding="utf-8")
 
-        self.assertIn("[ValidateSet('codex', 'claude', 'pi')]", harness)
+        self.assertIn("[ValidateSet('codex', 'claude', 'pi', 'kimi')]", harness)
         for disabled_engine in ("droid", "copilot", "opencode", "cursor"):
             self.assertNotIn(f"'{disabled_engine}'", harness)
 
-    def test_local_bundle_blocks_sensitive_untracked_file(self) -> None:
+    def test_local_bundle_omits_sensitive_untracked_file_without_blocking(self) -> None:
         for rel in (".env", "tokens/session.dat", "secrets/local.py"):
             with self.subTest(rel=rel), tempfile.TemporaryDirectory() as tempdir:
                 repo = init_repo(Path(tempdir))
                 path = repo / rel
                 path.parent.mkdir(parents=True, exist_ok=True)
                 path.write_text("placeholder=true\n", encoding="utf-8")
+                (repo / "review.py").write_text("print('review me')\n", encoding="utf-8")
 
-                with self.assertRaisesRegex(SystemExit, "untracked sensitive files"):
-                    self.helper["local_bundle"](repo)
+                bundle, truncated = self.helper["local_bundle"](repo)
+
+                self.assertIn("# Review Input Redactions", bundle)
+                self.assertIn(self.helper["REVIEW_SECURITY_REDACTION"], bundle)
+                self.assertNotIn(rel, bundle)
+                self.assertNotIn("placeholder=true", bundle)
+                self.assertIn("print('review me')", bundle)
+                self.assertFalse(truncated)
 
     def test_local_bundle_marks_untracked_binary_input_incomplete(self) -> None:
         with tempfile.TemporaryDirectory() as tempdir:
@@ -680,6 +1315,29 @@ class AutoreviewHardeningTests(unittest.TestCase):
         )
         self.assertTrue(all("Oversized review bundle chunk:" in prompt for prompt in prompts))
 
+    def test_kimi_prompt_budget_partitions_before_argv_limits(self) -> None:
+        if os.name == "nt":
+            self.skipTest("the 30 KiB Windows argv budget cannot fit the chunk-context reservation")
+        with tempfile.TemporaryDirectory() as tempdir:
+            repo = init_repo(Path(tempdir))
+            prompts = self.helper["build_review_prompts"](
+                repo,
+                "commit",
+                "HEAD",
+                "# Commit Diff\n" + "safe review content\n" * 12_000,
+                "",
+                "",
+                self.helper["KIMI_MAX_PROMPT_BYTES"],
+            )
+
+        self.assertGreater(len(prompts), 1)
+        self.assertTrue(
+            all(
+                len(prompt.encode("utf-8")) <= self.helper["KIMI_MAX_PROMPT_BYTES"]
+                for prompt in prompts
+            )
+        )
+
     def test_review_prompt_preserves_bundle_ending_whitespace(self) -> None:
         with tempfile.TemporaryDirectory() as tempdir:
             repo = init_repo(Path(tempdir))
@@ -710,71 +1368,147 @@ class AutoreviewHardeningTests(unittest.TestCase):
                         "",
                     )
 
-    def test_review_patch_escapes_controls_in_blocked_paths(self) -> None:
+    def test_review_patch_does_not_disclose_controls_in_omitted_paths(self) -> None:
         path = ".env.\x1b]52;c;VEVTVA==\x07\udc9b"
 
-        with self.assertRaises(SystemExit) as raised:
-            self.helper["validate_review_patch"](
-                "local staged diff",
-                [path],
-                "",
-            )
-
-        message = str(raised.exception)
-        self.assertNotIn("\x1b", message)
-        self.assertNotIn("\x07", message)
-        self.assertNotIn("\udc9b", message)
-        self.assertIn(
-            r".env.\x1b]52;c;VEVTVA==\x07\udc9b",
-            message,
+        redacted = self.helper["validate_review_patch"](
+            "local staged diff",
+            [path],
+            "",
         )
 
-    def test_review_patch_scans_reconstructed_content_not_diff_markers(
+        self.assertEqual(
+            redacted,
+            self.helper["REVIEW_SECURITY_REDACTION"] + "\n",
+        )
+        self.assertNotIn("\x1b", redacted)
+        self.assertNotIn("\x07", redacted)
+        self.assertNotIn("\udc9b", redacted)
+
+    def test_review_patch_omits_everything_when_sensitive_paths_cannot_be_mapped(
         self,
     ) -> None:
         patch = (
-            "@@ -0,0 +1,4 @@\n"
-            '+            "https://token=" + "hardcoded123@host/repo",\n'
-            '+            "DATABASE_URL=https:"\n'
-            '+            + f"//token={literal_username}:${{PASSWORD}}@host",\n'
-            '+            \'curl "https:\'\n'
+            "commit metadata that must not survive a mapping failure\n"
+            "diff --cc .env\n"
+            "@@@ -1,1 -1,1 +1,1 @@@\n"
+            "++placeholder=true\n"
         )
 
-        self.assertTrue(self.helper["secret_text_risk"](patch))
-        self.assertFalse(
-            any(
-                self.helper["secret_text_risk"](line)
-                for line in patch.splitlines()
-            )
-        )
-        self.assertEqual(
-            self.helper["validate_review_patch"](
-                "local unstaged diff",
-                ["safe.py"],
-                patch,
-            ),
+        redacted = self.helper["validate_review_patch"](
+            "branch diff",
+            [".env"],
             patch,
         )
 
-    def test_review_patch_scans_diff_metadata_line_by_line(self) -> None:
-        credential = "AKIA" + "ABCDEFGHIJKLMNOP"
-        patch = (
-            f"diff --git a/{credential}.txt b/{credential}.txt\n"
-            "new file mode 100644\n"
-            "--- /dev/null\n"
-            f"+++ b/{credential}.txt\n"
-            "@@ -0,0 +1 @@\n"
-            "+public content\n"
+        self.assertEqual(
+            redacted,
+            self.helper["REVIEW_SECURITY_REDACTION"] + "\n",
+        )
+        self.assertNotIn("placeholder", redacted)
+        self.assertNotIn("commit metadata", redacted)
+
+    def test_review_metadata_redaction_is_independent_of_path_classification(
+        self,
+    ) -> None:
+        credential = "ghp_" + "A" * 24
+        metadata = f" M {credential}.txt\n"
+
+        self.assertEqual(
+            self.helper["redact_secret_like_review_metadata"](metadata),
+            self.helper["REVIEW_SECURITY_REDACTION"],
+        )
+        self.assertNotIn(
+            credential,
+            self.helper["redact_secret_like_review_metadata"](metadata),
         )
 
-        with self.assertRaisesRegex(SystemExit, "secret-like content"):
+    def test_review_patch_redacts_metadata_but_preserves_code_content(self) -> None:
+        patch = (
+            "Authorization: Basic dXNlcjpwYXNzd29yZA==\n"
+            "diff --git a/src/runtime.ts b/src/runtime.ts\n"
+            "--- a/src/runtime.ts\n"
+            "+++ b/src/runtime.ts\n"
+            "@@ -0,0 +1 @@\n"
+            '+const token = "ordinary-hardcoded-value-12345";\n'
+        )
+
+        validated = self.helper["validate_review_patch"](
+            "commit diff",
+            ["src/runtime.ts"],
+            patch,
+        )
+
+        self.assertNotIn("dXNlcjpwYXNzd29yZA==", validated)
+        self.assertIn("ordinary-hardcoded-value-12345", validated)
+
+    def test_review_patch_redacts_standard_diff_paths_but_preserves_hunks(self) -> None:
+        credential = "ghp_" + "A" * 24
+        patch = (
+            f"diff --git a/{credential}.ts b/{credential}.ts\n"
+            f"--- a/{credential}.ts\n"
+            f"+++ b/{credential}.ts\n"
+            "@@ -0,0 +1 @@\n"
+            '+const token = "ordinary-hardcoded-value-12345";\n'
+        )
+
+        validated = self.helper["validate_review_patch"](
+            "commit diff",
+            ["src/runtime.ts"],
+            patch,
+        )
+
+        self.assertNotIn(credential, validated)
+        self.assertIn("ordinary-hardcoded-value-12345", validated)
+
+    def test_review_patch_preserves_combined_and_headerless_hunk_content(self) -> None:
+        credential_shaped_code = '+token = "ordinary-hardcoded-value-12345"\n'
+        for patch in (
+            "@@ -0,0 +1 @@\n" + credential_shaped_code,
+            "diff --cc src/runtime.ts\n"
+            "@@@ -0,0 -0,0 +1 @@@\n"
+            "++token = \"ordinary-hardcoded-value-12345\"\n",
+        ):
+            with self.subTest(patch=patch):
+                validated = self.helper["validate_review_patch"](
+                    "commit diff",
+                    ["src/runtime.ts"],
+                    patch,
+                )
+                self.assertIn("ordinary-hardcoded-value-12345", validated)
+
+    def test_review_patch_stops_hunk_classification_at_declared_counts(self) -> None:
+        credential = "ghp_" + "A" * 24
+        patch = (
+            "@@ -0,0 +1 @@\n"
+            "+first file content\n"
+            f"--- a/{credential}.ts\n"
+            f"+++ b/{credential}.ts\n"
+            "@@ -0,0 +1 @@\n"
+            '+token = "ordinary-hardcoded-value-12345"\n'
+        )
+
+        validated = self.helper["validate_review_patch"](
+            "commit diff",
+            ["first.ts", "second.ts"],
+            patch,
+        )
+
+        self.assertNotIn(credential, validated)
+        self.assertIn("ordinary-hardcoded-value-12345", validated)
+
+    def test_review_patch_enforces_limit_after_metadata_redaction(self) -> None:
+        patch = "ghp_" + "A" * 24
+
+        with self.assertRaisesRegex(SystemExit, "after metadata redaction"):
             self.helper["validate_review_patch"](
-                "local unstaged diff",
-                ["safe.txt"],
+                "commit diff",
+                [],
                 patch,
+                40,
             )
 
-    def test_tracked_sensitive_paths_are_blocked_in_all_modes(self) -> None:
+    def test_tracked_sensitive_paths_are_omitted_in_all_modes(self) -> None:
         with tempfile.TemporaryDirectory() as tempdir:
             repo = init_repo(Path(tempdir))
             (repo / "base.txt").write_text("base\n", encoding="utf-8")
@@ -783,15 +1517,61 @@ class AutoreviewHardeningTests(unittest.TestCase):
             base = git(repo, "rev-parse", "HEAD").strip()
 
             (repo / ".env").write_text("placeholder=true\n", encoding="utf-8")
-            git(repo, "add", ".env")
-            with self.assertRaisesRegex(SystemExit, "tracked sensitive paths"):
-                self.helper["local_bundle"](repo)
+            (repo / "base.txt").write_text("base\nreview me\n", encoding="utf-8")
+            git(repo, "add", ".env", "base.txt")
+            local, local_truncated = self.helper["local_bundle"](repo)
+            self.assertIn(self.helper["REVIEW_SECURITY_REDACTION"], local)
+            self.assertNotIn(".env", local)
+            self.assertNotIn("placeholder=true", local)
+            self.assertIn("+review me", local)
+            self.assertFalse(local_truncated)
 
             git(repo, "commit", "-q", "-m", "sensitive path")
-            with self.assertRaisesRegex(SystemExit, "tracked sensitive paths"):
-                self.helper["branch_bundle"](repo, base)
-            with self.assertRaisesRegex(SystemExit, "tracked sensitive paths"):
-                self.helper["commit_bundle"](repo, "HEAD")
+            for bundle, truncated in (
+                self.helper["branch_bundle"](repo, base),
+                self.helper["commit_bundle"](repo, "HEAD"),
+            ):
+                self.assertIn(self.helper["REVIEW_SECURITY_REDACTION"], bundle)
+                self.assertNotIn(".env", bundle)
+                self.assertNotIn("placeholder=true", bundle)
+                self.assertIn("+review me", bundle)
+                self.assertFalse(truncated)
+
+    def test_secret_named_workflows_are_reviewable_in_all_modes(self) -> None:
+        with tempfile.TemporaryDirectory() as tempdir:
+            repo = init_repo(Path(tempdir))
+            (repo / "base.txt").write_text("base\n", encoding="utf-8")
+            git(repo, "add", "base.txt")
+            git(repo, "commit", "-q", "-m", "base")
+            base = git(repo, "rev-parse", "HEAD").strip()
+
+            workflow = repo / ".github" / "workflows" / "secret-scan.yml"
+            workflow.parent.mkdir(parents=True)
+            workflow.write_text("name: Secret scan\n", encoding="utf-8")
+            untracked_bundle, _ = self.helper["local_bundle"](repo)
+            self.assertIn("secret-scan.yml", untracked_bundle)
+
+            git(repo, "add", str(workflow.relative_to(repo)))
+            tracked_bundle, _ = self.helper["local_bundle"](repo)
+            self.assertIn("secret-scan.yml", tracked_bundle)
+
+            git(repo, "commit", "-q", "-m", "add secret scanner")
+            branch_bundle, _ = self.helper["branch_bundle"](repo, base)
+            commit_bundle, _ = self.helper["commit_bundle"](repo, "HEAD")
+            self.assertIn("secret-scan.yml", branch_bundle)
+            self.assertIn("secret-scan.yml", commit_bundle)
+
+    def test_case_variant_secret_named_workflows_remain_sensitive(self) -> None:
+        for rel in (
+            ".GitHub/workflows/secret-scan.yml",
+            ".github/Workflows/secret-scan.yml",
+            ".github/workflows/secret-scan.YML",
+        ):
+            with self.subTest(rel=rel):
+                self.assertIsNotNone(self.helper["sensitive_repo_path_risk"](rel))
+                self.assertIsNotNone(
+                    self.helper["tracked_sensitive_repo_path_risk"](rel)
+                )
 
     def test_tracked_source_names_and_env_templates_remain_reviewable(self) -> None:
         for rel in (
@@ -820,6 +1600,7 @@ class AutoreviewHardeningTests(unittest.TestCase):
             "token_count/generated.py",
             ".docker/Dockerfile",
             ".docker/scripts/build.sh",
+            ".github/workflows/secret-scan.yml",
         ):
             with self.subTest(rel=rel):
                 self.assertIsNone(self.helper["tracked_sensitive_repo_path_risk"](rel))
@@ -835,6 +1616,19 @@ class AutoreviewHardeningTests(unittest.TestCase):
         ):
             with self.subTest(rel=rel):
                 self.assertIsNone(self.helper["sensitive_repo_path_risk"](rel))
+
+    def test_untracked_credential_shaped_source_content_is_reviewed(self) -> None:
+        with tempfile.TemporaryDirectory() as tempdir:
+            repo = init_repo(Path(tempdir))
+            source = 'const token = "ordinary-hardcoded-value-12345";\n'
+            path = repo / "src" / "runtime.ts"
+            path.parent.mkdir()
+            path.write_text(source, encoding="utf-8")
+
+            bundle, truncated = self.helper["local_bundle"](repo)
+
+            self.assertIn("ordinary-hardcoded-value-12345", bundle)
+            self.assertFalse(truncated)
 
     def test_untracked_design_token_artifacts_remain_reviewable(self) -> None:
         for rel in (
@@ -1863,6 +2657,56 @@ class AutoreviewHardeningTests(unittest.TestCase):
             )
         )
 
+    def test_review_patch_allows_provider_references_and_test_placeholders(
+        self,
+    ) -> None:
+        token_name = "to" + "ken"
+        key_name = "api_" + "key"
+        secret_name = "api_" + "secret"
+        safe_patch = (
+            "diff --git a/provider.ts b/provider.ts\n"
+            "--- a/provider.ts\n"
+            "+++ b/provider.ts\n"
+            "@@ -1 +1,6 @@\n"
+            f"-const {token_name} = data.session?.access_token;\n"
+            f"+const {token_name} = data.session?.access_token;\n"
+            "+const api" + f"Key = providerConfig.{key_name};\n"
+            "+const api" + "Sec" + f"ret = providerConfig.{secret_name};\n"
+            f'+const fixture = {{ {key_name}: "test-key" }};\n'
+            f'+const fixtureSecret = {{ {secret_name}: "test-secret" }};\n'
+            f'+const session = {{ access_{token_name}: "test-token" }};\n'
+        )
+
+        self.assertEqual(
+            self.helper["validate_review_patch"](
+                "branch diff",
+                ["provider.ts"],
+                safe_patch,
+            ),
+            safe_patch,
+        )
+
+    def test_provider_reference_allowlist_still_rejects_real_credentials(
+        self,
+    ) -> None:
+        key_name = "api_" + "key"
+        literal_value = "actual-production-" + "secret"
+        structured_value = "ghp_" + "ActualToken1234567890"
+        unsafe_values = (
+            f'const config = {{ {key_name}: "{literal_value}" }};',
+            f'const config = {{ {key_name}: "{structured_value}" }};',
+            f'const config = {{ {key_name}: "test-key-extra" }};',
+        )
+
+        for content in unsafe_values:
+            with self.subTest(content=content):
+                self.assertTrue(
+                    self.helper["secret_text_risk"](
+                        content,
+                        javascript_dialect="typescript",
+                    )
+                )
+
     def test_secret_detector_allows_typescript_object_secret_references(self) -> None:
         content = (
             "async function configure(context: RuntimeContext) {\n"
@@ -2314,6 +3158,220 @@ class AutoreviewHardeningTests(unittest.TestCase):
             )
         )
 
+    def test_secret_detector_allows_typescript_credential_plumbing_fixture(self) -> None:
+        source = (FIXTURES / "typescript-benign-references.ts").read_text(
+            encoding="utf-8"
+        )
+
+        patch = (
+            "diff --git a/src/credential-plumbing.ts b/src/credential-plumbing.ts\n"
+            "new file mode 100644\n"
+            "--- /dev/null\n"
+            "+++ b/src/credential-plumbing.ts\n"
+            f"@@ -0,0 +1,{len(source.splitlines())} @@\n"
+            + "".join(f"+{line}\n" for line in source.splitlines())
+        )
+        validated = self.helper["validate_review_patch"](
+            "typescript credential plumbing fixture",
+            ["src/credential-plumbing.ts"],
+            patch,
+        )
+        for reference in (
+            "filePassword",
+            "passwordResolution.password",
+            "tokenResolution.token",
+            "CredentialUnavailableDiagnostic",
+            "tokenRef",
+            "keyRef",
+        ):
+            self.assertIn(reference, validated)
+
+    def test_secret_detector_allows_typescript_member_reference_assignment(self) -> None:
+        source = "legacyXSearchResolvedRecord.apiKey = resolution.value;"
+        patch = (
+            "diff --git a/src/runtime-web-tools.ts b/src/runtime-web-tools.ts\n"
+            "--- a/src/runtime-web-tools.ts\n"
+            "+++ b/src/runtime-web-tools.ts\n"
+            "@@ -20,2 +20,3 @@ function resolveLegacySearch() {\n"
+            f" {source}\n"
+            "+const contractDigest = digestRuntimeWebOwnerContract(contract);\n"
+        )
+
+        self.assertFalse(
+            self.helper["secret_text_risk"](
+                source,
+                javascript_dialect="typescript",
+            )
+        )
+        self.assertEqual(
+            self.helper["validate_review_patch"](
+                "typescript member reference assignment",
+                ["src/runtime-web-tools.ts"],
+                patch,
+            ),
+            patch,
+        )
+
+        fake_literal = next(
+            line
+            for line in (FIXTURES / "typescript-sensitive-literals.ts")
+            .read_text(encoding="utf-8")
+            .splitlines()
+            if line.strip()
+        )
+        self.assertTrue(
+            self.helper["secret_text_risk"](
+                fake_literal,
+                javascript_dialect="typescript",
+            )
+        )
+    def test_review_bundle_preserves_typescript_config_paths(self) -> None:
+        source = (FIXTURES / "typescript-benign-config-path-references.ts").read_text(
+            encoding="utf-8"
+        )
+        patch = (
+            "diff --git a/src/config-path-references.ts b/src/config-path-references.ts\n"
+            "new file mode 100644\n"
+            "--- /dev/null\n"
+            "+++ b/src/config-path-references.ts\n"
+            f"@@ -0,0 +1,{len(source.splitlines())} @@\n"
+            + "".join(f"+{line}\n" for line in source.splitlines())
+        )
+
+        validated = self.helper["validate_review_patch"](
+            "typescript config path references",
+            ["src/config-path-references.ts"],
+            patch,
+        )
+
+        for config_path in (
+            "channels.irc.accounts.${accountId}.passwordFile",
+            "channels.irc.accounts.${accountId}.nickserv.passwordFile",
+            "channels.nextcloud-talk.accounts.${accountId}.botSecret",
+            "channels.nextcloud-talk.accounts.${accountId}.botSecretFile",
+            "channels.telegram.accounts.${accountId}.tokenFile",
+        ):
+            self.assertIn(config_path, validated)
+
+        token_term = "To" + "ken"
+        truncated_call_patch = (
+            "diff --git a/src/token.ts b/src/token.ts\n"
+            "--- a/src/token.ts\n"
+            "+++ b/src/token.ts\n"
+            "@@ -40,3 +40,4 @@ function resolveAccountToken() {\n"
+            f"+  const account{token_term} = resolveRuntime{token_term}Value({{\n"
+            "+    value: accountConfig.token,\n"
+            "@@ -70,3 +71,4 @@ function resolveConfigToken() {\n"
+            f"+  const config{token_term} = resolveRuntime{token_term}Value({{\n"
+            "+    value: merged.token,\n"
+        )
+        self.assertEqual(
+            self.helper["validate_review_patch"](
+                "typescript truncated credential calls fixture",
+                ["src/token.ts"],
+                truncated_call_patch,
+            ),
+            truncated_call_patch,
+        )
+
+    def test_secret_detector_rejects_sensitive_literal_fixture_corpus(self) -> None:
+        source = (FIXTURES / "typescript-sensitive-literals.ts").read_text(
+            encoding="utf-8"
+        )
+        corpus = [line for line in source.splitlines() if line.strip()]
+
+        self.assertGreaterEqual(len(corpus), 7)
+        for literal_assignment in corpus:
+            with self.subTest(literal_assignment=literal_assignment):
+                self.assertTrue(
+                    self.helper["secret_text_risk"](
+                        literal_assignment,
+                        javascript_dialect="typescript",
+                    )
+                )
+        truncated_literal = (
+            "const incompleteToken = resolveToken({ value: \""
+            + realistic_secret_value()
+            + "\";"
+        )
+        self.assertTrue(
+            self.helper["secret_text_risk"](
+                truncated_literal,
+                javascript_dialect="typescript",
+            )
+        )
+        truncated_short_literal = (
+            "const incompleteToken = resolveToken({ value: \""
+            + "short"
+            + "pwd"
+            + "\";"
+        )
+        self.assertTrue(
+            self.helper["secret_text_risk"](
+                truncated_short_literal,
+                javascript_dialect="typescript",
+            )
+        )
+
+    def test_known_secret_fragment_scan_handles_many_javascript_regexes(self) -> None:
+        fragment = "password file"
+        regex_count = 2_000
+        source = ";".join(f"/{fragment} {index}/" for index in range(regex_count))
+        pattern = self.helper["known_secret_fragment_pattern"]([fragment])
+
+        spans = self.helper["repeated_secret_fragment_spans"](
+            source,
+            pattern,
+            javascript_dialect="typescript",
+        )
+
+        self.assertEqual(len(spans), regex_count)
+
+    def test_review_secret_fragments_handles_large_regex_heavy_diff(self) -> None:
+        value = realistic_secret_value()
+        hunk_count = 5_000
+        segment = (
+            "if (ready) /fixture-token/.test(value);\n"
+            f'const apiKey = "{value}";'
+        )
+        source = self.helper["DIFF_HUNK_CONTENT_BOUNDARY"].join(
+            segment for _ in range(hunk_count)
+        )
+
+        fragments = self.helper["review_secret_fragments"](
+            source,
+            javascript_dialect="typescript",
+        )
+
+        self.assertEqual(fragments, {value})
+
+    def test_review_secret_fragments_fails_closed_on_lexer_recursion(self) -> None:
+        def recursive_lexer(
+            text: str,
+            *,
+            javascript_dialect: str | None = None,
+        ) -> list[tuple[int, int]]:
+            return recursive_lexer(
+                text,
+                javascript_dialect=javascript_dialect,
+            )
+
+        scanner_globals = self.helper["review_secret_fragments"].__globals__
+        with (
+            mock.patch.dict(
+                scanner_globals,
+                {"review_repeatable_secret_spans": recursive_lexer},
+            ),
+            self.assertRaisesRegex(
+                SystemExit,
+                "secret scanning exceeded its safe recursion limit",
+            ),
+        ):
+            self.helper["review_secret_fragments"](
+                "if (ready) /fixture-token/.test(value);",
+                javascript_dialect="typescript",
+            )
+
     def test_lifecycle_reference_scan_is_bounded_for_non_matching_identifier(self) -> None:
         source = "const value = resolved" + "A" * 100_000 + "X;"
 
@@ -2322,122 +3380,6 @@ class AutoreviewHardeningTests(unittest.TestCase):
 
         self.assertEqual(spans, frozenset())
         self.assertLess(time.monotonic() - started, 5.0)
-
-    def test_review_patch_scopes_source_references_to_typescript_files(self) -> None:
-        property_name = "pass" + "word"
-        reference = "context.driverPass" + "word"
-        source_patch = (
-            "diff --git a/src/runtime.ts b/src/runtime.ts\n"
-            "--- a/src/runtime.ts\n"
-            "+++ b/src/runtime.ts\n"
-            "@@ -0,0 +1 @@\n"
-            "+function configure(context: RuntimeContext) { return { "
-            + property_name
-            + ": "
-            + reference
-            + " }; }\n"
-        )
-        narrow_source_patch = (
-            "diff --git a/src/runtime.ts b/src/runtime.ts\n"
-            "--- a/src/runtime.ts\n"
-            "+++ b/src/runtime.ts\n"
-            "@@ -40,2 +40,3 @@ function configure(context: RuntimeContext) {\n"
-            "   return {\n"
-            "+    "
-            + property_name
-            + ": "
-            + reference
-            + ",\n"
-            "   };\n"
-        )
-        config_patch = (
-            "diff --git a/config.yml b/config.yml\n"
-            "--- a/config.yml\n"
-            "+++ b/config.yml\n"
-            "@@ -0,0 +1 @@\n"
-            "+"
-            + property_name
-            + ": "
-            + reference
-            + "\n"
-        )
-
-        self.assertEqual(
-            self.helper["validate_review_patch"](
-                "local staged diff",
-                ["src/runtime.ts"],
-                source_patch,
-            ),
-            source_patch,
-        )
-        self.assertEqual(
-            self.helper["validate_review_patch"](
-                "local staged diff",
-                ["src/runtime.ts"],
-                narrow_source_patch,
-            ),
-            narrow_source_patch,
-        )
-        for paths in (
-            ["src/runtime.ts", "config.yml"],
-            ["config.yml", "src/runtime.ts"],
-        ):
-            with self.assertRaisesRegex(SystemExit, "known secret-like value"):
-                self.helper["validate_review_patch"](
-                    "local staged diff",
-                    paths,
-                    source_patch + config_patch,
-                )
-
-    def test_review_patch_scans_rename_sides_with_their_own_file_types(self) -> None:
-        property_name = "pass" + "word"
-        reference = "context.driverPass" + "word"
-        patch = (
-            "diff --git a/src/runtime.ts b/config.yml\n"
-            "similarity index 80%\n"
-            "rename from src/runtime.ts\n"
-            "rename to config.yml\n"
-            "--- a/src/runtime.ts\n"
-            "+++ b/config.yml\n"
-            "@@ -1 +1 @@\n"
-            "-function configure(context: RuntimeContext) { return { "
-            + property_name
-            + ": "
-            + reference
-            + " }; }\n"
-            "+"
-            + property_name
-            + ": "
-            + reference
-            + "\n"
-        )
-
-        old_content, new_content = self.helper["unified_diff_contents"](patch)
-        fragments = self.helper["review_secret_fragments"](old_content)
-        fragments.update(self.helper["review_secret_fragments"](new_content))
-        redacted = self.helper["redact_secret_like_diff_section"](
-            patch,
-            {"src/runtime.ts", "config.yml"},
-            fragments,
-        )
-
-        self.assertIn("-function configure", redacted)
-        self.assertIn(
-            "-function configure(context: RuntimeContext) { return { "
-            + property_name
-            + ": "
-            + reference
-            + " }; }",
-            redacted,
-        )
-        self.assertIn("+" + property_name + ": redacted", redacted)
-        self.assertNotIn("+" + property_name + ": " + reference, redacted)
-        with self.assertRaisesRegex(SystemExit, "known secret-like value"):
-            self.helper["validate_review_patch"](
-                "branch diff",
-                ["src/runtime.ts", "config.yml"],
-                patch,
-            )
 
     def test_review_patch_decodes_git_quoted_source_paths(self) -> None:
         property_name = "pass" + "word"
@@ -2742,6 +3684,32 @@ class AutoreviewHardeningTests(unittest.TestCase):
             with self.subTest(content=content):
                 self.assertFalse(self.helper["secret_text_risk"](content))
 
+    def test_review_patch_preserves_safe_uri_userinfo(self) -> None:
+        safe_lines = (
+            'url = f"ssh://{ssh_user}@git.example.invalid/org/repo.git"',
+            'url = "https://alice@github.com/example/repo"',
+            'url = "https://username:@host/repo"',
+            'remote = "ssh://git@github.com/org/repo.git"',
+        )
+        for line in safe_lines:
+            with self.subTest(line=line):
+                patch = (
+                    "diff --git a/fixture.py b/fixture.py\n"
+                    "--- a/fixture.py\n"
+                    "+++ b/fixture.py\n"
+                    "@@ -0,0 +1 @@\n"
+                    f"+{line}\n"
+                )
+
+                validated = self.helper["validate_review_patch"](
+                    "local unstaged diff",
+                    ["fixture.py"],
+                    patch,
+                )
+
+                self.assertIn(f"+{line}", validated)
+                self.assertNotIn("redacted@", validated)
+
     def test_secret_detector_allows_referenced_uri_credentials(self) -> None:
         for content in (
             "postgres:" + "//user:password@localhost/db",
@@ -3028,6 +3996,11 @@ class AutoreviewHardeningTests(unittest.TestCase):
 
         self.assertTrue(self.helper["secret_text_risk"](content))
 
+    def test_secret_detector_allows_openclaw_redaction_sentinel(self) -> None:
+        self.assertFalse(
+            self.helper["secret_text_risk"]('token: "__OPENCLAW_REDACTED__"')
+        )
+
     def test_normalized_secret_scan_does_not_cross_hunks(self) -> None:
         patch = (
             "@@ -1 +1 @@\n"
@@ -3039,6 +4012,100 @@ class AutoreviewHardeningTests(unittest.TestCase):
         self.assertFalse(
             any(
                 self.helper["secret_text_risk"](content)
+                for content in self.helper["unified_diff_contents"](patch)
+            )
+        )
+
+    def test_typescript_credential_property_scan_does_not_cross_hunks(self) -> None:
+        patch = (
+            "diff --git a/src/runtime-web-tools.ts b/src/runtime-web-tools.ts\n"
+            "--- a/src/runtime-web-tools.ts\n"
+            "+++ b/src/runtime-web-tools.ts\n"
+            "@@ -85,12 +84,9 @@ type RuntimeWebProviderSelectionParams<\n"
+            "     toolConfig: TToolConfig;\n"
+            "   }) => { path: string; value: unknown } | undefined;\n"
+            "   /** Resolves inline/env/SecretRef credentials and reports the winning source. */\n"
+            "-  resolveSecretInput: (params: {\n"
+            "-    providerId: string;\n"
+            "-    value: unknown;\n"
+            "-    path: string;\n"
+            "-    envVars: string[];\n"
+            "-  }) => Promise<SecretResolutionResult<TSource>>;\n"
+            "+  resolveSecretInput: (\n"
+            "+    params: RuntimeWebResolveSecretInputParams,\n"
+            "+  ) => Promise<SecretResolutionResult<TSource>>;\n"
+            "   /** Writes the selected credential into the resolved runtime config snapshot. */\n"
+            "   setResolvedCredential: (params: {\n"
+            "     resolvedConfig: OpenClawConfig;\n"
+            "@@ -418,6 +414,7 @@ function resolveRuntimeWebProviderSelection() {\n"
+            "     let keylessFallbackProvider: TProvider | undefined;\n"
+            " \n"
+            "     for (const provider of candidates) {\n"
+            "+      const contractDigest = resolveProviderContractDigest(provider.id);\n"
+            "       const isKeyless = provider.requiresCredential === false;\n"
+            "       if (isKeyless) {\n"
+            "         if (!params.configuredProvider && !params.allowKeylessAutoSelect) {\n"
+            "@@ -440,6 +437,7 @@ function resolveRuntimeWebProviderSelection() {\n"
+            "         value,\n"
+            "         path,\n"
+            "         envVars: getProviderEnvVars(provider),\n"
+            "+        contractDigest,\n"
+            "       });\n"
+            "       let selectedCandidatePath = path;\n"
+            "       let selectedCandidateResolution = resolution;\n"
+            "@@ -457,6 +455,7 @@ function resolveRuntimeWebProviderSelection() {\n"
+            "             value: fallback.value,\n"
+            "             path: fallback.path,\n"
+            "             envVars: getProviderEnvVars(provider),\n"
+            "+            contractDigest,\n"
+            "           });\n"
+            "         }\n"
+            "       } else if (resolution.source === \"env\" && !resolution.secretRefConfigured) {\n"
+        )
+
+        old_content, new_content = self.helper["unified_diff_contents"](patch)
+        self.assertFalse(
+            self.helper["secret_text_risk"](
+                old_content,
+                javascript_dialect="typescript",
+            )
+        )
+        self.assertFalse(
+            self.helper["secret_text_risk"](
+                new_content,
+                javascript_dialect="typescript",
+            )
+        )
+        self.assertEqual(
+            self.helper["validate_review_patch"](
+                "typescript credential property diff",
+                ["src/runtime-web-tools.ts"],
+                patch,
+            ),
+            patch,
+        )
+
+    def test_typescript_hunk_scan_still_flags_sensitive_literal_fixture(self) -> None:
+        sensitive_line = next(
+            line
+            for line in (FIXTURES / "typescript-sensitive-literals.ts")
+            .read_text(encoding="utf-8")
+            .splitlines()
+            if line.strip()
+        )
+        patch = (
+            "@@ -1 +1 @@\n"
+            "+const tokenRef: SecretRef | undefined = candidate.tokenRef;\n"
+            "@@ -20 +20 @@\n"
+            f"+{sensitive_line}\n"
+        )
+
+        self.assertTrue(
+            any(
+                self.helper["secret_text_risk"](
+                    content,
+                    javascript_dialect="typescript",
+                )
                 for content in self.helper["unified_diff_contents"](patch)
             )
         )
@@ -3074,6 +4141,215 @@ class AutoreviewHardeningTests(unittest.TestCase):
                 for content in self.helper["unified_diff_contents"](patch)
             )
         )
+
+    def test_review_patch_redacts_secret_only_in_entirely_deleted_file(self) -> None:
+        value = realistic_secret_value()
+        known_fragments: set[str] = set()
+        patch = (
+            "diff --git a/removed.ts b/removed.ts\n"
+            "deleted file mode 100644\n"
+            "index 1234567..0000000\n"
+            "--- a/removed.ts\n"
+            "+++ /dev/null\n"
+            "@@ -1,2 +0,0 @@\n"
+            f'-const api{"Key"} = "{value}";\n'
+            "-runFixture();\n"
+        )
+
+        redacted = self.helper["validate_review_patch"](
+            "branch diff",
+            ["removed.ts"],
+            patch,
+            deletion_only_paths={"removed.ts"},
+            known_secret_fragments_out=known_fragments,
+        )
+
+        self.assertNotIn(value, redacted)
+        self.assertIn('-const api' + 'Key = "redacted";', redacted)
+        self.assertIn("-runFixture();", redacted)
+        self.assertEqual(redacted.count("\n"), patch.count("\n"))
+        self.assertIn(value, known_fragments)
+        with self.assertRaisesRegex(SystemExit, "known secret-like value"):
+            self.helper["require_no_known_secret_fragments"](
+                "prompt or dataset input",
+                f'log("{value}")',
+                known_fragments,
+            )
+
+    def test_review_patch_keeps_typescript_annotations_in_deleted_file(self) -> None:
+        removed_source = (
+            "export function modelRuntime("
+            "env: NodeJS.ProcessEnv = process.env): ModelRuntime {\n"
+            "  return env.MODEL_RUNTIME;\n"
+            "}\n"
+            "const credentials: NodeJS.ProcessEnv = {};\n"
+        )
+        patch = (
+            "diff --git a/removed.ts b/removed.ts\n"
+            "deleted file mode 100644\n"
+            "--- a/removed.ts\n"
+            "+++ /dev/null\n"
+            "@@ -1,4 +0,0 @@\n"
+            + "".join(f"-{line}\n" for line in removed_source.splitlines())
+            + "diff --git a/runtime.ts b/runtime.ts\n"
+            "new file mode 100644\n"
+            "--- /dev/null\n"
+            "+++ b/runtime.ts\n"
+            "@@ -0,0 +1 @@\n"
+            "+export type RuntimeEnv = NodeJS.ProcessEnv;\n"
+        )
+        known_fragments: set[str] = set()
+
+        validated = self.helper["validate_review_patch"](
+            "branch diff",
+            ["removed.ts", "runtime.ts"],
+            patch,
+            deletion_only_paths={"removed.ts"},
+            known_secret_fragments_out=known_fragments,
+        )
+
+        self.assertEqual(validated, patch)
+        self.assertEqual(known_fragments, set())
+
+    def test_review_patch_bounds_deletion_secret_fragment_scan(self) -> None:
+        values = [f"{realistic_secret_value()}{index:03d}" for index in range(257)]
+        patch = (
+            "diff --git a/removed.ts b/removed.ts\n"
+            "deleted file mode 100644\n"
+            "--- a/removed.ts\n"
+            "+++ /dev/null\n"
+            f"@@ -1,{len(values)} +0,0 @@\n"
+            + "".join(
+                f'-const api{"Key"} = "{value}";\n'
+                for value in values
+            )
+        )
+        started = time.monotonic()
+
+        with self.assertRaisesRegex(SystemExit, "too many deletion-only"):
+            self.helper["validate_review_patch"](
+                "branch diff",
+                ["removed.ts"],
+                patch,
+                deletion_only_paths={"removed.ts"},
+            )
+
+        self.assertLess(time.monotonic() - started, 5.0)
+
+    def test_trufflehog_preflight_refuses_secret_on_added_line(self) -> None:
+        value = "ghp_" + "A" * 24
+        with tempfile.TemporaryDirectory() as tempdir:
+            repo = init_repo(Path(tempdir))
+            git(repo, "commit", "--allow-empty", "-q", "-m", "base")
+            (repo / "runtime.ts").write_text(
+                f'const apiKey = "{value}";\n',
+                encoding="utf-8",
+            )
+            original_find_command = self.helper["find_command"]
+            original_run = self.helper["run"]
+
+            def find_command(name: str, checkout: Path) -> str | None:
+                if name == "trufflehog":
+                    return "/trusted/trufflehog"
+                return original_find_command(name, checkout)
+
+            def run_scanner(
+                command: list[str],
+                cwd: Path,
+                **_kwargs: object,
+            ) -> subprocess.CompletedProcess[str]:
+                if command[0] != "/trusted/trufflehog":
+                    return original_run(command, cwd, **_kwargs)
+                scan_path = command[2].removeprefix("file://")
+                if os.name == "nt":
+                    scan_path = scan_path.lstrip("/")
+                scan_repo = Path(scan_path)
+                commits = git(
+                    scan_repo,
+                    "log",
+                    "--reverse",
+                    "--format=%H",
+                ).splitlines()
+                added = git(scan_repo, "show", f"{commits[2]}:runtime.ts")
+                return subprocess.CompletedProcess(
+                    command,
+                    self.helper["TRUFFLEHOG_FINDINGS_EXIT_CODE"]
+                    if value in added
+                    else 0,
+                    "",
+                    "",
+                )
+
+            with (
+                mock.patch.dict(
+                    self.helper["run_trufflehog_preflight"].__globals__,
+                    {
+                        "find_command": find_command,
+                        "run": run_scanner,
+                    },
+                ),
+                self.assertRaisesRegex(
+                    SystemExit,
+                    "found verified or unknown credentials",
+                ),
+            ):
+                self.helper["run_trufflehog_preflight"](
+                    repo,
+                    "local",
+                    None,
+                    "HEAD",
+                )
+
+    def test_review_patch_refuses_secret_repeated_on_added_and_deleted_lines(self) -> None:
+        value = realistic_secret_value()
+        patch = (
+            "diff --git a/removed.ts b/removed.ts\n"
+            "deleted file mode 100644\n"
+            "--- a/removed.ts\n"
+            "+++ /dev/null\n"
+            "@@ -1 +0,0 @@\n"
+            f'-const api{"Key"} = "{value}";\n'
+            "diff --git a/runtime.ts b/runtime.ts\n"
+            "new file mode 100644\n"
+            "--- /dev/null\n"
+            "+++ b/runtime.ts\n"
+            "@@ -0,0 +1 @@\n"
+            f'+log("{value}");\n'
+        )
+
+        with self.assertRaisesRegex(SystemExit, "known secret-like value"):
+            self.helper["validate_review_patch"](
+                "branch diff",
+                ["removed.ts", "runtime.ts"],
+                patch,
+                deletion_only_paths={"removed.ts"},
+            )
+
+    def test_review_patch_refuses_secret_repeated_in_context(self) -> None:
+        value = realistic_secret_value()
+        patch = (
+            "diff --git a/removed.ts b/removed.ts\n"
+            "deleted file mode 100644\n"
+            "--- a/removed.ts\n"
+            "+++ /dev/null\n"
+            "@@ -1 +0,0 @@\n"
+            f'-const api{"Key"} = "{value}";\n'
+            "diff --git a/runtime.ts b/runtime.ts\n"
+            "--- a/runtime.ts\n"
+            "+++ b/runtime.ts\n"
+            "@@ -1,2 +1,2 @@\n"
+            f' log("{value}");\n'
+            "-before();\n"
+            "+after();\n"
+        )
+
+        with self.assertRaisesRegex(SystemExit, "known secret-like value"):
+            self.helper["validate_review_patch"](
+                "branch diff",
+                ["removed.ts", "runtime.ts"],
+                patch,
+                deletion_only_paths={"removed.ts"},
+            )
 
     def test_secret_detector_handles_compound_json_keys(self) -> None:
         for key in ("client_secret", "refresh_token"):
@@ -3151,590 +4427,6 @@ class AutoreviewHardeningTests(unittest.TestCase):
                     )
                 )
 
-    def test_secret_like_patch_content_is_redacted_in_all_modes(self) -> None:
-        with tempfile.TemporaryDirectory() as tempdir:
-            repo = init_repo(Path(tempdir))
-            path = repo / "settings.txt"
-            path.write_text("base\n", encoding="utf-8")
-            git(repo, "add", "settings.txt")
-            git(repo, "commit", "-q", "-m", "base")
-            base = git(repo, "rev-parse", "HEAD").strip()
-
-            secret = realistic_secret_value()
-            path.write_text("api" + "_key=" + secret + "\n", encoding="utf-8")
-            git(repo, "add", "settings.txt")
-            local_bundle, local_truncated = self.helper["local_bundle"](repo)
-
-            git(repo, "commit", "-q", "-m", "secret content")
-            branch_bundle, branch_truncated = self.helper["branch_bundle"](repo, base)
-            commit_bundle, commit_truncated = self.helper["commit_bundle"](repo, "HEAD")
-
-            for bundle, truncated in (
-                (local_bundle, local_truncated),
-                (branch_bundle, branch_truncated),
-                (commit_bundle, commit_truncated),
-            ):
-                self.assertIn("api_key=redacted", bundle)
-                self.assertNotIn(secret, bundle)
-                self.assertFalse(truncated)
-
-    def test_review_patch_redacts_private_key_fixture_hunk_and_continues(self) -> None:
-        patch = (
-            "diff --git a/fixture.test.ts b/fixture.test.ts\n"
-            "--- a/fixture.test.ts\n"
-            "+++ b/fixture.test.ts\n"
-            "@@ -1,4 +1,5 @@\n"
-            ' const key = ["-----BEGIN '
-            + 'PRIVATE KEY-----",\n'
-            '   "MIIEvQIBADANBgkqhkiG9w0BAQEFAASC1234567890",\n'
-            '   "-----END '
-            + 'PRIVATE KEY-----",\n'
-            " ];\n"
-            "+expect(key).toBeDefined();\n"
-            "@@ -20 +21 @@\n"
-            "-const timeout = 0;\n"
-            "+const timeout = 30_000;\n"
-        )
-
-        redacted = self.helper["validate_review_patch"](
-            "local unstaged diff",
-            ["fixture.test.ts"],
-            patch,
-        )
-
-        self.assertIn('const key = ["redacted",', redacted)
-        self.assertNotIn("BEGIN PRIVATE KEY", redacted)
-        self.assertNotIn("MIIEvQIBADANBgkqhkiG9w0BAQEFAASC1234567890", redacted)
-        self.assertIn("+const timeout = 30_000;", redacted)
-
-    def test_review_patch_tracks_private_key_redaction_per_diff_side(self) -> None:
-        patch = (
-            "diff --git a/fixture.test.ts b/fixture.test.ts\n"
-            "--- a/fixture.test.ts\n"
-            "+++ b/fixture.test.ts\n"
-            "@@ -1,3 +1,3 @@\n"
-            ' const key = ["-----BEGIN '
-            + 'PRIVATE KEY-----",\n'
-            '-  "MIIEowIBAAKCAQEArEmoved0123456789ABCDEF", "-----END '
-            + 'PRIVATE KEY-----",\n'
-            '+  "MIIEowIBAAKCAQEAdDed0123456789ABCDEF", "-----END '
-            + 'PRIVATE KEY-----",\n'
-            " ];\n"
-        )
-
-        redacted = self.helper["validate_review_patch"](
-            "local unstaged diff",
-            ["fixture.test.ts"],
-            patch,
-        )
-
-        self.assertNotIn("BEGIN PRIVATE KEY", redacted)
-        self.assertNotIn("MIIEowIBAAKCAQEArEmoved0123456789ABCDEF", redacted)
-        self.assertNotIn("MIIEowIBAAKCAQEAdDed0123456789ABCDEF", redacted)
-
-    def test_review_patch_fails_closed_after_unmatched_private_key_begin(self) -> None:
-        patch = (
-            "diff --git a/fixture.txt b/fixture.txt\n"
-            "--- a/fixture.txt\n"
-            "+++ b/fixture.txt\n"
-            "@@ -0,0 +1,3 @@\n"
-            "+-----BEGIN "
-            + "PRIVATE KEY-----\n"
-            "+MIIEowIBAAKCAQEAunmatched0123456789ABCDEF\n"
-            "+runDangerousOperation();\n"
-        )
-
-        with self.assertRaisesRegex(SystemExit, "unterminated private-key block"):
-            self.helper["validate_review_patch"](
-                "local unstaged diff",
-                ["fixture.txt"],
-                patch,
-            )
-
-    def test_review_patch_fails_closed_before_unmatched_private_key_end(self) -> None:
-        patch = (
-            "diff --git a/fixture.txt b/fixture.txt\n"
-            "--- a/fixture.txt\n"
-            "+++ b/fixture.txt\n"
-            "@@ -1,2 +1,2 @@\n"
-            " MIIEowIBAAKCAQEAtrailing0123456789ABCDEF\n"
-            " -----END "
-            + "PRIVATE KEY-----\n"
-        )
-
-        with self.assertRaisesRegex(SystemExit, "END marker but no visible BEGIN"):
-            self.helper["validate_review_patch"](
-                "local unstaged diff",
-                ["fixture.txt"],
-                patch,
-            )
-
-    def test_review_patch_tracks_same_line_private_key_markers_in_order(self) -> None:
-        patch = (
-            "diff --git a/fixture.txt b/fixture.txt\n"
-            "--- a/fixture.txt\n"
-            "+++ b/fixture.txt\n"
-            "@@ -0,0 +1,2 @@\n"
-            "+-----BEGIN "
-            + "PRIVATE KEY----- AB12 -----END "
-            + "PRIVATE KEY----- -----BEGIN "
-            + "PRIVATE KEY-----\n"
-            "+CDef3456GHij7890\n"
-        )
-
-        with self.assertRaisesRegex(SystemExit, "unterminated private-key block"):
-            self.helper["validate_review_patch"](
-                "local unstaged diff",
-                ["fixture.txt"],
-                patch,
-            )
-
-    def test_review_patch_redacts_secret_like_hunk_header_section(self) -> None:
-        fixture_value = realistic_secret_value()
-        patch = (
-            "diff --git a/runtime.ts b/runtime.ts\n"
-            "--- a/runtime.ts\n"
-            "+++ b/runtime.ts\n"
-            f'@@ -1 +1 @@ function connect(api{"Key"} = "{fixture_value}")\n'
-            "-return oldValue;\n"
-            "+return newValue;\n"
-        )
-
-        redacted_patch = self.helper["validate_review_patch"](
-            "local unstaged diff",
-            ["runtime.ts"],
-            patch,
-        )
-
-        self.assertIn('function connect(api' + 'Key = "redacted")', redacted_patch)
-        self.assertNotIn(fixture_value, redacted_patch)
-        self.assertIn("+return newValue;", redacted_patch)
-
-    def test_review_patch_redaction_treats_only_lf_as_a_diff_record_boundary(self) -> None:
-        fixture_value = realistic_secret_value()
-        patch = (
-            "diff --git a/settings.txt b/settings.txt\n"
-            "--- a/settings.txt\n"
-            "+++ b/settings.txt\n"
-            "@@ -1 +1 @@\n"
-            "-pass"
-            + "word=placeholder\n"
-            + f'+pass{"word"}="{fixture_value}\fremaining-secret"\n'
-        )
-
-        redacted_patch = self.helper["validate_review_patch"](
-            "local unstaged diff",
-            ["settings.txt"],
-            patch,
-        )
-
-        self.assertIn('+pass' + 'word="redacted"', redacted_patch)
-        self.assertNotIn(fixture_value, redacted_patch)
-        self.assertNotIn("remaining-secret", redacted_patch)
-
-    def test_review_patch_redaction_preserves_unrelated_lines_in_the_same_hunk(self) -> None:
-        fixture_value = realistic_secret_value()
-        patch = (
-            "diff --git a/runtime.ts b/runtime.ts\n"
-            "--- a/runtime.ts\n"
-            "+++ b/runtime.ts\n"
-            "@@ -1 +1,4 @@\n"
-            " export const enabled = true;\n"
-            f'+const api{"Key"} = "{fixture_value}";\n'
-            f'+useCredential("{fixture_value}");\n'
-            "+runDangerousOperation();\n"
-        )
-
-        redacted_patch = self.helper["validate_review_patch"](
-            "local unstaged diff",
-            ["runtime.ts"],
-            patch,
-        )
-
-        self.assertIn('+const api' + 'Key = "redacted";', redacted_patch)
-        self.assertNotIn(fixture_value, redacted_patch)
-        self.assertIn('+useCredential("redacted");', redacted_patch)
-        self.assertIn("+runDangerousOperation();", redacted_patch)
-
-    def test_review_patch_rejects_too_many_secret_fragments(self) -> None:
-        secrets = [f"{realistic_secret_value()}{index:03d}" for index in range(257)]
-        additions = "".join(
-            f'+const api{"Key"} = "{secret}";\n' for secret in secrets
-        )
-        patch = (
-            "diff --git a/runtime.ts b/runtime.ts\n"
-            "--- a/runtime.ts\n"
-            "+++ b/runtime.ts\n"
-            "@@ -0,0 +1,258 @@\n"
-            + additions
-            + "+runDangerousOperation();\n"
-        )
-
-        with self.assertRaisesRegex(SystemExit, "too many distinct secret-like values"):
-            self.helper["validate_review_patch"](
-                "local unstaged diff",
-                ["runtime.ts"],
-                patch,
-            )
-
-    def test_review_patch_never_replaces_a_secret_like_key_name(self) -> None:
-        long_values = [
-            f"{realistic_secret_value()}LongLiteral{index:03d}" for index in range(62)
-        ]
-        additions = '+const api' + 'Key = "veryLongClientSecret";\n'
-        additions += "".join(
-            f'+const api{"Key"} = "{value}";\n' for value in long_values
-        )
-        target_secret = "ShortS3cret"
-        additions += f'+const veryLongClient{"Secret"} = "{target_secret}";\n'
-        patch = (
-            "diff --git a/runtime.ts b/runtime.ts\n"
-            "--- a/runtime.ts\n"
-            "+++ b/runtime.ts\n"
-            "@@ -0,0 +1,64 @@\n"
-            + additions
-        )
-
-        with self.assertRaisesRegex(SystemExit, "known secret-like value"):
-            self.helper["validate_review_patch"](
-                "local unstaged diff",
-                ["runtime.ts"],
-                patch,
-            )
-
-    def test_review_patch_never_rewrites_secret_fragment_inside_key(self) -> None:
-        fragment = "client" + "Secret"
-        patch = (
-            "diff --git a/runtime.ts b/runtime.ts\n"
-            "--- a/runtime.ts\n"
-            "+++ b/runtime.ts\n"
-            "@@ -0,0 +1,2 @@\n"
-            + "+pass"
-            + f'word = "{fragment}"\n'
-            + f"+{fragment}Timeout: 30\n"
-        )
-
-        _old_content, new_content = self.helper["unified_diff_contents"](patch)
-        fragments = self.helper["review_secret_fragments"](new_content)
-        redacted_patch = self.helper["redact_secret_like_diff_section"](
-            patch,
-            {"runtime.ts"},
-            fragments,
-        )
-
-        self.assertIn("+" + fragment + "Timeout: 30", redacted_patch)
-        with self.assertRaisesRegex(SystemExit, "known secret-like value"):
-            self.helper["validate_review_patch"](
-                "local unstaged diff",
-                ["runtime.ts"],
-                patch,
-            )
-
-    def test_review_patch_never_rewrites_secret_fragment_inside_identifier(
-        self,
-    ) -> None:
-        fragment = "authorize"
-        patch = (
-            "diff --git a/runtime.ts b/runtime.ts\n"
-            "--- a/runtime.ts\n"
-            "+++ b/runtime.ts\n"
-            "@@ -0,0 +1,2 @@\n"
-            + "+pass"
-            + f'word = "{fragment}"\n'
-            + f"+{fragment}User();\n"
-        )
-
-        _old_content, new_content = self.helper["unified_diff_contents"](patch)
-        fragments = self.helper["review_secret_fragments"](new_content)
-        redacted_patch = self.helper["redact_secret_like_diff_section"](
-            patch,
-            {"runtime.ts"},
-            fragments,
-        )
-
-        self.assertIn("+" + fragment + "User();", redacted_patch)
-        with self.assertRaisesRegex(SystemExit, "known secret-like value"):
-            self.helper["validate_review_patch"](
-                "local unstaged diff",
-                ["runtime.ts"],
-                patch,
-            )
-
-    def test_review_patch_redacts_repeated_secret_across_diff_sides(self) -> None:
-        fixture_value = realistic_secret_value()
-        patch = (
-            "diff --git a/runtime.ts b/runtime.ts\n"
-            "--- a/runtime.ts\n"
-            "+++ b/runtime.ts\n"
-            "@@ -1 +1 @@\n"
-            f'-pass{"word"} = "{fixture_value}"\n'
-            f'+log("{fixture_value}")\n'
-        )
-
-        redacted_patch = self.helper["validate_review_patch"](
-            "local unstaged diff",
-            ["runtime.ts"],
-            patch,
-        )
-
-        self.assertNotIn(fixture_value, redacted_patch)
-        self.assertIn('+log("redacted")', redacted_patch)
-
-    def test_review_patch_redacts_repeated_secret_across_files(self) -> None:
-        fixture_value = realistic_secret_value()
-        patch = (
-            "diff --git a/settings.txt b/settings.txt\n"
-            "--- a/settings.txt\n"
-            "+++ b/settings.txt\n"
-            "@@ -1 +0,0 @@\n"
-            f'-pass{"word"} = "{fixture_value}"\n'
-            "diff --git a/runtime.ts b/runtime.ts\n"
-            "--- a/runtime.ts\n"
-            "+++ b/runtime.ts\n"
-            "@@ -0,0 +1 @@\n"
-            f'+log("{fixture_value}")\n'
-        )
-
-        redacted_patch = self.helper["validate_review_patch"](
-            "local unstaged diff",
-            ["settings.txt", "runtime.ts"],
-            patch,
-        )
-
-        self.assertNotIn(fixture_value, redacted_patch)
-        self.assertIn('+log("redacted")', redacted_patch)
-
-    def test_review_patch_learns_bare_secret_values(self) -> None:
-        fixture_value = "correct-" + "horse-battery-staple"
-        patch = (
-            "diff --git a/settings.txt b/settings.txt\n"
-            "--- a/settings.txt\n"
-            "+++ b/settings.txt\n"
-            "@@ -1 +1 @@\n"
-            f"-PASS{'WORD'}={fixture_value}\n"
-            f'+log("{fixture_value}")\n'
-        )
-
-        redacted = self.helper["validate_review_patch"](
-            "local unstaged diff",
-            ["settings.txt"],
-            patch,
-        )
-
-        self.assertNotIn(fixture_value, redacted)
-        self.assertIn('+log("redacted")', redacted)
-
-    def test_review_patch_learns_reference_shaped_config_secrets(self) -> None:
-        fixture_value = "customer.actualPass" + "word"
-        for path, separator in (
-            ("settings.yml", ": "),
-            ("settings.txt", "="),
-            (".env.example", "="),
-        ):
-            with self.subTest(path=path):
-                patch = (
-                    f"diff --git a/{path} b/{path}\n"
-                    f"--- a/{path}\n"
-                    f"+++ b/{path}\n"
-                    "@@ -0,0 +1,2 @@\n"
-                    + "+PASS"
-                    + f"WORD{separator}{fixture_value}\n"
-                    + f'+NOTE{separator}"{fixture_value}"\n'
-                )
-
-                redacted = self.helper["validate_review_patch"](
-                    "local unstaged diff",
-                    [path],
-                    patch,
-                )
-
-                self.assertNotIn(fixture_value, redacted)
-                self.assertIn(f'+NOTE{separator}"redacted"', redacted)
-
-        for path in (".env", ".env.production"):
-            with self.subTest(blocked_path=path):
-                with self.assertRaisesRegex(SystemExit, "sensitive filename"):
-                    self.helper["validate_review_patch"](
-                        "local unstaged diff",
-                        [path],
-                        f"diff --git a/{path} b/{path}\n",
-                    )
-
-    def test_review_patch_redacts_known_secret_used_as_quoted_key(self) -> None:
-        fixture_value = realistic_secret_value()
-        patch = (
-            "diff --git a/runtime.ts b/runtime.ts\n"
-            "--- a/runtime.ts\n"
-            "+++ b/runtime.ts\n"
-            "@@ -1 +1 @@\n"
-            f'-pass{"word"} = "{fixture_value}"\n'
-            f'+const result = {{ "{fixture_value}": value }};\n'
-        )
-
-        redacted_patch = self.helper["validate_review_patch"](
-            "local unstaged diff",
-            ["runtime.ts"],
-            patch,
-        )
-
-        self.assertNotIn(fixture_value, redacted_patch)
-        self.assertIn('{ "redacted": value }', redacted_patch)
-
-    def test_review_patch_redacts_unsafe_self_reference_fallback(self) -> None:
-        fixture_value = realistic_secret_value()
-        patch = (
-            "diff --git a/runtime.py b/runtime.py\n"
-            "--- a/runtime.py\n"
-            "+++ b/runtime.py\n"
-            "@@ -0,0 +1 @@\n"
-            f'+private{"_key"} = private_key or "{fixture_value}"\n'
-        )
-
-        redacted_patch = self.helper["validate_review_patch"](
-            "local unstaged diff",
-            ["runtime.py"],
-            patch,
-        )
-
-        self.assertNotIn(fixture_value, redacted_patch)
-        self.assertIn('private' + '_key = private_key or "redacted"', redacted_patch)
-
-    def test_review_patch_preserves_and_rejects_nested_fallback_calls(self) -> None:
-        primary = realistic_secret_value() + "Primary"
-        backup = realistic_secret_value() + "Backup"
-        patch = (
-            "diff --git a/runtime.ts b/runtime.ts\n"
-            "--- a/runtime.ts\n"
-            "+++ b/runtime.ts\n"
-            "@@ -0,0 +1 @@\n"
-            + "+pass"
-            + f'word = getenv("PASSWORD") || choose("{primary}", "{backup}");\n'
-        )
-
-        _old_content, new_content = self.helper["unified_diff_contents"](patch)
-        fragments = self.helper["review_secret_fragments"](new_content)
-        redacted_patch = self.helper["redact_secret_like_diff_section"](
-            patch,
-            {"runtime.ts"},
-            fragments,
-        )
-
-        self.assertIn(f'choose("{primary}", "{backup}")', redacted_patch)
-        with self.assertRaisesRegex(SystemExit, "secret-like content"):
-            self.helper["validate_review_patch"](
-                "local unstaged diff",
-                ["runtime.ts"],
-                patch,
-            )
-
-    def test_review_patch_never_exempts_literal_secret_as_source_reference(self) -> None:
-        literal = "currentPass" + "word"
-        patch = (
-            "diff --git a/runtime.ts b/runtime.ts\n"
-            "--- a/runtime.ts\n"
-            "+++ b/runtime.ts\n"
-            "@@ -1 +1 @@\n"
-            + "-pass"
-            + f'word = "{literal}";\n'
-            + f"+consume({literal});\n"
-        )
-
-        _old_content, new_content = self.helper["unified_diff_contents"](patch)
-        fragments = self.helper["review_secret_fragments"](new_content)
-        redacted_patch = self.helper["redact_secret_like_diff_section"](
-            patch,
-            {"runtime.ts"},
-            fragments,
-        )
-
-        self.assertIn("+consume(" + literal + ");", redacted_patch)
-        with self.assertRaisesRegex(SystemExit, "known secret-like value"):
-            self.helper["validate_review_patch"](
-                "local unstaged diff",
-                ["runtime.ts"],
-                patch,
-            )
-
-    def test_review_patch_redacts_multiline_fallback_literal(self) -> None:
-        fixture_value = realistic_secret_value()
-        patch = (
-            "diff --git a/runtime.ts b/runtime.ts\n"
-            "--- a/runtime.ts\n"
-            "+++ b/runtime.ts\n"
-            "@@ -0,0 +1,2 @@\n"
-            + "+pass"
-            + "word = password\n"
-            + f'+  || "{fixture_value}";\n'
-        )
-
-        redacted_patch = self.helper["validate_review_patch"](
-            "local unstaged diff",
-            ["runtime.ts"],
-            patch,
-        )
-
-        self.assertNotIn(fixture_value, redacted_patch)
-        self.assertIn('+  || "redacted";', redacted_patch)
-
-    def test_review_patch_preserves_and_rejects_ambiguous_multiline_call_value(
-        self,
-    ) -> None:
-        fixture_value = realistic_secret_value()
-        patch = (
-            "diff --git a/runtime.py b/runtime.py\n"
-            "--- a/runtime.py\n"
-            "+++ b/runtime.py\n"
-            "@@ -0,0 +1,3 @@\n"
-            + "+pass"
-            + "word = decode(\n"
-            + f'+    "{fixture_value}",\n'
-            + "+)\n"
-        )
-
-        _old_content, new_content = self.helper["unified_diff_contents"](patch)
-        fragments = self.helper["review_secret_fragments"](new_content)
-        redacted_patch = self.helper["redact_secret_like_diff_section"](
-            patch,
-            {"runtime.py"},
-            fragments,
-        )
-
-        self.assertNotIn(fixture_value, redacted_patch)
-        self.assertIn("+pass" + "word = decode(", redacted_patch)
-        self.assertIn('+    "redacted",', redacted_patch)
-        validated_patch = self.helper["validate_review_patch"](
-            "local unstaged diff",
-            ["runtime.py"],
-            patch,
-        )
-        self.assertIn("+pass" + "word = decode(", validated_patch)
-        self.assertIn('+    "redacted",', validated_patch)
-
-    def test_review_patch_redacts_short_and_unquoted_fallbacks(self) -> None:
-        for fallback in ('"hunter2"', "12345678"):
-            with self.subTest(fallback=fallback):
-                patch = (
-                    "diff --git a/runtime.py b/runtime.py\n"
-                    "--- a/runtime.py\n"
-                    "+++ b/runtime.py\n"
-                    "@@ -0,0 +1 @@\n"
-                    + "+pass"
-                    + f'word = getenv("PASSWORD") or {fallback}\n'
-                )
-
-                redacted_patch = self.helper["validate_review_patch"](
-                    "local unstaged diff",
-                    ["runtime.py"],
-                    patch,
-                )
-
-                self.assertNotIn(fallback.strip('"'), redacted_patch)
-                expected = '"redacted"' if fallback.startswith('"') else "redacted"
-                self.assertIn(
-                    f'getenv("PASSWORD") or {expected}',
-                    redacted_patch,
-                )
-
     def test_review_patch_preserves_redaction_placeholder_fallback(self) -> None:
         patch = (
             "diff --git a/runtime.py b/runtime.py\n"
@@ -3754,671 +4446,14 @@ class AutoreviewHardeningTests(unittest.TestCase):
             patch,
         )
 
-    def test_review_patch_ignores_nested_fallback_operator_text(self) -> None:
-        fixture_value = realistic_secret_value()
-        patch = (
-            "diff --git a/runtime.ts b/runtime.ts\n"
-            "--- a/runtime.ts\n"
-            "+++ b/runtime.ts\n"
-            "@@ -0,0 +1 @@\n"
-            + "+pass"
-            + f'word = defaults["x || y"] || "{fixture_value}"\n'
-        )
-
-        redacted_patch = self.helper["validate_review_patch"](
-            "local unstaged diff",
-            ["runtime.ts"],
-            patch,
-        )
-
-        self.assertNotIn(fixture_value, redacted_patch)
-        self.assertIn('defaults["x || y"] || "redacted"', redacted_patch)
-
-    def test_review_patch_ignores_fallback_literals_inside_comments(self) -> None:
-        patch = (
-            "diff --git a/runtime.ts b/runtime.ts\n"
-            "--- a/runtime.ts\n"
-            "+++ b/runtime.ts\n"
-            "@@ -0,0 +1,2 @@\n"
-            + "+pass"
-            + 'word = primary || secondary // "evil-package"\n'
-            + '+import("evil-package");\n'
-        )
-
-        _old_content, new_content = self.helper["unified_diff_contents"](patch)
-        fragments = self.helper["review_secret_fragments"](new_content)
-        redacted_patch = self.helper["redact_secret_like_diff_section"](
-            patch,
-            {"runtime.ts"},
-            fragments,
-        )
-        self.assertIn('+import("evil-package");', redacted_patch)
-        with self.assertRaisesRegex(SystemExit, "secret-like content"):
-            self.helper["validate_review_patch"](
-                "local unstaged diff",
-                ["runtime.ts"],
-                patch,
-            )
-
-    def test_review_patch_learns_bearer_credential_without_prefix(self) -> None:
-        bearer_value = "AbcdEFGHijklMNOPqrstUVWX+SensitiveTail123=="
-        patch = (
-            "diff --git a/runtime.ts b/runtime.ts\n"
-            "--- a/runtime.ts\n"
-            "+++ b/runtime.ts\n"
-            "@@ -0,0 +1,2 @@\n"
-            + f'+const authorization = "Bearer {bearer_value}";\n'
-            + f'+log("{bearer_value}");\n'
-        )
-
-        redacted = self.helper["validate_review_patch"](
-            "local unstaged diff",
-            ["runtime.ts"],
-            patch,
-        )
-
-        self.assertNotIn(bearer_value, redacted)
-        self.assertIn('"Bearer redacted"', redacted)
-        self.assertIn('+log("redacted");', redacted)
-
-    def test_review_patch_preserves_safe_assignment_on_mixed_risk_line(self) -> None:
-        fixture_value = realistic_secret_value()
-        patch = (
-            "diff --git a/runtime.ts b/runtime.ts\n"
-            "--- a/runtime.ts\n"
-            "+++ b/runtime.ts\n"
-            "@@ -0,0 +1 @@\n"
-            f'+const options = {{ creden{"tials"}: "include", api{"Key"}: "{fixture_value}" }};\n'
-        )
-
-        redacted_patch = self.helper["validate_review_patch"](
-            "local unstaged diff",
-            ["runtime.ts"],
-            patch,
-        )
-
-        self.assertIn('creden' + 'tials: "include"', redacted_patch)
-        self.assertIn('api' + 'Key: "redacted"', redacted_patch)
-
-    def test_review_patch_redacts_commented_private_key_body(self) -> None:
-        body = "MIIEowIBAAKCAQEAcommented0123456789ABCDEF"
-        patch = (
-            "diff --git a/fixture.txt b/fixture.txt\n"
-            "--- a/fixture.txt\n"
-            "+++ b/fixture.txt\n"
-            "@@ -0,0 +1,4 @@\n"
-            "+# -----BEGIN "
-            + "PRIVATE KEY-----\n"
-            f"+# {body}\n"
-            "+# -----END "
-            + "PRIVATE KEY-----\n"
-            "+runDangerousOperation();\n"
-        )
-
-        redacted = self.helper["validate_review_patch"](
-            "local unstaged diff",
-            ["fixture.txt"],
-            patch,
-        )
-
-        self.assertNotIn(body, redacted)
-        self.assertIn("+# redacted", redacted)
-        self.assertIn("+runDangerousOperation();", redacted)
-
-    def test_review_patch_redacts_block_commented_private_key_body(self) -> None:
-        body = "MIIEvQIBADANBgkqhkiG9w0BAQEFAASC1234567890"
-        patch = (
-            "diff --git a/fixture.txt b/fixture.txt\n"
-            "--- a/fixture.txt\n"
-            "+++ b/fixture.txt\n"
-            "@@ -0,0 +1,3 @@\n"
-            "+/* -----BEGIN "
-            + "PRIVATE KEY----- */\n"
-            + f"+/* {body} */\n"
-            + "+/* -----END "
-            + "PRIVATE KEY----- */\n"
-        )
-
-        redacted = self.helper["validate_review_patch"](
-            "local unstaged diff",
-            ["fixture.txt"],
-            patch,
-        )
-
-        self.assertNotIn(body, redacted)
-        self.assertIn("+/* redacted */", redacted)
-
-    def test_review_patch_normalizes_escaped_private_key_body_fragment(self) -> None:
-        body = "MIIEvQIBADANBgkqhkiG9w0BAQEFAASC1234567890"
-        patch = (
-            "diff --git a/fixture.ts b/fixture.ts\n"
-            "--- a/fixture.ts\n"
-            "+++ b/fixture.ts\n"
-            "@@ -0,0 +1,2 @@\n"
-            "+const pem = \"-----BEGIN "
-            + f"PRIVATE KEY-----\\n{body}\\n-----END "
-            + "PRIVATE KEY-----\";\n"
-            + f'+log("{body}");\n'
-        )
-
-        redacted_patch = self.helper["validate_review_patch"](
-            "local unstaged diff",
-            ["fixture.ts"],
-            patch,
-        )
-
-        self.assertNotIn(body, redacted_patch)
-        self.assertIn('+log("redacted");', redacted_patch)
-
-    def test_review_patch_redacts_escaped_private_key_tail_quanta(self) -> None:
-        for tail in ("AQ==", "AQI="):
-            with self.subTest(tail=tail):
-                patch = (
-                    "diff --git a/fixture.ts b/fixture.ts\n"
-                    "--- a/fixture.ts\n"
-                    "+++ b/fixture.ts\n"
-                    "@@ -0,0 +1 @@\n"
-                    "+const pem = \"-----BEGIN "
-                    + f"PRIVATE KEY-----\\n{tail}\\n-----END "
-                    + "PRIVATE KEY-----\";\n"
-                )
-
-                redacted_patch = self.helper["validate_review_patch"](
-                    "local unstaged diff",
-                    ["fixture.ts"],
-                    patch,
-                )
-
-                self.assertNotIn(tail, redacted_patch)
-                self.assertIn("\\nredacted\\n", redacted_patch)
-
-    def test_review_patch_redacts_short_private_key_chunks(self) -> None:
-        patch = (
-            "diff --git a/fixture.txt b/fixture.txt\n"
-            "--- a/fixture.txt\n"
-            "+++ b/fixture.txt\n"
-            "@@ -0,0 +1,3 @@\n"
-            "+-----BEGIN "
-            + "PRIVATE KEY-----\n"
-            "+AB12 CDef3456GHij7890\n"
-            "+-----END "
-            + "PRIVATE KEY-----\n"
-        )
-
-        redacted = self.helper["validate_review_patch"](
-            "local unstaged diff",
-            ["fixture.txt"],
-            patch,
-        )
-
-        self.assertNotIn("AB12", redacted)
-        self.assertNotIn("CDef3456GHij7890", redacted)
-
-    def test_review_patch_redacts_padded_private_key_tail_quanta(self) -> None:
-        for tail in ("AQ==", "AQI="):
-            with self.subTest(tail=tail):
-                patch = (
-                    "diff --git a/fixture.txt b/fixture.txt\n"
-                    "--- a/fixture.txt\n"
-                    "+++ b/fixture.txt\n"
-                    "@@ -0,0 +1,3 @@\n"
-                    "+-----BEGIN "
-                    + "PRIVATE KEY-----\n"
-                    + f"+{tail}\n"
-                    + "+-----END "
-                    + "PRIVATE KEY-----\n"
-                )
-
-                redacted = self.helper["validate_review_patch"](
-                    "local unstaged diff",
-                    ["fixture.txt"],
-                    patch,
-                )
-
-                self.assertNotIn(tail, redacted)
-
-    def test_review_patch_redacts_private_key_body_without_visible_markers(self) -> None:
-        chunks = "AB12 CDef3456GHij7890 KLmn1234OPqr5678"
-        patch = (
-            "diff --git a/fixture.txt b/fixture.txt\n"
-            "--- a/fixture.txt\n"
-            "+++ b/fixture.txt\n"
-            "@@ -8 +8,2 @@\n"
-            + f"+{chunks}\n"
-            + f'+log("{chunks}")\n'
-        )
-
-        redacted = self.helper["validate_review_patch"](
-            "local unstaged diff",
-            ["fixture.txt"],
-            patch,
-        )
-
-        self.assertNotIn(chunks, redacted)
-        self.assertIn("+redacted redacted redacted", redacted)
-        self.assertIn('+log("redacted redacted redacted")', redacted)
-
-    def test_review_patch_redacts_markerless_private_key_body_in_string(self) -> None:
-        body = "MIIEvQIBADANBgkqhkiG9w0BAQEFAASC1234567890abcdef"
-        patch = (
-            "diff --git a/fixture.ts b/fixture.ts\n"
-            "--- a/fixture.ts\n"
-            "+++ b/fixture.ts\n"
-            "@@ -0,0 +1,2 @@\n"
-            + f'+const fixture = "{body}";\n'
-            + f'+log("{body}");\n'
-        )
-
-        redacted_patch = self.helper["validate_review_patch"](
-            "local unstaged diff",
-            ["fixture.ts"],
-            patch,
-        )
-
-        self.assertNotIn(body, redacted_patch)
-        self.assertIn('+const fixture = "redacted";', redacted_patch)
-        self.assertIn('+log("redacted");', redacted_patch)
-
-    def test_review_patch_redacts_markerless_private_key_in_short_lines(self) -> None:
-        body = markerless_private_key_fixture()
-        chunks = [body[index : index + 4] for index in range(0, len(body), 4)]
+    def test_review_patch_preserves_ambiguous_short_markerless_lines(self) -> None:
+        chunks = ["AB12", "CDef", "GH34", "ijKL", "MN56", "opQR"]
         patch = (
             "diff --git a/fixture.txt b/fixture.txt\n"
             "--- a/fixture.txt\n"
             "+++ b/fixture.txt\n"
             f"@@ -0,0 +1,{len(chunks)} @@\n"
             + "".join(f"+{chunk}\n" for chunk in chunks)
-        )
-
-        redacted_patch = self.helper["validate_review_patch"](
-            "local unstaged diff",
-            ["fixture.txt"],
-            patch,
-        )
-
-        self.assertEqual(redacted_patch.count("+redacted\n"), len(chunks))
-        self.assertTrue(all(chunk not in redacted_patch for chunk in chunks))
-
-    def test_review_patch_redacts_padding_only_markerless_key_signal(self) -> None:
-        body = (
-            "ABCDEFGHIJKLMNOP"
-            + "QRSTUVWXYZabcdef"
-            + "ghijklmnopqrstuv="
-        )
-        patch = (
-            "diff --git a/fixture.txt b/fixture.txt\n"
-            "--- a/fixture.txt\n"
-            "+++ b/fixture.txt\n"
-            "@@ -0,0 +1,1 @@\n"
-            + f"+{body}\n"
-        )
-
-        redacted_patch = self.helper["validate_review_patch"](
-            "local unstaged diff",
-            ["fixture.txt"],
-            patch,
-        )
-
-        self.assertNotIn(body, redacted_patch)
-        self.assertIn("+redacted\n", redacted_patch)
-
-    def test_review_patch_redacts_lowercase_special_mixed_chunks(self) -> None:
-        chunks = [
-            "ab1+",
-            "cd2/",
-            "ef3+",
-            "gh4/",
-            "ij5+",
-            "kl6/",
-            "mn7+",
-            "op8/",
-            "qr9+",
-            "st0/",
-        ]
-        patch = (
-            "diff --git a/fixture.txt b/fixture.txt\n"
-            "--- a/fixture.txt\n"
-            "+++ b/fixture.txt\n"
-            f"@@ -0,0 +1,{len(chunks)} @@\n"
-            + "".join(f"+{chunk}\n" for chunk in chunks)
-        )
-
-        redacted_patch = self.helper["validate_review_patch"](
-            "local unstaged diff",
-            ["fixture.txt"],
-            patch,
-        )
-
-        self.assertEqual(redacted_patch.count("+redacted\n"), len(chunks))
-        self.assertTrue(all(chunk not in redacted_patch for chunk in chunks))
-
-    def test_review_patch_redacts_continued_markerless_private_key_lines(self) -> None:
-        body = markerless_private_key_fixture()
-        chunks = [body[index : index + 4] for index in range(0, len(body), 4)]
-        patch = (
-            "diff --git a/fixture.py b/fixture.py\n"
-            "--- a/fixture.py\n"
-            "+++ b/fixture.py\n"
-            f"@@ -0,0 +1,{len(chunks)} @@\n"
-            + "".join(f"+{chunk}\\\n" for chunk in chunks[:-1])
-            + f"+{chunks[-1]}\n"
-        )
-
-        redacted_patch = self.helper["validate_review_patch"](
-            "local unstaged diff",
-            ["fixture.py"],
-            patch,
-        )
-
-        self.assertEqual(redacted_patch.count("+redacted\\\n"), len(chunks) - 1)
-        self.assertIn("+redacted\n", redacted_patch)
-        self.assertTrue(all(chunk not in redacted_patch for chunk in chunks))
-
-    def test_review_patch_redacts_commented_markerless_private_key_lines(self) -> None:
-        body = markerless_private_key_fixture()
-        chunks = [body[index : index + 4] for index in range(0, len(body), 4)]
-        patch = (
-            "diff --git a/fixture.txt b/fixture.txt\n"
-            "--- a/fixture.txt\n"
-            "+++ b/fixture.txt\n"
-            f"@@ -0,0 +1,{len(chunks)} @@\n"
-            + "".join(f"+# {chunk}\n" for chunk in chunks)
-        )
-
-        redacted_patch = self.helper["validate_review_patch"](
-            "local unstaged diff",
-            ["fixture.txt"],
-            patch,
-        )
-
-        self.assertEqual(redacted_patch.count("+# redacted\n"), len(chunks))
-        self.assertTrue(all(chunk not in redacted_patch for chunk in chunks))
-
-    def test_review_patch_redacts_block_commented_markerless_key(self) -> None:
-        body = markerless_private_key_fixture()
-        chunks = [body[index : index + 4] for index in range(0, len(body), 4)]
-        key_lines = [f"+/* {chunks[0]}\n"]
-        key_lines.extend(f"+ * {chunk}\n" for chunk in chunks[1:-1])
-        key_lines.append(f"+ * {chunks[-1]} */\n")
-        patch = (
-            "diff --git a/fixture.txt b/fixture.txt\n"
-            "--- a/fixture.txt\n"
-            "+++ b/fixture.txt\n"
-            f"@@ -0,0 +1,{len(chunks)} @@\n"
-            + "".join(key_lines)
-        )
-
-        redacted_patch = self.helper["validate_review_patch"](
-            "local unstaged diff",
-            ["fixture.txt"],
-            patch,
-        )
-
-        self.assertIn("+/* redacted\n", redacted_patch)
-        self.assertIn("+ * redacted */\n", redacted_patch)
-        self.assertTrue(all(chunk not in redacted_patch for chunk in chunks))
-
-    def test_review_patch_redacts_multiple_key_fragments_per_line(self) -> None:
-        body = markerless_private_key_fixture()
-        chunks = [body[index : index + 4] for index in range(0, len(body), 4)]
-        pairs = list(zip(chunks[::2], chunks[1::2]))
-        patch = (
-            "diff --git a/fixture.txt b/fixture.txt\n"
-            "--- a/fixture.txt\n"
-            "+++ b/fixture.txt\n"
-            f"@@ -0,0 +1,{len(pairs)} @@\n"
-            + "".join(f'+"{left}" + "{right}"\n' for left, right in pairs)
-        )
-
-        redacted_patch = self.helper["validate_review_patch"](
-            "local unstaged diff",
-            ["fixture.txt"],
-            patch,
-        )
-
-        self.assertEqual(redacted_patch.count("redacted"), len(chunks))
-        self.assertTrue(all(chunk not in redacted_patch for chunk in chunks))
-
-    def test_review_patch_does_not_propagate_wrapper_keyword_as_secret(self) -> None:
-        body = markerless_private_key_fixture()
-        chunks = [body[index : index + 4] for index in range(0, len(body), 4)]
-        for wrapper in ("return", "RETURN", "ReturnValue"):
-            with self.subTest(wrapper=wrapper):
-                patch = (
-                    "diff --git a/fixture.py b/fixture.py\n"
-                    "--- a/fixture.py\n"
-                    "+++ b/fixture.py\n"
-                    "@@ -0,0 +1,2 @@\n"
-                    + f'+{wrapper} "'
-                    + '" + "'.join(chunks)
-                    + '"\n'
-                    + f"+{wrapper} ordinary_value\n"
-                )
-
-                redacted_patch = self.helper["validate_review_patch"](
-                    "local unstaged diff",
-                    ["fixture.py"],
-                    patch,
-                )
-
-                self.assertIn(f"+{wrapper} ordinary_value\n", redacted_patch)
-                self.assertEqual(redacted_patch.count("redacted"), len(chunks) + 1)
-                self.assertTrue(all(chunk not in redacted_patch for chunk in chunks))
-
-    def test_review_patch_keeps_unquoted_key_beside_quoted_decoy(self) -> None:
-        body = markerless_private_key_fixture()
-        patch = (
-            "diff --git a/fixture.txt b/fixture.txt\n"
-            "--- a/fixture.txt\n"
-            "+++ b/fixture.txt\n"
-            "@@ -0,0 +1,1 @@\n"
-            + f'+{body} "note"\n'
-        )
-
-        redacted_patch = self.helper["validate_review_patch"](
-            "local unstaged diff",
-            ["fixture.txt"],
-            patch,
-        )
-
-        self.assertNotIn(body, redacted_patch)
-        self.assertIn('+redacted "redacted"\n', redacted_patch)
-
-    def test_review_patch_finds_key_after_adjacent_token_only_line(self) -> None:
-        prefix = "A" * 128
-        body = markerless_private_key_fixture()
-        chunks = [body[index : index + 4] for index in range(0, len(body), 4)]
-        patch = (
-            "diff --git a/fixture.txt b/fixture.txt\n"
-            "--- a/fixture.txt\n"
-            "+++ b/fixture.txt\n"
-            f"@@ -0,0 +1,{len(chunks) + 1} @@\n"
-            f"+{prefix}\n"
-            + "".join(f"+{chunk}\n" for chunk in chunks)
-        )
-
-        redacted_patch = self.helper["validate_review_patch"](
-            "local unstaged diff",
-            ["fixture.txt"],
-            patch,
-        )
-
-        self.assertIn(f"+{prefix}\n", redacted_patch)
-        self.assertEqual(redacted_patch.count("+redacted\n"), len(chunks))
-        self.assertTrue(all(chunk not in redacted_patch for chunk in chunks))
-
-    def test_review_patch_finds_key_before_adjacent_token_only_line(self) -> None:
-        suffix = "A" * 128
-        body = markerless_private_key_fixture()
-        chunks = [body[index : index + 4] for index in range(0, len(body), 4)]
-        patch = (
-            "diff --git a/fixture.txt b/fixture.txt\n"
-            "--- a/fixture.txt\n"
-            "+++ b/fixture.txt\n"
-            f"@@ -0,0 +1,{len(chunks) + 1} @@\n"
-            + "".join(f"+{chunk}\n" for chunk in chunks)
-            + f"+{suffix}\n"
-        )
-
-        redacted_patch = self.helper["validate_review_patch"](
-            "local unstaged diff",
-            ["fixture.txt"],
-            patch,
-        )
-
-        self.assertIn(f"+{suffix}\n", redacted_patch)
-        self.assertEqual(redacted_patch.count("+redacted\n"), len(chunks))
-        self.assertTrue(all(chunk not in redacted_patch for chunk in chunks))
-
-    def test_review_patch_scans_complete_markerless_key_run(self) -> None:
-        chunks = ["AAAA"] * 129
-        chunks.extend(
-            markerless_private_key_fixture()[index : index + 4]
-            for _ in range(40)
-            for index in range(0, len(markerless_private_key_fixture()), 4)
-        )
-        patch = (
-            "diff --git a/fixture.txt b/fixture.txt\n"
-            "--- a/fixture.txt\n"
-            "+++ b/fixture.txt\n"
-            f"@@ -0,0 +1,{len(chunks)} @@\n"
-            + "".join(f"+{chunk}\n" for chunk in chunks)
-        )
-
-        redacted_patch = self.helper["validate_review_patch"](
-            "local unstaged diff",
-            ["fixture.txt"],
-            patch,
-        )
-
-        self.assertEqual(redacted_patch.count("+redacted\n"), len(chunks))
-
-    def test_review_patch_preserves_split_short_chunk_fallback(self) -> None:
-        chunks = [
-            "AB" + "12",
-            "CD" + "ef" + "34" + "56",
-            "GH" + "ij" + "78" + "90",
-            "KL" + "mn" + "12" + "34",
-            "OP" + "qr" + "56" + "78",
-        ]
-        patch = (
-            "diff --git a/fixture.txt b/fixture.txt\n"
-            "--- a/fixture.txt\n"
-            "+++ b/fixture.txt\n"
-            f"@@ -0,0 +1,{len(chunks)} @@\n"
-            + "".join(f"+{chunk}\n" for chunk in chunks)
-        )
-
-        redacted_patch = self.helper["validate_review_patch"](
-            "local unstaged diff",
-            ["fixture.txt"],
-            patch,
-        )
-
-        self.assertEqual(redacted_patch.count("+redacted\n"), len(chunks))
-        self.assertTrue(all(chunk not in redacted_patch for chunk in chunks))
-
-    def test_review_patch_bounds_ambiguous_markerless_key_scan(self) -> None:
-        values = [
-            f"A1{chr(97 + (index // 26) % 26)}{chr(97 + index % 26)}"
-            for index in range(512)
-        ]
-        patch = (
-            "diff --git a/fixture.txt b/fixture.txt\n"
-            "--- a/fixture.txt\n"
-            "+++ b/fixture.txt\n"
-            f"@@ -0,0 +1,{len(values)} @@\n"
-            + "".join(f"+{value}\n" for value in values)
-        )
-
-        with self.assertRaisesRegex(SystemExit, "oversized ambiguous markerless-key run"):
-            self.helper["validate_review_patch"](
-                "local unstaged diff",
-                ["fixture.txt"],
-                patch,
-            )
-
-    def test_review_patch_preserves_ordinary_identifier_run(self) -> None:
-        for values in (
-            ["identifier"] * 1025,
-            ["Identifier1"] * 1025,
-            ["identifier"] * 1024 + ["Identifier1"],
-        ):
-            with self.subTest(value_kinds=len(set(values))):
-                patch = (
-                    "diff --git a/fixture.txt b/fixture.txt\n"
-                    "--- a/fixture.txt\n"
-                    "+++ b/fixture.txt\n"
-                    f"@@ -0,0 +1,{len(values)} @@\n"
-                    + "".join(f"+{value}\n" for value in values)
-                )
-
-                redacted_patch = self.helper["validate_review_patch"](
-                    "local unstaged diff",
-                    ["fixture.txt"],
-                    patch,
-                )
-
-                self.assertEqual(redacted_patch, patch)
-
-    def test_review_patch_preserves_bare_multi_token_added_lines(self) -> None:
-        values = ["AbC1 AbC1"] * 128
-        patch = (
-            "diff --git a/fixture.txt b/fixture.txt\n"
-            "--- a/fixture.txt\n"
-            "+++ b/fixture.txt\n"
-            f"@@ -0,0 +1,{len(values)} @@\n"
-            + "".join(f"+{value}\n" for value in values)
-        )
-
-        redacted_patch = self.helper["validate_review_patch"](
-            "local unstaged diff",
-            ["fixture.txt"],
-            patch,
-        )
-
-        self.assertEqual(redacted_patch, patch)
-
-    def test_review_patch_keeps_scanning_after_transient_key_miss(self) -> None:
-        chunks = [
-            "AB" + "12",
-            "CD" + "34",
-            "ef" + "G5",
-            "HI" + "67",
-            "jk" + "L8",
-            "mn" + "op",
-            "QR" + "90",
-            "st" + "U1",
-            "VW" + "23",
-            "xy" + "Z4",
-            "AB" + "56",
-            "cd" + "E7",
-        ]
-        patch = (
-            "diff --git a/fixture.txt b/fixture.txt\n"
-            "--- a/fixture.txt\n"
-            "+++ b/fixture.txt\n"
-            f"@@ -0,0 +1,{len(chunks)} @@\n"
-            + "".join(f"+{chunk}\n" for chunk in chunks)
-        )
-
-        redacted_patch = self.helper["validate_review_patch"](
-            "local unstaged diff",
-            ["fixture.txt"],
-            patch,
-        )
-
-        self.assertEqual(redacted_patch.count("+redacted\n"), len(chunks))
-        self.assertTrue(all(chunk not in redacted_patch for chunk in chunks))
-
-    def test_review_patch_preserves_ordinary_short_identifier_lines(self) -> None:
-        values = ["name", "host", "port", "mode", "path", "kind"]
-        patch = (
-            "diff --git a/fixture.txt b/fixture.txt\n"
-            "--- a/fixture.txt\n"
-            "+++ b/fixture.txt\n"
-            f"@@ -0,0 +1,{len(values)} @@\n"
-            + "".join(f"+{value}\n" for value in values)
         )
 
         redacted_patch = self.helper["validate_review_patch"](
@@ -4467,170 +4502,81 @@ class AutoreviewHardeningTests(unittest.TestCase):
         self.assertIn("+" + digest, redacted)
         self.assertIn("+Subproject commit " + digest, redacted)
 
-    def test_review_patch_learns_private_key_body_chunks(self) -> None:
-        body = "MIIEowIBAAKCAQEAshared0123456789ABCDEF"
-        patch = (
-            "diff --git a/fixture.txt b/fixture.txt\n"
-            "--- a/fixture.txt\n"
-            "+++ b/fixture.txt\n"
-            "@@ -0,0 +1,4 @@\n"
-            "+-----BEGIN "
-            + "PRIVATE KEY-----\n"
-            f"+{body}\n"
-            "+-----END "
-            + "PRIVATE KEY-----\n"
-            f'+log("{body}")\n'
-        )
-
-        redacted = self.helper["validate_review_patch"](
-            "local unstaged diff",
-            ["fixture.txt"],
-            patch,
-        )
-
-        self.assertNotIn(body, redacted)
-        self.assertIn('+log("redacted")', redacted)
-
-    def test_review_patch_redacts_known_secret_in_bare_comment(self) -> None:
-        fixture_value = "qjvmtzplskdwoeirutyghbnx"
+    def test_review_patch_preserves_unwrapped_alphabetic_identifier(self) -> None:
+        identifier = "AbCdEfGh" + "IjKlMnOp"
         patch = (
             "diff --git a/runtime.ts b/runtime.ts\n"
             "--- a/runtime.ts\n"
             "+++ b/runtime.ts\n"
-            "@@ -1 +1 @@\n"
-            f'-pass{"word"} = "{fixture_value}"\n'
-            f"+# rotated value {fixture_value}\n"
-        )
-
-        with self.assertRaisesRegex(SystemExit, "known secret-like value"):
-            self.helper["validate_review_patch"](
-                "local unstaged diff",
-                ["runtime.ts"],
-                patch,
-            )
-
-    def test_review_patch_redacts_known_secret_in_hunk_header(self) -> None:
-        fixture_value = realistic_secret_value()
-        patch = (
-            "diff --git a/runtime.ts b/runtime.ts\n"
-            "--- a/runtime.ts\n"
-            "+++ b/runtime.ts\n"
-            f"@@ -1 +1 @@ function rotate_{fixture_value}()\n"
-            f'-pass{"word"} = "{fixture_value}"\n'
-            "+return true;\n"
-        )
-
-        redacted_patch = self.helper["validate_review_patch"](
-            "local unstaged diff",
-            ["runtime.ts"],
-            patch,
-        )
-
-        self.assertNotIn(fixture_value, redacted_patch)
-        self.assertIn("function rotate_redacted()", redacted_patch)
-
-    def test_review_patch_learns_secret_from_hunk_header(self) -> None:
-        fixture_value = realistic_secret_value()
-        patch = (
-            "diff --git a/runtime.ts b/runtime.ts\n"
-            "--- a/runtime.ts\n"
-            "+++ b/runtime.ts\n"
-            + f'@@ -1 +1 @@ function f(pass{"word"} = "{fixture_value}")\n'
-            + f'+log("{fixture_value}");\n'
-        )
-
-        redacted_patch = self.helper["validate_review_patch"](
-            "local unstaged diff",
-            ["runtime.ts"],
-            patch,
-        )
-
-        self.assertNotIn(fixture_value, redacted_patch)
-        self.assertIn('function f(pass' + 'word = "redacted")', redacted_patch)
-        self.assertIn('+log("redacted");', redacted_patch)
-
-    def test_review_patch_redacts_markerless_private_key_hunk_header(self) -> None:
-        body = "MIIEvQIBADANBgkqhkiG9w0BAQEFAASC1234567890abcdef"
-        patch = (
-            "diff --git a/fixture.txt b/fixture.txt\n"
-            "--- a/fixture.txt\n"
-            "+++ b/fixture.txt\n"
-            f"@@ -1 +1 @@ {body}\n"
-            "+return true\n"
-        )
-
-        redacted_patch = self.helper["validate_review_patch"](
-            "local unstaged diff",
-            ["fixture.txt"],
-            patch,
-        )
-
-        self.assertNotIn(body, redacted_patch)
-        self.assertIn("@@ -1 +1 @@ redacted", redacted_patch)
-
-    def test_review_patch_redacts_private_key_hunk_header_and_repeats(self) -> None:
-        body = "MIIEvQIBADANBgkqhkiG9w0BAQEFAASC1234567890"
-        patch = (
-            "diff --git a/runtime.ts b/runtime.ts\n"
-            "--- a/runtime.ts\n"
-            "+++ b/runtime.ts\n"
-            "@@ -1 +1 @@ function f() { return \"-----BEGIN "
-            + f"PRIVATE KEY-----\\n{body}\"; }}\n"
-            + f'+log("{body}");\n'
-        )
-
-        redacted_patch = self.helper["validate_review_patch"](
-            "local unstaged diff",
-            ["runtime.ts"],
-            patch,
-        )
-
-        self.assertNotIn(body, redacted_patch)
-        self.assertIn(self.helper["REVIEW_SECRET_REDACTION"], redacted_patch)
-        self.assertIn('+log("redacted");', redacted_patch)
-
-    def test_review_patch_rejects_known_secret_in_diff_metadata(self) -> None:
-        secret = realistic_secret_value()
-        patch = (
-            "diff --git a/settings.txt b/settings.txt\n"
-            "--- a/settings.txt\n"
-            "+++ b/settings.txt\n"
-            "@@ -1 +0,0 @@\n"
-            f'-pass{"word"} = "{secret}"\n'
-            f"diff --git a/{secret}.txt b/{secret}.txt\n"
-            f"--- a/{secret}.txt\n"
-            f"+++ b/{secret}.txt\n"
             "@@ -0,0 +1 @@\n"
-            "+safe\n"
-        )
-
-        with self.assertRaisesRegex(SystemExit, "known secret-like value"):
-            self.helper["validate_review_patch"](
-                "local unstaged diff",
-                ["settings.txt", f"{secret}.txt"],
-                patch,
-            )
-
-    def test_review_patch_redacts_non_self_reference_fallback(self) -> None:
-        fixture_value = realistic_secret_value()
-        patch = (
-            "diff --git a/runtime.py b/runtime.py\n"
-            "--- a/runtime.py\n"
-            "+++ b/runtime.py\n"
-            "@@ -0,0 +1 @@\n"
-            f'+pass{"word"} = getenv("PASSWORD") or "{fixture_value}"; '
-            + 'execute("DROP DATABASE production")\n'
+            + f"+const {identifier} = true;\n"
         )
 
         redacted_patch = self.helper["validate_review_patch"](
             "local unstaged diff",
-            ["runtime.py"],
+            ["runtime.ts"],
             patch,
         )
 
-        self.assertNotIn(fixture_value, redacted_patch)
-        self.assertIn('getenv("PASSWORD") or "redacted"', redacted_patch)
-        self.assertIn('execute("DROP DATABASE production")', redacted_patch)
+        self.assertIn(identifier, redacted_patch)
+
+    def test_review_patch_preserves_punctuation_wrapped_alphabetic_identifier(self) -> None:
+        identifier = "AbCdEfGh" + "IjKlMnOp"
+        patch = (
+            "diff --git a/runtime.ts b/runtime.ts\n"
+            "--- a/runtime.ts\n"
+            "+++ b/runtime.ts\n"
+            "@@ -0,0 +1 @@\n"
+            + f"+  {identifier},\n"
+        )
+
+        redacted_patch = self.helper["validate_review_patch"](
+            "local unstaged diff",
+            ["runtime.ts"],
+            patch,
+        )
+
+        self.assertIn(identifier, redacted_patch)
+
+    def test_review_patch_preserves_escaped_newline_beside_alphabetic_identifier(self) -> None:
+        identifier = "AbCdEfGh" + "IjKlMnOp"
+        patch = (
+            "diff --git a/runtime.ts b/runtime.ts\n"
+            "--- a/runtime.ts\n"
+            "+++ b/runtime.ts\n"
+            "@@ -0,0 +1 @@\n"
+            + f'+[{identifier}, "\\\\n"];\n'
+        )
+
+        redacted_patch = self.helper["validate_review_patch"](
+            "local unstaged diff",
+            ["runtime.ts"],
+            patch,
+        )
+
+        self.assertIn(identifier, redacted_patch)
+
+    def test_review_patch_preserves_bare_identifier_in_escaped_pem_concatenation(self) -> None:
+        identifier = "AbCdEfGh" + "IjKlMnOp"
+        patch = (
+            "diff --git a/runtime.ts b/runtime.ts\n"
+            "--- a/runtime.ts\n"
+            "+++ b/runtime.ts\n"
+            "@@ -0,0 +1 @@\n"
+            '+const fixture = "-----BEGIN '
+            + "PRIVATE KEY-----\\n\" + "
+            + identifier
+            + ' + "\\n-----END '
+            + 'PRIVATE KEY-----";\n'
+        )
+
+        redacted_patch = self.helper["validate_review_patch"](
+            "local unstaged diff",
+            ["runtime.ts"],
+            patch,
+        )
+
+        self.assertIn(identifier, redacted_patch)
 
     def test_local_bundle_allows_deleted_test_token_fixture(self) -> None:
         with tempfile.TemporaryDirectory() as tempdir:
@@ -4675,6 +4621,133 @@ class AutoreviewHardeningTests(unittest.TestCase):
                 argparse.Namespace(engine="droid", tools=False),
                 True,
             )
+        with self.assertRaisesRegex(SystemExit, "kimi engine refused truncated review input"):
+            self.helper["ensure_reviewer_input_complete"](
+                argparse.Namespace(engine="kimi", tools=False),
+                True,
+            )
+
+    def test_kimi_config_is_sanitized_without_losing_model_auth(self) -> None:
+        with tempfile.TemporaryDirectory() as tempdir:
+            root = Path(tempdir)
+            repo = init_repo(root)
+            share = root / "kimi-home"
+            share.mkdir()
+            (share / "config.toml").write_text(
+                "\n".join(
+                    [
+                        'default_model = "review-model"',
+                        'extra_skill_dirs = ["/tmp/unsafe-skills"]',
+                        "",
+                        "[models.review-model]",
+                        'provider = "review-provider"',
+                        'model = "kimi-k2"',
+                        "max_context_size = 100000",
+                        "",
+                        "[providers.review-provider]",
+                        'type = "kimi"',
+                        'base_url = "https://api.example.invalid"',
+                        'api_key = "test-token"',
+                        "",
+                        "[services.moonshot_search]",
+                        'base_url = "http://localhost"',
+                        "",
+                        "[thinking]",
+                        "enabled = false",
+                        "",
+                    ]
+                ),
+                encoding="utf-8",
+            )
+            with mock.patch.dict(
+                os.environ,
+                {"KIMI_CODE_HOME": str(share)},
+                clear=False,
+            ):
+                config, source_share = self.helper["load_kimi_review_config"](repo)
+
+        self.assertEqual(source_share, share.resolve())
+        self.assertEqual(config["default_model"], "review-model")
+        self.assertEqual(
+            config["providers"]["review-provider"]["api_key"],
+            "test-token",
+        )
+        self.assertNotIn("services", config)
+        self.assertNotIn("extra_skill_dirs", config)
+        self.assertNotIn("thinking", config)
+        self.assertNotIn("hooks", config)
+
+    def test_kimi_oauth_credentials_are_linked_outside_runtime_state(self) -> None:
+        if os.name == "nt":
+            self.skipTest("directory symlink privileges vary on Windows")
+        with tempfile.TemporaryDirectory() as tempdir:
+            root = Path(tempdir)
+            repo = init_repo(root)
+            source_share = root / "source-kimi"
+            credentials = source_share / "credentials"
+            credentials.mkdir(parents=True)
+            device_id = "0123456789abcdef0123456789abcdef"
+            (source_share / "device_id").write_text(device_id, encoding="utf-8")
+            runtime_share = root / "runtime-kimi"
+            runtime_share.mkdir()
+
+            self.helper["prepare_kimi_runtime_auth"](
+                repo,
+                source_share,
+                runtime_share,
+            )
+
+            linked = runtime_share / "credentials"
+            self.assertTrue(linked.is_symlink())
+            self.assertEqual(linked.resolve(), credentials.resolve())
+            self.assertEqual(
+                (runtime_share / "device_id").read_text(encoding="utf-8"),
+                device_id,
+            )
+
+    def test_kimi_rejects_repo_controlled_config_symlink(self) -> None:
+        if os.name == "nt":
+            self.skipTest("directory symlink privileges vary on Windows")
+        with tempfile.TemporaryDirectory() as tempdir:
+            root = Path(tempdir)
+            repo = init_repo(root)
+            hostile_config = repo / "kimi-config.toml"
+            hostile_config.write_text("default_model = \"x\"\n", encoding="utf-8")
+            share = root / "kimi-home"
+            share.mkdir()
+            (share / "config.toml").symlink_to(hostile_config)
+
+            with mock.patch.dict(
+                os.environ,
+                {"KIMI_CODE_HOME": str(share)},
+                clear=False,
+            ), self.assertRaisesRegex(
+                SystemExit,
+                "must resolve outside",
+            ):
+                self.helper["load_kimi_review_config"](repo)
+
+    def test_kimi_engine_env_preserves_only_supported_runtime_overrides(self) -> None:
+        with tempfile.TemporaryDirectory() as tempdir:
+            repo = init_repo(Path(tempdir))
+            with mock.patch.dict(
+                os.environ,
+                {
+                    "KIMI_API_KEY": "test-token",
+                    "KIMI_BASE_URL": "https://api.example.invalid",
+                    "KIMI_MODEL_NAME": "kimi-model",
+                    "KIMI_CODE_HOME": str(repo / ".hostile-kimi"),
+                    "PYTHONPATH": "/tmp/hostile-python",
+                },
+                clear=False,
+            ):
+                env = self.helper["safe_engine_env"](repo, engine="kimi")
+
+        self.assertEqual(env["KIMI_API_KEY"], "test-token")
+        self.assertEqual(env["KIMI_BASE_URL"], "https://api.example.invalid")
+        self.assertEqual(env["KIMI_MODEL_NAME"], "kimi-model")
+        self.assertNotIn("KIMI_CODE_HOME", env)
+        self.assertNotIn("PYTHONPATH", env)
 
     def test_safe_git_env_preserves_trusted_platform_and_helper_paths(self) -> None:
         with tempfile.TemporaryDirectory() as tempdir:
@@ -4714,7 +4787,7 @@ class AutoreviewHardeningTests(unittest.TestCase):
 
             with self.assertRaisesRegex(
                 SystemExit,
-                r"droid engine is unavailable.*use codex, claude, or pi",
+                r"droid engine is unavailable.*use codex, claude, pi, or kimi",
             ) as error:
                 self.helper["run_droid"](argparse.Namespace(), repo, "prompt")
             self.assertNotIn("opencode", str(error.exception))
@@ -5319,6 +5392,7 @@ class AutoreviewHardeningTests(unittest.TestCase):
             )
             record_path = root / "record.json"
             env = os.environ.copy()
+            add_fake_trufflehog(self.helper, root, env)
             env.update(
                 {
                     "AUTOREVIEW_FAKE_RECORD": str(record_path),
@@ -5366,6 +5440,7 @@ class AutoreviewHardeningTests(unittest.TestCase):
             )
             record_path = root / "record.json"
             env = os.environ.copy()
+            add_fake_trufflehog(self.helper, root, env)
             env.update(
                 {
                     "AUTOREVIEW_FAKE_MUTATE": str(source),
@@ -5605,10 +5680,19 @@ class AutoreviewHardeningTests(unittest.TestCase):
                 os.environ.clear()
                 os.environ.update(old)
 
+    def test_installed_java_rejects_launcher_without_runtime(self) -> None:
+        launcher = "/usr/bin/java"
+        unavailable = subprocess.CompletedProcess([launcher, "-version"], 1)
+        with (
+            mock.patch("shutil.which", return_value=launcher),
+            mock.patch("subprocess.run", return_value=unavailable),
+        ):
+            self.assertIsNone(installed_java())
+
     def test_parallel_test_environment_isolates_jvm_user_home(self) -> None:
-        java = shutil.which("java")
+        java = installed_java()
         if java is None:
-            self.skipTest("java is not installed")
+            self.skipTest("a usable Java runtime is not installed")
         with tempfile.TemporaryDirectory() as tempdir:
             root = Path(tempdir)
             repo = init_repo(root)
@@ -5658,9 +5742,9 @@ class AutoreviewHardeningTests(unittest.TestCase):
         )
 
     def test_java_tool_option_quote_round_trips_special_paths(self) -> None:
-        java = shutil.which("java")
+        java = installed_java()
         if java is None:
-            self.skipTest("java is not installed")
+            self.skipTest("a usable Java runtime is not installed")
         names = ["space home", "apostrophe's home"]
         if os.name != "nt":
             names.append('double"quote home')
@@ -5853,25 +5937,29 @@ class AutoreviewHardeningTests(unittest.TestCase):
                 "1",
             )
 
-    def test_build_prompt_rejects_secret_like_git_metadata(self) -> None:
+    def test_build_prompt_redacts_secret_like_git_metadata(self) -> None:
         with tempfile.TemporaryDirectory() as tempdir:
             repo = init_repo(Path(tempdir))
             secret = "ghp_" + "A" * 24
             git(repo, "checkout", "-q", "-b", f"feature/{secret}")
 
-            with self.assertRaisesRegex(SystemExit, "secret-like content"):
-                self.helper["build_prompt"](repo, "local", None, "diff", "", "")
+            prompt = self.helper["build_prompt"](
+                repo, "local", None, "diff", "", ""
+            )
+            self.assertIn(self.helper["REVIEW_SECURITY_REDACTION"], prompt)
+            self.assertNotIn(secret, prompt)
 
             git(repo, "checkout", "-q", "-B", "safe-branch")
-            with self.assertRaisesRegex(SystemExit, "secret-like content"):
-                self.helper["build_prompt"](
-                    repo,
-                    "branch",
-                    f"origin/{secret}",
-                    "diff",
-                    "",
-                    "",
-                )
+            prompt = self.helper["build_prompt"](
+                repo,
+                "branch",
+                f"origin/{secret}",
+                "diff",
+                "",
+                "",
+            )
+            self.assertIn(self.helper["REVIEW_SECURITY_REDACTION"], prompt)
+            self.assertNotIn(secret, prompt)
 
     def test_codex_env_rejects_executable_dbus_transport(self) -> None:
         old = os.environ.copy()
@@ -6662,7 +6750,7 @@ class AutoreviewHardeningTests(unittest.TestCase):
             repo = init_repo(Path(tempdir))
             with self.assertRaisesRegex(
                 SystemExit,
-                r"ignored repository secrets; use codex, claude, or pi",
+                r"ignored repository secrets; use codex, claude, pi, or kimi",
             ) as error:
                 self.helper["run_copilot"](
                     args,
@@ -7137,27 +7225,6 @@ class AutoreviewHardeningTests(unittest.TestCase):
             )
         )
 
-    def test_review_patch_scans_multiline_diff_metadata(self) -> None:
-        patch = (
-            "Subject: example\n"
-            "    Author"
-            + "ization: Basic\n"
-            "    dXNlcjpwYXNzd29yZA==\n"
-            "diff --git a/safe.txt b/safe.txt\n"
-            "--- a/safe.txt\n"
-            "+++ b/safe.txt\n"
-            "@@ -1 +1 @@\n"
-            "-old\n"
-            "+new\n"
-        )
-
-        with self.assertRaisesRegex(SystemExit, "secret-like content"):
-            self.helper["validate_review_patch"](
-                "local unstaged diff",
-                ["safe.txt"],
-                patch,
-            )
-
     def test_secret_detector_handles_additional_credential_keys(self) -> None:
         for content in (
             "cred" + "ential = real-hardcoded-" + "secret",
@@ -7451,6 +7518,200 @@ class AutoreviewHardeningTests(unittest.TestCase):
             self.assertIn(r"\x1b", displayed)
             self.assertIn(r"\x07", displayed)
             self.assertTrue(displayed.endswith("\n"))
+
+    def test_repeatable_scan_finds_multiline_arrow_fallback_literal(self) -> None:
+        secret = "fallback-secret-123"
+        content = (
+            "password = (() => {\n"
+            "  const value = source;\n"
+            "  return value;\n"
+            f'}})() || "{secret}";\n'
+            f'log("{secret}");\n'
+            "runDangerousOperation();\n"
+        )
+
+        spans = self.helper["review_repeatable_secret_spans"](
+            content,
+            javascript_dialect="typescript",
+        )
+
+        self.assertIn(secret, {content[start:end] for start, end in spans})
+
+    def test_assignment_prefix_fallback_scan_is_bounded(self) -> None:
+        for separator in ("\n", ""):
+            with self.subTest(separator=repr(separator)):
+                content = separator.join(
+                    f"password = value_{index};" for index in range(5_000)
+                )
+
+                started = time.monotonic()
+                spans = self.helper["review_repeatable_secret_spans"](content)
+
+                self.assertLess(time.monotonic() - started, 5.0)
+                self.assertEqual(spans, [])
+
+    def test_assignment_prefix_scan_stops_at_raw_diff_line_boundary(self) -> None:
+        content = (
+            "+password = cachedPassword\n"
+            '+role = suppliedRole || "admin";\n'
+        )
+
+        spans = self.helper["review_repeatable_secret_spans"](
+            content,
+            javascript_dialect="typescript",
+        )
+
+        self.assertNotIn("admin", {content[start:end] for start, end in spans})
+
+    def test_assignment_prefix_scan_continues_after_trailing_operator(self) -> None:
+        content = (
+            "+password = supplied ||\n"
+            '+  "real-secret";\n'
+        )
+
+        spans = self.helper["review_repeatable_secret_spans"](
+            content,
+            javascript_dialect="typescript",
+        )
+
+        self.assertIn(
+            "real-secret",
+            {content[start:end] for start, end in spans},
+        )
+        prefix_match = next(
+            self.helper["SECRET_ASSIGNMENT_PREFIX_PATTERN"].finditer(content)
+        )
+        assignment_match = next(
+            self.helper["SECRET_ASSIGNMENT_PATTERN"].finditer(content)
+        )
+        for collector, match in (
+            ("assignment_prefix_fallback_literal_spans", prefix_match),
+            ("assignment_fallback_literal_spans", assignment_match),
+        ):
+            with self.subTest(collector=collector):
+                collected = self.helper[collector](
+                    content,
+                    match,
+                    javascript_dialect="typescript",
+                )
+                self.assertIn(
+                    "real-secret",
+                    {content[start:end] for start, end in collected},
+                )
+
+    def test_assignment_prefix_scan_accepts_raw_diff_context_line(self) -> None:
+        content = (
+            "+password = newSource\n"
+            '  || "real-secret";\n'
+        )
+
+        spans = self.helper["review_repeatable_secret_spans"](
+            content,
+            javascript_dialect="typescript",
+        )
+
+        self.assertIn(
+            "real-secret",
+            {content[start:end] for start, end in spans},
+        )
+
+    def test_generic_assignment_scan_stops_at_next_diff_line(self) -> None:
+        content = (
+            "+password = source or fallback\n"
+            '+(grant_role("admin"))\n'
+        )
+
+        spans = self.helper["review_repeatable_secret_spans"](content)
+
+        self.assertNotIn(
+            "admin",
+            {content[start:end] for start, end in spans},
+        )
+
+    def test_generic_literal_scan_stops_at_next_diff_line(self) -> None:
+        content = (
+            '+password = "foo"\n'
+            '+grant_role("admin")\n'
+        )
+
+        spans = self.helper["review_repeatable_secret_spans"](content)
+
+        self.assertNotIn(
+            "admin",
+            {content[start:end] for start, end in spans},
+        )
+
+    def test_generic_assignment_scan_continues_after_fallback_operator(self) -> None:
+        content = (
+            '+password = ENV["PASSWORD"] ||\n'
+            '+  "production-secret"\n'
+        )
+
+        spans = self.helper["review_repeatable_secret_spans"](content)
+
+        self.assertIn(
+            "production-secret",
+            {content[start:end] for start, end in spans},
+        )
+
+    def test_assignment_scan_bounds_encoded_source_fixture(self) -> None:
+        content = "'password = source || \"production-secret\";'"
+
+        spans = self.helper["review_repeatable_secret_spans"](content)
+
+        self.assertIn(
+            "production-secret",
+            {content[start:end] for start, end in spans},
+        )
+
+    def test_assignment_scan_redacts_command_payload_fallback(self) -> None:
+        content = 'run("password = ENV.PASSWORD || \'tenant-default\'")'
+
+        spans = self.helper["review_repeatable_secret_spans"](content)
+
+        self.assertIn(
+            "tenant-default",
+            {content[start:end] for start, end in spans},
+        )
+
+    def test_assignment_scan_redacts_serialized_string_payload(self) -> None:
+        secret = realistic_secret_value()
+        content = f"const body = '{{\"password\":\"{secret}\"}}'"
+
+        spans = self.helper["review_repeatable_secret_spans"](content)
+
+        self.assertIn(secret, {content[start:end] for start, end in spans})
+
+    def test_reference_scan_stops_before_independent_statement(self) -> None:
+        content = (
+            "password = process.env.PASSWORD\n"
+            'value || "public"\n'
+        )
+
+        spans = self.helper["review_repeatable_secret_spans"](
+            content,
+            javascript_dialect="typescript",
+        )
+
+        self.assertNotIn(
+            "public",
+            {content[start:end] for start, end in spans},
+        )
+
+    def test_assignment_scan_stops_at_hunk_boundary_with_open_call(self) -> None:
+        boundary = self.helper["DIFF_HUNK_CONTENT_BOUNDARY"]
+        content = (
+            "password = choose(\n"
+            f"{boundary}\n"
+            'grant_role("admin"))\n'
+        )
+
+        spans = self.helper["review_repeatable_secret_spans"](content)
+
+        self.assertNotIn(
+            "admin",
+            {content[start:end] for start, end in spans},
+        )
 
     def test_self_test_shortcut_runs_deterministic_checks(self) -> None:
         command = [str(SCRIPT), "--self-test"]
