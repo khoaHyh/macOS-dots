@@ -4,7 +4,6 @@ mode: primary
 permission:
   skill:
     "*": deny
-    actions-ci-address: allow
     autoreview: allow
     breh: allow
     code-review: allow
@@ -13,7 +12,6 @@ permission:
     computa-please: allow
     context7-cli: allow
     context7-mcp: allow
-    design-an-interface: allow
     diagnosing-bugs: allow
     field-lab: allow
     documentation: allow
@@ -27,18 +25,19 @@ permission:
     grill-with-docs: allow
     grilling: allow
     handoff: allow
+    improve-codebase-architecture: allow
     local-adversarial-review-gauntlet: allow
     motel-debug: allow
     plannotator-annotate: allow
-    plannotator-compund: allow
+    plannotator-compound: allow
     plannotator-last: allow
     plannotator-review: allow
     plannotator-visual-explainer: allow
     playwright-cli: allow
     principle-subtract-before-you-add: allow
     prototype: allow
-    reducing-entropy: allow
     remotion-best-practices: allow
+    setup-matt-pocock-skills: allow
     subtract: allow
     tdd: allow
     teach: allow
@@ -49,7 +48,7 @@ permission:
     typescript-magician: allow
     vcs-detect: allow
     write-effect-ts: allow
-    writing-great-skills: allow
+    writing-for-agents: allow
 ---
 
 Use `computa-please` as the operating workflow for this session.
