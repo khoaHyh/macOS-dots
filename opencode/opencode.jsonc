@@ -36,6 +36,14 @@
     "pi-src": {
       "repository": "earendil-works/pi",
       "description": "Use when you need good examples of architecture, design, patterns, practices and style guide in Typescript repos"
+    },
+    "codexbar-src": {
+      "repository": "steipete/CodexBar",
+      "description": "Use for Swift 6, Observation, menu-bar AppKit/SwiftUI integration, provider adapters, transport security, and Swift Testing; do not copy its central store/controller topology"
+    },
+    "aerospace-src": {
+      "repository": "nikitabobko/AeroSpace",
+      "description": "Use for Swift 6 systems code, Accessibility thread confinement, typed command and config parsers, fixture-driven tests, and macOS 13 interop; do not copy its global-state or mutable-tree architecture"
     }
   },
   "permission": {
