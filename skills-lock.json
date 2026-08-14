@@ -76,7 +76,7 @@
       "source": "khoahyh/skills",
       "sourceType": "github",
       "skillPath": "computa-please/SKILL.md",
-      "computedHash": "e1f153934becdf128b5b6b24b29a22dbdd89bea99c67313fda59d03e2390d926"
+      "computedHash": "b4a4d4046fe9f16ab201df40e221ba06f2f69ad6f7651c9e8a39229152fa0a2a"
     },
     "context7-cli": {
       "source": "upstash/context7",
@@ -217,7 +217,7 @@
       "source": "khoaHyh/skills",
       "sourceType": "github",
       "skillPath": "local-adversarial-review-gauntlet/SKILL.md",
-      "computedHash": "6b2d05d406afa409c1622e03890d4382e2cf74e397d436b9b597bd28bb28d585"
+      "computedHash": "ccff91fce12d38c6cd8584d26a7685a30d072ad0e9dee516e48ce34a0cd92397"
     },
     "loop-me": {
       "source": "mattpocock/skills",
@@ -236,6 +236,12 @@
       "sourceType": "github",
       "skillPath": "skills/motel-debug/SKILL.md",
       "computedHash": "5c2d76bf6c6118380750ab4cd91317b16781d39361169dee095a85e057a38d82"
+    },
+    "observability-logging": {
+      "source": "khoaHyh/skills",
+      "sourceType": "github",
+      "skillPath": "observability-logging/SKILL.md",
+      "computedHash": "47ceea637252d08401f81f3693a2fc3e6838232e8160e3ff7ac394d712486317"
     },
     "opentui": {
       "source": "msmps/opentui-skill",
@@ -484,10 +490,10 @@
       "computedHash": "68999bb1a241384b2f921f3321d779b7d05eb6089077b70d88cee2aee3d75ccc"
     },
     "tech-spec": {
-      "source": "dmmulroy/skills",
+      "source": "khoaHyh/skills",
       "sourceType": "github",
       "skillPath": "tech-spec/SKILL.md",
-      "computedHash": "02ca3d3118c88d933f2ae8505b12413899e88a0b8e204e11d8ed6bb3297f013a"
+      "computedHash": "e749c46df48b96f12d829ac990ed931a83fb94f7c3372a5439c907146362baaf"
     },
     "thermo-nuclear-code-quality-review": {
       "source": "cursor/plugins",
@@ -559,7 +565,7 @@
       "source": "khoahyh/skills",
       "sourceType": "github",
       "skillPath": "write-effect-ts/SKILL.md",
-      "computedHash": "8e04225af03f2b58942f571405eb3ea6a0f21d27ea7d62aed5fdbb69350523f7"
+      "computedHash": "102b56f3fb1fb7e892357a4c2028f2b8e599dceff9b8d8ffc4597a0844a4dfb2"
     },
     "writing-beats": {
       "source": "mattpocock/skills",

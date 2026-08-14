@@ -1,248 +1,144 @@
 ---
 name: tech-spec
-description: Write a typed call-stack architecture handoff.
-disable-model-invocation: true
+description: Write an implementation-ready typed call-stack architecture handoff. Use when the user requests a tech spec, durable implementation plan, API design, module design, or phased engineering plan.
 ---
 
 # Tech Spec
 
-A tech spec is a **typed call-stack architecture handoff**: code-shaped contracts plus execution flows. Prefer TypeScript pseudocode over prose wherever precision matters.
+A tech spec makes implementation decisions reviewable before code changes. Prefer typed contracts and call stacks over broad prose. This skill is design-only: do not implement.
 
-This skill is design-only. Do not implement. Save a file only when the user asks for a file; otherwise return the spec inline.
+Return the spec inline unless the user requests a file or the calling workflow provides an artifact path.
 
-## Branch selection
+## 1. Establish evidence
 
-1. Use **Path A: Convert context to spec** when the conversation, docs, or codebase already contain enough background to describe the change.
-2. Use **Path B: Grill first** when the user wants a new spec but has not provided enough problem, constraints, design direction, affected code, or acceptance criteria.
+Inspect the request, repository instructions, relevant code, tests, docs, and runtime constraints. Reuse the project's vocabulary and existing patterns for types, errors, adapters, telemetry, and tests.
 
-If a question can be answered by exploring the codebase, inspect the codebase instead of asking.
+Record:
 
-Completion criterion: the branch is chosen from actual available context; missing architectural decisions are not invented.
+- current behavior and problem;
+- users or callers;
+- goals and non-goals;
+- invariants and constraints;
+- affected entrypoints and side effects;
+- Compatibility posture and its evidence;
+- operational risks and open decisions.
 
-## Path A: Convert context to spec
+Inspect discoverable facts instead of asking. Keep unresolved product or architecture decisions as open questions rather than inventing them.
 
-### 1. Load standards and local context
+Choose **Direct cutover** when no observed external behavior, retained data, deployment constraint, or user requirement must survive; the spec must leave one path. Choose **Protected evolution** only for a named obligation and keep its compatibility mechanism at the narrowest seam with a permanent status or removal condition.
 
-Inspect existing code and docs for local vocabulary, module layout, domain concepts, errors, adapters, observability, runtime patterns, and test style.
+**Complete when:** every requirement and constraint is grounded in user input, code, docs, runtime evidence, or an explicit open question.
 
-Completion criterion: the spec uses project vocabulary and does not introduce a pattern, library, adapter, schema style, or test strategy before checking local precedent.
+## 2. Name the smallest complete slice
 
-### 2. Extract the design problem
+Define one end-to-end behavior from ingress to observable result. State what is intentionally outside the slice and give it a rough file/concept budget.
 
-Capture:
+For an addition, refactor, or rewrite, inspect what can be deleted, collapsed, inlined, or narrowed before proposing new structure. For a refactor, pin current behavior and require a measurable reduction in reader load. A refactor that changes behavior must be split or renamed as a feature or fix.
 
-- current state;
-- problem;
-- users/callers;
-- goals;
-- non-goals;
-- constraints;
-- invariants;
-- affected systems;
-- likely entrypoints;
-- operational/runtime concerns;
-- risks;
-- open questions.
+**Complete when:** the slice can ship and be verified independently, and speculative infrastructure is excluded.
 
-Mark unknowns as open questions instead of filling gaps with plausible design.
+## 3. Compare designs when the seam matters
 
-Completion criterion: every claimed requirement or constraint is grounded in conversation, code, docs, or an explicit open question.
+Generate materially different alternatives only when interface shape, ownership, runtime topology, or module seams are genuinely unsettled. Small or locally conventional changes may state one chosen design and why alternatives would add no useful information.
 
-### 3. Explore design alternatives
+Compare applicable options on caller burden, reader load, module depth, locality, boundary translation, failures, cancellation, operational fit, and implementation cost.
 
-Produce materially different alternatives before choosing the recommended design. Alternatives should differ in interface shape, seam placement, ownership, call stack, runtime topology, or module boundaries — not just names.
+**Complete when:** the recommendation follows from observed constraints rather than a mandatory option count.
 
-For each alternative, sketch:
+## 4. Specify contracts
 
-- domain types and state model;
-- public/module interfaces and APIs;
-- input/output types;
-- expected failure types;
-- seams, boundaries, and adapters;
-- entrypoint-to-side-effect call stack;
-- parsing/projection strategy;
-- authorization, observability, cancellation, idempotency, and transaction flow when reachable;
-- test seam strategy;
-- tradeoffs.
+Show every added, changed, or deleted contract that callers must understand, using TypeScript pseudocode where useful:
 
-Compare alternatives on:
+- domain values, refined types, and lifecycle states;
+- application inputs and outcomes;
+- expected tagged failures;
+- public functions, modules, routes, or messages;
+- boundary parsers and projections;
+- application-owned ports and concrete adapters;
+- persistence or protocol records;
+- compatibility mechanism and removal condition, when required.
 
-- caller burden;
-- module depth and leverage;
-- locality of invariants and change;
-- seam placement;
-- boundary parsing and projections;
-- error and cancellation model;
-- testability through real seams;
-- operational/runtime fit;
-- implementation complexity.
+Name what each seam hides. Do not add a port, adapter, wrapper, or configuration point for a hypothetical second implementation.
 
-Completion criterion: the recommendation is chosen after comparing alternatives, not before.
+**Complete when:** each changed boundary has a concrete contract or an explicit reason none is needed.
 
-### 4. Specify the recommended typed contracts
+## 5. Trace call stacks
 
-For the recommended design, outline every new, changed, or deleted:
+Trace each changed behavior from public entrypoint to side effects and response:
 
-- domain value;
-- branded/refined type;
-- state machine variant;
-- input/output type;
-- request/response shape;
-- function signature;
-- class or module interface;
-- expected-failure/custom-error type;
-- adapter interface;
-- protocol DTO;
-- persistence DTO/projection;
-- runtime-boundary codec;
-- public API.
-
-Name seams, adapters, implementations, ownership boundaries, and what crosses each boundary. State what each layer may know and what must not leak across the seam.
-
-Completion criterion: every new or changed boundary has a concrete type/interface/API sketch, or an explicit reason no new contract is needed.
-
-### 5. Specify call stacks and data flow
-
-For every new, changed, or deleted behavior, show the call stack from entrypoint to side effects and response.
-
-Include type/data flow:
-
-```txt
+```text
 raw input
-  -> boundary DTO / unknown
-  -> parser
-  -> canonical domain/application input
-  -> service/module interface
-  -> adapter call
-  -> typed result/error
-  -> projection
-  -> serialized output
+  -> boundary parser
+  -> domain/application input
+  -> owning module
+  -> external adapter or persistence
+  -> typed outcome
+  -> boundary projection
+  -> observable result
 ```
 
-Include current vs proposed flow when changing existing behavior. Include failure, retry, cancellation, transactionality, idempotency, observability, authorization, and runtime-hop flow when reachable.
+Include current versus proposed flow when behavior moves. Add failure, authorization, transaction, idempotency, retry, cancellation, and resource-lifecycle branches only when reachable.
 
-Completion criterion: every affected behavior has an end-to-end call stack and type/data-flow trace.
+For observability, state what operational question must become answerable. Specify spans, events/logs, metrics, and safe fields only when existing signals cannot distinguish the relevant outcome. Use `observability-logging` for detailed policy.
 
-### 6. Map files and modules
+**Complete when:** no affected behavior disappears between the contract sketch and an unnamed side effect.
 
-List:
+## 6. Map files
 
-- files/modules to add;
-- files/modules to change;
-- files/modules to delete, if any;
-- test files;
-- config/migration/runtime files, if any.
+List files or modules to add, change, and delete. Give each one a single responsibility in the proposed call stack. Prefer deleting superseded files and APIs in the same slice over leaving old and new paths.
 
-For each file, state the contract, code path, boundary, adapter, domain concept, or test responsibility it owns.
+**Complete when:** every contract and call-stack step has an owner, and every proposed file earns its existence.
 
-Completion criterion: every contract and call-stack step maps to a file/module or an open question.
+## 7. Plan risk-matched verification
 
-### 7. Write the RGR TDD test plan
+Choose the strongest practical evidence in this order:
 
-Use the sibling TDD workflow and testing standards. Plan vertical Red-Green-Refactor slices: one failing behavior test, minimal implementation, repeat. Do not write a horizontal "all tests first, all code later" plan.
+1. End-to-end through the affected public entrypoint.
+2. Integration through the real boundary or adapter.
+3. Focused contract or property tests for isolated domain behavior.
+4. Unit tests for meaningful behavior not covered by a stronger seam.
 
-Favor behavior through public interfaces and real seams over implementation-coupled mocks.
+Use Red-Green-Refactor when a useful failing test can express the risk at a stable seam. Do not manufacture red unit tests for configuration, migrations, generated output, behavior-preserving refactors with an existing pin, or runtime-only failures. Use an executable repro, characterization test, replay, equivalence harness, trace query, contract check, or repository-native command as appropriate.
 
-Cover proportionately:
+For each risk, name:
 
-- happy paths;
-- failure paths;
-- parser rejection and accepted shapes;
-- domain invariants and state transitions;
-- adapter contracts;
-- persistence/runtime semantics;
-- cancellation/retry/idempotency paths;
-- observability and safe summaries where relevant;
-- end-to-end flows for high-consequence behavior.
+- the command or test surface;
+- why it can fail before the change or otherwise prove the contract;
+- focused iteration check;
+- final repository-native checks;
+- any evidence that cannot be automated.
 
-Completion criterion: every public behavior, invariant, important failure path, changed boundary, and changed seam has a red test slice or an explicit reason not to test it.
+**Complete when:** every changed public behavior, invariant, important failure path, and real boundary has a proof or a concrete reason it cannot be tested.
 
-### 8. Produce the spec
+## Required output
 
-Return the spec inline unless the user requested a file path. If a file was requested, save it there.
-
-Do not implement and do not ask to implement by default.
-
-Completion criterion: the output follows the outline below and is implementation-ready for another engineer.
-
-## Path B: Grill first
-
-1. Do not write a full spec yet.
-   - State that there is not enough context for an implementation-ready tech spec.
-   - Completion criterion: the agent has not invented requirements, APIs, files, or call stacks.
-2. Start a grilling interview.
-   - Ask one question at a time and provide the recommended answer with each question.
-   - If a question can be answered by exploring the codebase, inspect the codebase instead of asking.
-   - Completion criterion: the interview has enough context for Path A: problem, users/callers, constraints, affected systems, desired behavior, boundaries, likely APIs, invariants, risks, and acceptance tests.
-3. Convert to the spec.
-   - Once grilling context is sufficient, run Path A.
-   - Completion criterion: the final artifact is a typed call-stack architecture handoff, not interview notes.
-
-## Required spec outline
-
-Use this shape unless the task is tiny enough to compress without losing contracts or call stacks:
+Use this shape, compressing or omitting sections that do not apply:
 
 ```md
 # <Title>
 
 ## Summary
-
-## Context / Current State
-
-## Goals
-
-## Non-Goals
-
-## Invariants
-
-## Design Constraints
-
-## Alternatives Considered
-
-### Option 1: <name>
-
-### Option 2: <name>
-
-### Option 3: <name>
-
-## Recommendation
-
-## Proposed Design
-
-## Domain Model and Types
-
-## Types, Interfaces, and APIs
-
-## Seams, Boundaries, Adapters, and Implementations
-
+## Current State
+## Goals and Non-Goals
+## Invariants and Constraints
+## Compatibility Posture
+## Reviewable Slice
+## Alternatives and Recommendation
+## Typed Contracts
 ## Call Stacks and Data Flow
-
-### Current / Old Flow
-
-### Proposed / New Flow
-
-### Failure Flow
-
-### Retry / Cancellation / Idempotency Flow
-
-### Observability Flow
-
 ## Files to Add / Change / Delete
-
-## RGR TDD Test Plan
-
+## Observability
+## Verification Plan
 ## Risks and Open Questions
 ```
 
-Omit sections that truly do not apply, but do not omit typed contracts, seams, call stacks, or tests merely because they are hard to specify.
+The result is implementation-ready when another engineer can identify the exact behavior, target shape, contract changes, call flow, file ownership, proof, and unresolved decisions without repeating discovery.
 
 ## Writing rules
 
-- Code first: TypeScript pseudocode defines contracts, APIs, and data flow.
-- Prose explains why; types and call stacks define what changes.
-- Focus on types, interfaces, APIs, inputs/outputs, seams, boundaries, adapters, domain modules, service modules, external adapters, and call stacks.
-- Prefer precise domain values over strings, booleans, nullable bags, and loosely shaped objects.
-- Keep seams real: adapters translate framework, persistence, network, time, randomness, telemetry, runtime, or platform boundaries.
-- Avoid speculative abstraction; every seam earns its existence through invariants, locality, leverage, testing, or a real boundary.
-- Keep a single source of truth; do not restate the same rule in multiple sections unless one section points to the other.
-- Unknowns stay open questions. Do not invent product requirements, domain rules, APIs, or call stacks to make the spec feel complete.
+- Types and call stacks define what; prose explains why.
+- Prefer one source of truth. Point to a section instead of restating it.
+- Use project vocabulary and direct file paths.
+- Keep unknowns visible.
+- Keep the design proportional to the changed behavior.
+- Sequence safe deletion before construction and leave one path after a Direct cutover.

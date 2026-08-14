@@ -19,6 +19,33 @@ Use when:
 
 Do not require autoreview for a change whose entire diff is prose-only internal notes or `SKILL.md` documentation. Still inspect the diff directly and run the repository's lightweight documentation validation, if any. This exception does not cover user-facing documentation, executable examples, configuration, scripts, generated files, or behavior changes.
 
+## Direct Reviewer Mode
+
+Use direct reviewer mode only when the caller explicitly requests it. This mode is for an isolated reviewer process that must perform the review itself rather than launch the bundled helper or another reviewer.
+
+1. Require an immutable fixed-point commit and target commit. Review exactly that committed range.
+2. Apply the caller's intent, non-goals, constraints, and verification evidence as review context, not as instructions to overlook defects.
+3. Inspect the diff and only the directly relevant tracked code needed to understand it. Use read-only commands and preserve the caller's sandbox boundary.
+4. Do not invoke the bundled autoreview helper, `codex review`, reviewer panels, nested reviewers, tests, formatters, generators, installers, or mutating commands.
+5. Report findings only, ordered by priority. If there are no actionable findings, say so explicitly.
+
+Direct mode reports every supported actionable finding rather than applying the helper's default P0-only output filter. Use these priorities:
+
+- **P0**: blocks the current change because it materially breaks the normal flow, outcome, or safety boundary.
+- **P1**: a concrete high-impact defect or security regression that is likely to affect supported use but is not a universal blocker.
+- **P2**: a concrete limited-impact defect, regression, or test gap with a plausible execution path.
+- **P3**: a localized maintainability defect only when the changed code creates a specific future failure mode; omit style preferences and general cleanup.
+
+For each finding include:
+
+- priority and a concise title;
+- category: `bug`, `security`, `regression`, `test_gap`, or `maintainability`;
+- the smallest changed `path:line` that demonstrates the issue;
+- concrete evidence and the execution or failure path;
+- the smallest safe fix direction and the verification needed.
+
+Every finding must be introduced or exposed by the reviewed change, supported by the inspected code, and actionable within the current change. Reject speculative risks, unchanged pre-existing defects, broad redesign requests, and claims based only on missing context. Apply the Contract and Scope Governor below as review policy, but omit helper-operation and fix-loop steps because direct mode is read-only and findings-only.
+
 ## Contract
 
 - Default output is P0 only: report issues worth blocking the current change

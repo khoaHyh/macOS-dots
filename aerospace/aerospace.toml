@@ -6,6 +6,8 @@ config-version = 2
 after-startup-command = [
     'exec-and-forget $HOME/dev/macOS-dots/scripts/refresh_simple_bar.sh',
     'layout --workspace 2 --root h_tiles',
+    'layout --workspace 3 --root h_tiles',
+    'layout --workspace 4 --root h_tiles',
 ]
 start-at-login = true
 
@@ -118,6 +120,7 @@ persistent-workspaces = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10']
     j = 'resize height +50'
     k = 'resize height -50'
     l = 'resize width +50'
+    alt-f = 'fullscreen'
     # Keep workspace switching available if resize mode is active.
     alt-1 = 'workspace 1'
     alt-2 = 'workspace 2'

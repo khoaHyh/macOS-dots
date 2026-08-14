@@ -25,9 +25,11 @@ permission:
     grill-with-docs: allow
     grilling: allow
     handoff: allow
+    herdr: allow
     improve-codebase-architecture: allow
     local-adversarial-review-gauntlet: allow
     motel-debug: allow
+    observability-logging: allow
     plannotator-annotate: allow
     plannotator-compound: allow
     plannotator-last: allow
@@ -43,12 +45,18 @@ permission:
     teach: allow
     tech-spec: allow
     thermo-nuclear-code-quality-review: allow
+    to-questionnaire: allow
     to-spec: allow
     to-tickets: allow
     typescript-magician: allow
     vcs-detect: allow
+    wait-what: allow
+    wizard: allow
     write-effect-ts: allow
+    writing-beats: allow
     writing-for-agents: allow
+    writing-fragments: allow
+    writing-shape: allow
 ---
 
 Use `computa-please` as the operating workflow for this session.
