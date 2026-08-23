@@ -90,11 +90,6 @@
       "skillPath": "skills/context7-mcp/SKILL.md",
       "computedHash": "38728e71e4773f70b3e7d2a2c90b1b0466ba7829603d790b05e0a3ab12f8e569"
     },
-    "deepen-codebase-design": {
-      "source": "khoahyh/skills",
-      "sourceType": "github",
-      "computedHash": "81ccdc702ab33d21920ad76bfc5a1fd592fb2918db74612fc5fb65d1f117b493"
-    },
     "diagnosing-bugs": {
       "source": "mattpocock/skills",
       "sourceType": "github",
@@ -207,11 +202,6 @@
       "sourceType": "github",
       "skillPath": "pstack/skills/interrogate/SKILL.md",
       "computedHash": "badbe0ad469f9829ebb64cf457833467cebbe72cf1c04dceb05f049864ef83e4"
-    },
-    "jujutsu-colocated": {
-      "source": "khoahyh/skills",
-      "sourceType": "github",
-      "computedHash": "b035125604902aa786fc4045ad9237a6e80612d37ca7a9734764f278ed8331e4"
     },
     "local-adversarial-review-gauntlet": {
       "source": "khoaHyh/skills",
@@ -459,12 +449,6 @@
       "skillPath": "skills/in-progress/setup-ts-deep-modules/SKILL.md",
       "computedHash": "bd5cbaa455454c2d6c27a1b734e0d820606da6c482bf3c79ec55fbc3f3e03ef3"
     },
-    "sharingan": {
-      "source": "khoahyh/skills",
-      "sourceType": "github",
-      "skillPath": "sharingan/SKILL.md",
-      "computedHash": "f8034b9364951736a9e82a9dc3c5e1cc4e339a4d3fa52cec6af50c3c0b32cb7f"
-    },
     "show-me-your-work": {
       "source": "cursor/plugins",
       "sourceType": "github",
@@ -560,12 +544,6 @@
       "sourceType": "github",
       "skillPath": "skills/engineering/wizard/SKILL.md",
       "computedHash": "3cfe7e22cba6a19a8b73e3bc231970202b26db82e1ac44aa16ad592e8a1897b3"
-    },
-    "write-effect-ts": {
-      "source": "khoahyh/skills",
-      "sourceType": "github",
-      "skillPath": "write-effect-ts/SKILL.md",
-      "computedHash": "102b56f3fb1fb7e892357a4c2028f2b8e599dceff9b8d8ffc4597a0844a4dfb2"
     },
     "writing-beats": {
       "source": "mattpocock/skills",

@@ -52,7 +52,6 @@ permission:
     vcs-detect: allow
     wait-what: allow
     wizard: allow
-    write-effect-ts: allow
     writing-beats: allow
     writing-for-agents: allow
     writing-fragments: allow
