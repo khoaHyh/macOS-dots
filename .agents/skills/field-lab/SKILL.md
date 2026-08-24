@@ -71,6 +71,12 @@ Reduce choice load. Recommend one path and add at most one meaningfully differen
 
 Changing one axis does not change another. More instruments do not force a Field Trip. A Field Trip does not select a workflow. An Expedition adds navigation, not permission.
 
+Treat every workflow as a human-operated route. It may schedule instruments,
+declare checkpoints, and show which branches fit the returned evidence. The
+human chooses every branch that changes the question, specimen, method, stakes,
+or kind of result. Workflow completion means the named route ran; it never
+closes the inquiry.
+
 ## Instrument-only authority gate
 
 Treat authority to examine and authority to interpret or act as absent by default.
@@ -86,6 +92,7 @@ If question 2, 3, or 4 has no answer, do not perform the operation. Offer the fi
 
 - Treat a fully specified bounded output as direct only when the user has fixed both the source material and the transformation closely enough that no interpretive method remains to choose. A bounded topic, source count, time limit, or output format does not make a research survey, comparison, pattern extraction, candidate hunt, or fresh representation a direct-answer case.
 - Outside the direct-answer cases in question 1, treat searching, source collection, source surveys, and agent recruitment as substantive work, not neutral preparation. Perform them only when a selected instrument, authorized workflow stage, or explicitly requested later task from question 2 requires them, and only within its declared inputs, scope, controls, and result.
+- Treat a source the user supplies during an authorized instrument or workflow stage as selected input to that active operation unless the user labels it reference-only. Read the relevant supplied material before asking the next substantive question, and let it inform later questions within that operation. This authorizes reading the supplied source, not searching for more sources, widening the inquiry, or producing an unscheduled synthesis.
 - Treat an open request to research or survey a subject as the user's aim, not as selection of a method. Recommend a named research-capable instrument and wait unless the user already selected one or chose a workflow that schedules it.
 - When no instrument is an obvious fit, do not improvise a method, begin a generic survey, or browse in hope that the method will emerge. Run the Focus interview: reflect the provisional aim, ask the single question whose answer would most change the instrument choice, and stop. Repeat one question at a time only while a result-changing ambiguity remains.
 - Do not inspect sources and then announce themes, patterns, candidate classes, strongest examples, implications, or a “first pass” unless the selected operation explicitly produces that exact result.
@@ -176,7 +183,7 @@ Use the bench below to choose what to offer. After the user selects an instrumen
 
 - Let the user select an instrument by direct request, choice from an offer, agreement to a Field Trip plan that names it, or selection of a workflow whose schedule names it.
 - Preserve any user-selected sequence. “Run A and B, then C” selects all three: A and B are the current batch and C is queued next. Completion of the current batch does not cancel or reopen the choice of C.
-- Distinguish the **selected queue** from mere offers. For ad hoc work, only the user may add, remove, replace, or reorder queued instruments. A user-selected workflow may advance its declared schedule but may not add unscheduled instruments. Keep the queue in conversation during a Walk and in the collection plan during a Field Trip.
+- Distinguish the **selected queue** from mere offers. For ad hoc work, only the user may add, remove, replace, or reorder queued instruments. A user-selected workflow may advance its declared fixed schedule but may not choose a conditional branch or add an unscheduled instrument. Keep the queue in conversation during a Walk and in the collection plan during a Field Trip.
 - Treat the Focus interview as the sole selection exception: ask its questions directly without an instrument announcement; the user authorizes completion by answering.
 - Treat a workflow schedule as selection, not phase-start permission. Obey any separate phase-opening gate.
 - Treat the explanation of a selected instrument as identification, not permission.
@@ -205,6 +212,10 @@ Return the closest practical equivalent of raw data for that operation:
 - what the operation may have induced or hidden; and
 - what remains unmeasured.
 
+Do not leave possible distortion implicit in the control or limitations. Every
+completed instrument return must name at least one way the operation itself may
+have added, selected, flattened, or hidden structure.
+
 Keep observation, measurement, user testimony, source claim, elicited response, generated sample, controlled comparison, test result, inference, analogy, value judgment, and hypothesis distinct. Do not turn one kind into another later.
 
 Do not use one instrument result to explain the whole subject, select the most important finding, synthesize across instruments, recommend an action, or silently replace the user's term. Keep any later user-requested interpretation or workflow-authorized analysis separate.
@@ -222,6 +233,41 @@ After every instrument result:
 7. If no instrument would add much, say that plainly and stop offering tools.
 
 If the user selects a workflow, enter it directly instead of showing another instrument menu.
+
+## Workflow routing
+
+Order instruments by epistemic dependency and the risk that an early operation
+will contaminate a later observation, not by bench taxonomy. Confirm the aim;
+collect or freeze material that later probes could alter; establish baselines
+and context boundaries; run prerequisites; then move from observation and
+distinction toward generation, interpretation, or synthesis only when the
+selected method and requested task allow it. Reduce avoidable order effects and
+name the correlation that remains; do not let an impossible standard of purity
+stall useful work.
+
+Match route size to inquiry clarity:
+
+- For a clear aim and known use case, offer a named workflow or one proposed
+  route with its important checkpoints and branches.
+- For an open-ended inquiry, offer one instrument or a short sequence. Let later
+  readings narrow the next branch.
+- Use the Focus interview and instruments that expose competing assumptions or
+  internal failures early when the user's model may be inconsistent.
+- Filter from the current inquiry state. Recommend one fit and at most one route
+  that examines a different uncertainty.
+
+At a branch, state what each option would examine, what evidence made it
+relevant, and its main cost or distortion. Let the human choose, including to
+reframe, pause, stop, or take a route the workflow did not anticipate. No
+reading definitively ends a line of inquiry.
+
+Keep stable operating method in instrument cards, reusable order and gates in
+workflow files, and the current aim, sources, readings, selected queue, user
+comments, and branch history in the Field Log. When creating or changing a
+workflow, read [workflow-contract.md](reference/workflow-contract.md). Do not
+add automation fields to an ordinary workflow. Autonomous branching belongs to
+the future Field Station protocol described in
+[field-station-protocol.md](reference/field-station-protocol.md).
 
 ## Instrument bench
 
@@ -263,7 +309,7 @@ When the script marks a query weak, do not trust its ranking as a shortlist. Rew
 | [`term-scan`](reference/instruments/term-scan.md)                             | A repeated word may carry several standards or meanings                               | Competing loadings and where they change evidence or choice                                 |
 | [`tension-statement`](reference/instruments/tension-statement.md)             | Friction is vague or a working tension may have moved or thinned                      | A traced initial menu and later tension-status checks with user choice                      |
 | [`third-pole`](reference/instruments/third-pole.md)                           | A binary may omit an axis, position, or constituency                                  | A genuinely independent pole, or evidence none is supported                                 |
-| [`ground-condition`](reference/instruments/ground-condition.md)               | A fact, resource, authority relation, or level may change the debate                  | Candidate ground conditions and their evidence status                                       |
+| [`ground-condition`](reference/instruments/ground-condition.md)               | A material condition may change the debate, or a model may fail at a boundary         | Ground conditions, supported range or boundary break, and their evidence status              |
 | [`real-world-check`](reference/instruments/real-world-check.md)               | One safe, reversible change could answer a practical uncertainty                      | What actually changes after one controlled action                                           |
 | [`elenchus`](reference/instruments/elenchus.md)                               | Hidden premises, stakes, history, or belief load need deeper elicitation              | Answerable assumptions, commitments, testimony, and gaps                                    |
 | [`frame-projector`](reference/instruments/frame-projector.md)                 | Concrete examples may support several useful 2×2 projections                          | Candidate clusters, separating axes, missing quadrants, and projection loss                 |
@@ -273,7 +319,7 @@ When the script marks a query weak, do not trust its ranking as a shortlist. Rew
 | [`defamiliarize`](reference/instruments/defamiliarize.md)                     | Current vocabulary blocks new distinctions                                            | Foreign forms, translated distinctions, and their breakpoints                               |
 | [`donor-perturb`](reference/instruments/donor-perturb.md)                     | The home field lacks a needed mechanism                                               | Distant donor mechanisms, mappings, fit, and transfer limits                                |
 | [`structural-recombine`](reference/instruments/structural-recombine.md)       | Whole arguments hide possible cross-links among parts                                 | Decomposed parts, proposed links, calibration, and source trace                             |
-| [`design-grammar`](reference/instruments/design-grammar.md)                   | A fixed artifact or system may hide a reusable language of possible forms             | Candidate primitives, invariants, combination rules, adjacent forms, and decomposition loss |
+| [`design-grammar`](reference/instruments/design-grammar.md)                   | A fixed artifact or system may hide a reusable language of possible forms             | Primitives, overlaps, legal transformations, supported range, adjacent forms, and loss       |
 | [`formation-section`](reference/instruments/formation-section.md)             | Accumulated material contains additions, deletion, reuse, overwrites, or branches     | Source units, direct relations, formation processes, and uncertain phases                   |
 | [`attribute-interpolation`](reference/instruments/attribute-interpolation.md) | One specimen may change character as one meaningful quality varies                    | Generated thresholds, collateral changes, and invariants along one declared attribute       |
 | [`criterion-excavation`](reference/instruments/criterion-excavation.md)       | A person can recognize good and bad examples more easily than they can name why       | Candidate hidden but observable criteria exposed through corrected example records          |
@@ -326,7 +372,31 @@ When several Field Logs now share a question, place, system, lineage, or planned
 
 > We've got three related trails now. Want me to give them a shared index, with a separate Field Log for each? That will keep the threads linked without mixing their evidence.
 
-This shared index is an **Expedition**. After agreement, read [expedition.md](reference/expedition.md), then create [expedition-log-template.md](reference/expedition-log-template.md). Treat it as a container and shared record, not a method.
+This shared index is an **Expedition**. After agreement, read
+[expedition.md](reference/expedition.md) and
+[expedition-log-events.md](reference/expedition-log-events.md). Use the bundled
+Expedition writer as the only mutation path; never create or edit
+`expedition_log.jsonl` or `expedition_log.md` directly. Treat it as a container
+and shared record, not a method.
+
+For every new Field Trip inside an Expedition, read `expedition_log.md` as the
+first tool call. The log is a compact briefing. Inspect, search, or read older
+Field Logs and their readouts or sources when the current inquiry needs more
+depth. A promotion must point to an entry that already exists in the promoting
+Field Log and must say why it was promoted. Replacement and removal change only
+the current projection; do not present superseded or removed promotions as
+current.
+
+When the destination Expedition, scope, initiating comment, and inherited
+context are already chosen, use `field-lab trip start` as described in
+[field-trip.md](reference/field-trip.md). Give it the prepared choices; do not
+let the orchestration command choose the Expedition, scope, prior comments, or
+plan. Retry the same input when its recovery receipt reports a partial start.
+
+To migrate a hand-written Expedition, treat reconstruction as an agent task:
+read the old Markdown, initialize the compound log, append the events needed to
+reconstruct its current briefing, render, and compare before moving the old
+file. Do not look for a migration CLI command.
 
 ## Rubric Builder workflow
 
@@ -365,6 +435,12 @@ Use one owner for each rule:
 - Instrument cards: operating range, input, procedure, execution placement, control, result, likely distortions, fallback, required work, and stop rule.
 - [instrument-contract.md](reference/instrument-contract.md): card-authoring and saved-result schemas; read it only when creating or changing an instrument card.
 - [instrument-usage-audit.md](reference/instrument-usage-audit.md): conservative completed-use counts and maturity evidence; read it when changing a card's maturity.
+- [workflow-contract.md](reference/workflow-contract.md): workflow-authoring,
+  sequencing, branch, authority, and test rules; read it only when creating or
+  changing a workflow.
+- [field-station-protocol.md](reference/field-station-protocol.md): deferred
+  design for autonomous protocols and their commissioning workflow; read it
+  only when designing scheduled or autonomous Field Lab work.
 - Field Trip and Expedition files: materialization procedures and log schemas.
 - [dialectic-workflow.md](reference/dialectic-workflow.md): all workflow-wide gates and safeguards.
 - Phase and stage files: only their local work, deliverables, and checklist.

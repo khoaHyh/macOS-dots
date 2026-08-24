@@ -1,7 +1,6 @@
 ---
 name: subtract
 description: Subtract entropy and complexity from a codebase or selected changes.
-disable-model-invocation: true
 ---
 
 # Subtract

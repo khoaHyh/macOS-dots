@@ -10,7 +10,6 @@
     //   }
     // ]
   ],
-  "instructions": ["prompts/pstack-compatibility.md"],
   "small_model": "openai/gpt-5.4-mini",
   "provider": {
     "openai": {
@@ -23,7 +22,7 @@
       }
     }
   },
-  "lsp": true,
+  "lsp": false,
   "references": {
     "effect-src": {
       "repository": "Effect-TS/effect",
@@ -49,46 +48,23 @@
   "permission": {
     "websearch": "allow",
     "question": "allow",
+    "external_directory": {
+      "~/.local/share/agent-skills/personal-drafting/**": "allow"
+    },
     "skill": {
       "*": "allow",
-      "architect": "deny",
-      "arena": "deny",
-      "automate-me": "deny",
-      "blast-radius": "deny",
-      "figure-it-out": "deny",
-      "how": "deny",
-      "interrogate": "deny",
-      "poteto-mode": "deny",
-      "principle-boundary-discipline": "deny",
-      "principle-build-the-lever": "deny",
-      "principle-encode-lessons-in-structure": "deny",
-      "principle-exhaust-the-design-space": "deny",
-      "principle-experience-first": "deny",
-      "principle-fix-root-causes": "deny",
-      "principle-foundational-thinking": "deny",
-      "principle-guard-the-context-window": "deny",
-      "principle-laziness-protocol": "deny",
-      "principle-make-operations-idempotent": "deny",
-      "principle-migrate-callers-then-delete-legacy-apis": "deny",
-      "principle-minimize-reader-load": "deny",
-      "principle-never-block-on-the-human": "deny",
-      "principle-outcome-oriented-execution": "deny",
-      "principle-prove-it-works": "deny",
-      "principle-redesign-from-first-principles": "deny",
-      "principle-separate-before-serializing-shared-state": "deny",
-      "principle-sequence-verifiable-units": "deny",
-      "principle-subtract-before-you-add": "deny",
-      "principle-type-system-discipline": "deny",
-      "recall": "deny",
-      "reflect": "deny",
-      "setup-pstack": "deny",
-      "show-me-your-work": "deny",
-      "typescript-best-practices": "deny",
-      "unslop": "deny",
-      "why": "deny"
+      "personal-drafting": "deny",
+      "principle-subtract-before-you-add": "deny"
     }
   },
   "agent": {
+    "build": {
+      "permission": {
+        "skill": {
+          "personal-drafting": "allow"
+        }
+      }
+    },
     "explore": {
       "mode": "subagent",
       "description": "Focused codebase search specialist",
@@ -112,14 +88,6 @@
     "general": {
       "model": "openai/gpt-5.6-sol-fast",
       "variant": "medium"
-    },
-    "minion": {
-      "model": "openai/gpt-5.6-sol-fast",
-      "variant": "high"
-    },
-    "orchestrator": {
-      "model": "openai/gpt-5.6-sol",
-      "variant": "xhigh"
     }
   },
   "mcp": {

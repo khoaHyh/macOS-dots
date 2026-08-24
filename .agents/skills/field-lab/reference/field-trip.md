@@ -23,6 +23,8 @@ Use the built Node scripts directly:
 
 ```text
 node <skill-root>/artifact-browser/dist/field-log-cli/index.js
+node <skill-root>/artifact-browser/dist/expedition-log-cli/index.js
+node <skill-root>/artifact-browser/dist/field-lab-cli/index.js
 node <skill-root>/artifact-browser/dist/cli/index.js
 ```
 
@@ -32,7 +34,67 @@ If either script is missing, build once:
 pnpm --dir <skill-root>/artifact-browser build
 ```
 
-Do not install or globally link either CLI.
+Do not install or globally link these CLIs.
+
+## Start an Expedition member in one call
+
+When the Expedition, scope, initiating comment, and inherited context are
+already chosen, use the orchestration command instead of coordinating the two
+writers by hand:
+
+```text
+node <skill-root>/artifact-browser/dist/field-lab-cli/index.js trip start \
+  --expedition <expedition-directory> \
+  --slug <trip-slug> \
+  --input <start.json> \
+  --reader
+```
+
+Use `--open` in place of `--reader` when the system browser should also open.
+In Codex, prefer `--reader`, then open the returned URL in the integrated
+browser. `--context` and `--file` are aliases for `--input`.
+
+The input owns the choices the CLI must not make:
+
+```json
+{
+  "operationId": "optional-stable-retry-id",
+  "actor": {"kind": "orchestrator", "pointer": "current-task"},
+  "authorization": {
+    "kind": "artifact-consent",
+    "pointer": "user-turn",
+    "verbatim": "Add this inquiry to the Expedition."
+  },
+  "trip": {
+    "title": "Reactive API design",
+    "openingQuestion": "What should a reactive API expose?",
+    "scope": "Inspect API shapes without choosing a product strategy."
+  },
+  "events": [
+    {
+      "type": "comment.recorded",
+      "actor": {"kind": "user", "pointer": "user-turn"},
+      "payload": {
+        "speaker": "Kyle",
+        "text": "Add this inquiry to the Expedition."
+      }
+    }
+  ]
+}
+```
+
+The first event must preserve the initiating user comment. Later events may
+carry the selected scope, prior comments, questions, and plan. The command
+validates the Expedition, creates the Field Log in its final member directory,
+appends the prepared events, records membership in both streams, rebuilds both
+Markdown projections, and validates both histories. With `--reader` or
+`--open`, it starts or reuses the trip-named tmux reader against the Expedition
+and selects the new Field Log.
+
+The JSON result includes the trip ID, paths, warnings, reader URL when
+requested, and `.field-lab-trip-start.json`. That file is a recovery receipt,
+not canonical inquiry history. Retry the same command and input after a partial
+failure. The operation resumes completed steps and never rolls history back.
 
 ## Set up the Field Log
 
@@ -65,16 +127,45 @@ be overwritten during every successful append or recovery.
 
 ## Open the live reader
 
-After initialization, start the reader against the trip directory:
+After initialization, derive the reader session name from the Field Trip
+directory basename:
+
+```text
+artifact-browser-<field-trip-name>
+```
+
+Replace characters outside letters, numbers, underscores, and hyphens with
+hyphens. This name must follow the Field Trip name so a later session can find
+and reuse the right reader.
+
+Check whether `tmux` is installed. When it is, start the reader in a detached
+tmux session against the trip directory:
+
+```bash
+tmux new-session -d -s artifact-browser-<field-trip-name> \
+  "node <skill-root>/artifact-browser/dist/cli/index.js <trip-directory> --no-open"
+tmux capture-pane -p -t artifact-browser-<field-trip-name>
+```
+
+If the named tmux session already exists, do not start a duplicate. Capture its
+pane to recover the live URL and confirm that its reader still runs. Tell the
+user that tmux keeps the reader alive when the Codex terminal closes or the
+computer sleeps, but not across a reboot.
+
+When `tmux` is not installed, start the reader in the foreground:
 
 ```bash
 node <skill-root>/artifact-browser/dist/cli/index.js <trip-directory> --no-open
 ```
 
+Tell the user that this foreground reader must be relaunched whenever its
+terminal ends. Recommend tmux and offer to install or set it up for them. On
+native Windows, explain that tmux requires WSL before offering that setup.
+
 The server chooses open loopback ports and prints a capability-bearing URL.
-Keep that process running for the working session. In Codex, open the printed
-URL in the integrated browser when available; otherwise give the URL to the
-user. Never store its port or capability in the Field Log.
+In Codex, open the printed URL in the integrated browser when available;
+otherwise give the URL to the user. Never store its port or capability in the
+Field Log.
 
 The orchestrator owns the live URL. When a writer receipt returns `entryId`,
 `runId`, or `relativeHref`, preserve the printed URL's `cap` parameter and link
@@ -113,6 +204,11 @@ Keep the canonical router, selected queue, and authority boundary from
   their absolute path. The writer makes a durable trip-local copy when that
   path is under Desktop, Downloads, or the operating system's temporary
   directory; do not copy those files by hand.
+- When the user supplies a source during an authorized operation, register it,
+  inspect the relevant supplied material before the next substantive question,
+  and record the examination coverage. Let that reading guide later questions
+  inside the operation. A supplied source authorizes reading that source, not
+  wider research. If access fails, state the limit before continuing.
 - Record every selected instrument run. Add `prepared` or `started` events only
   when they preserve a meaningful baseline, control, execution boundary, or
   handoff.
@@ -202,8 +298,16 @@ do not matter.
 
 ## Expedition membership
 
-A Field Trip may stand alone or belong to an Expedition. Joining one adds
-lineage pointers while preserving the trip's own event stream. Do not flatten
-its readings into the Expedition index. Add an atlas or wiki only when
-cross-links, several agents, recursion, drift, or context loss make graph memory
-useful.
+A Field Trip may stand alone or belong to an Expedition. Use `expedition-log
+join` to move a standalone trip under the Expedition and write lineage pointers
+to both logs. Do not move it or edit either projection by hand.
+
+When this is a new trip inside an Expedition, read `expedition_log.md` as the
+first tool call. Its promoted entries are orientation, not inherited truth.
+Use `inspect`, `search`, and `read` to open member Field Logs and sources at the
+depth the inquiry needs.
+
+Promote only an entry that already exists in this Field Log. Give every
+promotion a short rationale. A later trip may replace or remove a promotion;
+that changes the current Expedition projection without erasing canonical event
+history.

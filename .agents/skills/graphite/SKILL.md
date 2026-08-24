@@ -29,7 +29,7 @@ Work with Graphite (`gt`) for creating, navigating, and managing stacked pull re
 | Jump to top of stack | `gt top` |
 | Jump to bottom of stack | `gt bottom` |
 | View stack structure | `gt ls` |
-| Submit stack for review | `gt submit --no-interactive` |
+| Submit stack as drafts | `gt submit --draft --no-interactive` |
 | Rebase stack on trunk | `gt restack` |
 | Change branch parent | `gt track --parent <branch>` |
 | Rename current branch | `gt rename <new-name>` |
@@ -78,7 +78,7 @@ auth-bugfix/handle-401-status-codes
 2. Stage changes: `git add <files>`
 3. Create branch: `gt create branch-name -m "commit message"`
 4. Repeat for each PR in the stack
-5. Submit: `gt submit --no-interactive`
+5. Submit as drafts: `gt submit --draft --no-interactive`
 
 ### Handle Untracked Branches (common with worktrees)
 
@@ -213,8 +213,10 @@ After creating each PR, run appropriate linting, building, and testing:
 ### Submit the Stack
 
 ```bash
-gt submit --no-interactive
+gt submit --draft --no-interactive
 ```
+
+Ready/reviewable only when the user explicitly asks: `gt submit --publish --no-interactive`.
 
 ### Update PR Descriptions
 

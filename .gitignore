@@ -3,6 +3,9 @@ jj/
 
 .playwright-cli
 
+# private personal skills
+.agents/skills/personal-drafting
+
 # agent plan/prd/specs
 .sisyphus
 specs/

@@ -16,6 +16,8 @@ permission:
     field-lab: allow
     documentation: allow
     domain-modeling: allow
+    effect: allow
+    feature-grill: allow
     feedback-loop: allow
     find-docs: allow
     fix-ci: allow
@@ -27,9 +29,12 @@ permission:
     handoff: allow
     herdr: allow
     improve-codebase-architecture: allow
+    install-anti-slop: allow
     local-adversarial-review-gauntlet: allow
     motel-debug: allow
     observability-logging: allow
+    peekaboo: allow
+    personal-drafting: allow
     plannotator-annotate: allow
     plannotator-compound: allow
     plannotator-last: allow
@@ -39,6 +44,7 @@ permission:
     principle-subtract-before-you-add: allow
     prototype: allow
     remotion-best-practices: allow
+    review-remediation: allow
     setup-matt-pocock-skills: allow
     subtract: allow
     tdd: allow

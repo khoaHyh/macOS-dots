@@ -43,7 +43,7 @@ Take a common dispute: how should two people clean their kitchen? A few question
 
 If the inquiry starts producing sources, comparisons, or findings worth keeping, I’ll say so: “There’s something worth keeping here. Want me to start a Field Log?” The log gives each observation a date, a source, and enough context to revisit it later. If several Field Logs belong together, I can give them a shared Expedition index without mixing their evidence.
 
-For a question that needs several linked steps, I may offer a workflow such as the Electric Monk dialectic. You can stop whenever you have enough. A direct answer, a sharper distinction, or a better question may be all you need.
+For a question that needs several linked steps, I may offer a workflow such as the Electric Monk dialectic. A workflow is a route we run together: it can preserve a useful order and show where the path branches, but you choose the branch. You can stop whenever you have enough. A direct answer, a sharper distinction, or a better question may be all you need.
 
 ## What I carry
 
@@ -95,9 +95,22 @@ None of these thinkers supplies a complete philosophy for the lab. Each changed 
 ## Repository
 
 - [`SKILL.md`](SKILL.md): entry point and routing rules
+- [`.agents/behaviors/`](.agents/behaviors/): sparse, authoritative standards for reviewing Field Lab trajectories
 - [`reference/instruments/`](reference/instruments/): the instrument bench
+- [`reference/workflow-contract.md`](reference/workflow-contract.md): the contract for human-operated workflows
+- [`reference/field-station-protocol.md`](reference/field-station-protocol.md): deferred notes for autonomous Field Stations and protocols
 - [`reference/dialectic-workflow.md`](reference/dialectic-workflow.md): the Electric Monk workflow
+- [`reference/conformance-suite.md`](reference/conformance-suite.md): behavior-spec calibration and raw-trace boundaries
+- [`artifact-browser/src/field-lab/conformance/`](artifact-browser/src/field-lab/conformance/): XState conformance model and calibration traces
 - [`reference/`](reference/): field-work, memory, and validation contracts
+
+The behavior specs follow the open [Agent Behavior](https://www.agentbehavior.dev/)
+format. They define what trace reviewers and evals should count as compliant;
+they are not another prompt injected into Kit. The executable harness accepts a
+neutral raw trajectory, preserves raw event IDs as citations, and runs explicit
+Field Lab semantics through an XState kernel. Its Field Log adapter does not
+infer work from prose, and marks logs incomplete unless the caller can prove the
+JSONL contains the whole agent trajectory.
 
 ## License
 

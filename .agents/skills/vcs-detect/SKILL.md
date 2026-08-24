@@ -47,7 +47,7 @@ fi
 | Create branch | `git checkout -b <name>` | `gt create -am "<type>(<scope>): <description>" [branch-name]` |
 | Add commit to current branch | `git add -A && git commit -m "<type>(<scope>): <description>"` | `gt modify --commit -am "<type>(<scope>): <description>"` |
 | Amend unpublished commit | `git add -A && git commit --amend --no-edit` | `gt modify -a --no-edit` |
-| Submit PRs | `gh pr create` | `gt submit` / `gt submit --stack` |
+| Submit PRs | `gh pr create --draft` | `gt submit --draft` / `gt submit --draft --stack` |
 | Sync with trunk | `git fetch && git rebase origin/main` | `gt sync` or `gt restack` |
 | Set stack parent | N/A | `gt track --parent <branch>` |
 
