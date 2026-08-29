@@ -1,6 +1,6 @@
 ---
 name: computa-please
-description: "Use for /computa-please: route evaluation, specs, implementation, finish loops, debugging, review, pickup, and workflow reflection before mutation."
+description: "Use for /computa-please: route design intake, grilling, specs, implementation, finish loops, debugging, review, pickup, and workflow reflection before mutation."
 ---
 
 # computa-please
@@ -20,9 +20,23 @@ Choose one mode before substantial work and state whether mutation and durable a
 - **Recall/Pickup** for recovering live work from a handoff, spec, branch, or PR.
 - **Reflect** for turning observed workflow friction into a proposed structural improvement.
 
-Default evaluative or ambiguous requests to Discuss. Ask only about product direction, public contracts, production behavior, auth, security, secrets, money, deletion, deploys, ownership, or facts that inspection cannot settle.
+Default evaluative or ambiguous requests to Discuss. Resolve discoverable facts through inspection and reserve questions for user decisions.
+
+Before substantial design or mutation, follow [the Design Readiness runbook](references/design-readiness.md) for new behavior, a nontrivial redesign or refactor, architecture work, or a Spec/Implement request without an accepted contract. It owns the preliminary questions, the user checkpoint, and routing to `feature-grill`, `grill-with-docs`, general `grilling`, or no grill. Keep production code read-only until that gate passes; mutate design docs only through a user-authorized `grill-with-docs` route.
 
 Create a todo list only for genuinely multi-step work where progress state helps. Load a skill once per session unless its source changed or a distinct branch requires unread reference material.
+
+## Adversarial engineering posture
+
+Work as a skeptical fellow engineer. Treat the request, existing code, docs, tests, prior reviews, and your own first answer as claims whose trust must be earned. Assume the work may hide a serious defect behind plausible code; try to falsify it through realistic execution paths before accepting it. Direct adversarial pressure at the work while treating the author as a collaborator; report concrete failure modes and evidence.
+
+Keep adversarial work bounded rather than maximalist. Test realistic states, observed consumers, and credible threats within the declared contract. Prefer the fewest layers, checks, options, and abstractions that make the result robust. Skepticism must reduce uncertainty and simplify the result, not multiply mechanisms.
+
+- Start at the top of the evidence DAG: repository instructions and accepted contracts; public entrypoints, indexes, exports, registries, and schemas; owning implementations; callers and tests; then current canonical upstream docs, types, source, RFCs, or ADRs where external semantics matter.
+- Search to locate definitions, edges, and authoritative nodes before reading leaves. Follow an edge only while it can change the contract, design, finding, compatibility posture, or proof. Stop broadening when the remaining uncertainty cannot change the result.
+- Prefer a robust repository idiom and documented upstream best practice. A deviation needs a concrete local constraint; familiarity, novelty, and taste are not evidence.
+- Select perspectives by observed risk: behavior and spec, ownership and invariants, state and lifecycle, concurrency and retries, errors and recovery, trust boundaries, data and compatibility, operability, and performance. Examine the perspectives that can materially change this work rather than mechanically applying every lens.
+- Reject bikeshedding, speculative edge cases, defensive compatibility without an observed obligation, and abstractions that hide no current complexity. Be thorough about consequences, not exhaustive about possibilities.
 
 ## Pull request descriptions
 
@@ -80,6 +94,21 @@ Use Red-Green-Refactor when a useful failing test can express the risk. For conf
 
 Discover repository-native focused and final checks once, retain their commands and outcomes in working context, and rerun only when relevant inputs changed. Before completion, inspect status and the complete diff, run the focused proof plus required final checks, and report anything not run.
 
+## High-assurance local review
+
+`local-adversarial-review-gauntlet` costs roughly ten minutes, so select it when the expected defect-finding value justifies that delay. Do not wait for the user to name the skill when `computa-please` is orchestrating qualifying work. Treat these as presumptive risk signals rather than keyword triggers:
+
+- Security, authentication, authorization, secrets, privacy, or another trust boundary.
+- Money movement, billing, pricing, entitlements, or financially consequential accounting.
+- Production infrastructure, deployment control planes, or recovery and data-integrity paths.
+- Internal developer platforms or internal tooling with broad workflow, release, or repository impact.
+- Architecture or design changes that establish a durable seam, ownership boundary, protocol, or hard-to-reverse contract.
+- Complex cross-module changes or nontrivial features with multiple failure paths, consequential state transitions, or weak deterministic coverage.
+
+Select the gauntlet when one of those risks is materially present and four independent reviewers could plausibly change the result. Use the normal review path when the slice is small, mechanically proven, and a broader review is unlikely to repay its runtime. This orchestration route is the exception to the gauntlet's direct-invocation rule; outside `computa-please`, the user must explicitly request it.
+
+Run the selected gauntlet once, after the coherent slice passes deterministic verification and has an immutable committed target, but before publication or the final human gate. The orchestration packet must name the risk signal, fixed point, target, and whether a prerequisite local commit is authorized. An active Finish Loop supplies that commit authorization; otherwise ask one bounded question before committing or invoking the gauntlet.
+
 ## Delegation contract
 
 The main agent owns synthesis and the final diff. Delegate only when independent work will reduce elapsed time or provide a genuinely different evidence source.
@@ -114,21 +143,21 @@ Create a comprehension map only when the user asks for one or the spec is comple
 
 ### Discuss
 
-Research enough to produce a recommendation, tradeoff, or decision. Do not edit or persist unless the user promotes the work.
+Research enough to produce a recommendation, tradeoff, or decision. Run Design Readiness when the discussion could become a feature, architecture, or consequential redesign; use its selected grilling flow before claiming shared understanding. Do not edit or persist unless the user promotes the work.
 
 ### Spec
 
-1. Create an artifact path only when persistence is requested or needed.
-2. Establish Compatibility posture and run subtraction analysis where it can change the design.
-3. Run `tech-spec`; it owns spec structure, typed contracts, call stacks, file mapping, and risk-matched verification planning.
-4. Grill only when unresolved product, terminology, contract, or architecture decisions make the spec unsafe to implement.
+1. Run Design Readiness. Complete any selected grilling flow and obtain user confirmation before specifying.
+2. Create an artifact path only when persistence is requested or needed.
+3. Establish Compatibility posture and run subtraction analysis where it can change the design.
+4. Run `tech-spec`; it owns spec structure, typed contracts, call stacks, file mapping, and risk-matched verification planning.
 5. Create a comprehension map only under the rule above.
 
 Complete when a fresh session can implement without rediscovering the contract, target shape, call flow, files, proof, and open decisions.
 
 ### Implement
 
-Read the accepted spec and handoff when they exist. Load `principle-subtract-before-you-add` for additions, refactors, or rewrites; Finish Loop implementation inherits this rule. Load `coding-standards`, plus `codebase-design` for a nontrivial seam and technology-specific skills when relevant. Load `tdd` only when RGR is the selected verification loop.
+Read the accepted spec, its linked Feature Contract, and handoff when they exist. Run Design Readiness before editing when no accepted tech spec or equally explicit implementation contract settles the requested behavior and design; a Feature Contract alone opens Spec, not Implement. Load `principle-subtract-before-you-add` for additions, refactors, or rewrites; Finish Loop implementation inherits this rule. Load `coding-standards`, plus `codebase-design` for a nontrivial seam and technology-specific skills when relevant. Load `tdd` only when RGR is the selected verification loop.
 
 Apply the working contract, implementation posture, and verification posture. Persist progress only when a durable artifact exists.
 
@@ -145,7 +174,7 @@ Load `diagnosing-bugs`; add `feedback-loop`, `motel-debug`, `observability-loggi
 1. Reproduce or tightly bound the actual symptom.
 2. Improve the evidence loop before fanning out hypotheses.
 3. Understand root cause, or explicitly mark it unknown before a contained mitigation.
-4. Apply the smallest fix at the owning seam.
+4. If the proposed fix crosses any Design Readiness trigger, run its gate before mutation; otherwise apply the smallest fix at the owning seam.
 5. Rerun the original repro and relevant final checks.
 6. Remove temporary probes after the post-fix repro unless the user chooses to keep production telemetry.
 
@@ -153,8 +182,9 @@ Load `diagnosing-bugs`; add `feedback-loop`, `motel-debug`, `observability-loggi
 
 Review findings are proportional to risk:
 
+- Review independently of the author's confidence and prior reviewer conclusions. Verify each candidate through the owning call path and report it only when a realistic failure mode survives inspection.
 - Use the repository's normal review path for ordinary diffs.
-- Use `local-adversarial-review-gauntlet` only when the user explicitly requests adversarial review, the change is high risk, or an authorized Finish Loop selects that gate.
+- Apply the High-assurance local review gate above. An explicit request for the gauntlet always selects it; qualifying orchestrated work selects it through the risk and ROI test.
 - Tests, typecheck, lint, build, repros, and trace queries are verification, not review.
 - Keep PR feedback and CI remediation in their explicit workflows. Use `review-remediation` for a frozen feedback set from any human or automated reviewer.
 

@@ -11,7 +11,7 @@
       "source": "openclaw/agent-skills",
       "sourceType": "github",
       "skillPath": "skills/autoreview/SKILL.md",
-      "computedHash": "71038de9ed60dcfdad51e0e28188e033ed4b968b01045bf639fb322f3c2ddb9c"
+      "computedHash": "adcc7d6a577f424ecd4f8106b9d9b8d9313171a5213956dff8ff2efe273edc8d"
     },
     "code-review": {
       "source": "mattpocock/skills",
@@ -35,7 +35,7 @@
       "source": "khoahyh/skills",
       "sourceType": "github",
       "skillPath": "computa-please/SKILL.md",
-      "computedHash": "d2ecd44444e1ae6dc818e61ba4e0981b5ac1ce52316ccb7ffd2e9d40dd98714d"
+      "computedHash": "26db964359421baab3a46964080409ff2fe3f8ddc7f6367e7bfad4a4639d3e49"
     },
     "context7-cli": {
       "source": "upstash/context7",
@@ -149,7 +149,7 @@
       "source": "khoaHyh/skills",
       "sourceType": "github",
       "skillPath": "local-adversarial-review-gauntlet/SKILL.md",
-      "computedHash": "ccff91fce12d38c6cd8584d26a7685a30d072ad0e9dee516e48ce34a0cd92397"
+      "computedHash": "a94a45079a327c6fc1cd32097f1fd279b6d0d98f5221a61c97e796c7c8119ec8"
     },
     "motel-debug": {
       "source": "kitlangton/motel",
