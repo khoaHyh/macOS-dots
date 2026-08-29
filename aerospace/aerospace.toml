@@ -4,6 +4,7 @@
 config-version = 2
 
 after-startup-command = [
+    'exec-and-forget $HOME/dev/macOS-dots/scripts/configure_aerospace.sh',
     'exec-and-forget $HOME/dev/macOS-dots/scripts/refresh_simple_bar.sh',
     'layout --workspace 2 --root h_tiles',
     'layout --workspace 3 --root h_tiles',
@@ -43,14 +44,14 @@ persistent-workspaces = ['1', '2', '3', '4', '5', '6', '7']
     inner.vertical = 10
     outer.left = 10
     outer.bottom = 10
-    # Built-in notched displays already reserve the macOS menu bar/notch area in
-    # AeroSpace's visible frame, so keep only the simple-bar breathing room there.
-    outer.top = [{ monitor."built-in" = 10 }, 40]
+    # Safe default for source checkouts. configure_aerospace.sh lowers the
+    # built-in value only when Übersicht can place simple-bar in a notch area.
+    outer.top = [{ monitor."built-in" = 40 }, 40]
     outer.right = 10
 
 [mode.main.binding]
     # AeroSpace app/config lifecycle.
-    ctrl-alt-cmd-r = 'reload-config'
+    ctrl-alt-cmd-r = 'exec-and-forget $HOME/dev/macOS-dots/scripts/configure_aerospace.sh'
 
     # App launcher.
     alt-enter = 'exec-and-forget open -na /Applications/Ghostty.app'
@@ -114,7 +115,7 @@ persistent-workspaces = ['1', '2', '3', '4', '5', '6', '7']
     alt-shift-f = 'macos-native-fullscreen'
 
     # i3-style config reload.
-    alt-shift-c = 'reload-config'
+    alt-shift-c = 'exec-and-forget $HOME/dev/macOS-dots/scripts/configure_aerospace.sh'
     alt-tab = 'workspace-back-and-forth'
 
 [mode.resize.binding]

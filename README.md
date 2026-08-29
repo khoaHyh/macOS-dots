@@ -8,10 +8,11 @@ Personal macOS setup for shell, terminal, window management, and CLI tooling.
 - `.tmux.conf`: custom keybinds, TPM plugins, `tmux-gruvbox` theme
 - `.gitconfig` + `themes.gitconfig`: git aliases and delta theme presets
 - `starship.toml`: prompt config
-- `aerospace/aerospace.toml`: tiling and keyboard shortcuts
+- `aerospace/aerospace.toml`: source config for tiling and keyboard shortcuts
 - `ghostty/config`: terminal defaults used by the `alt + enter` shortcut
 - `herdr/config.toml`: Herdr UI, notification, and theme config
 - `scripts/open_iterm2.sh`: optional iTerm2 launcher script
+- `scripts/configure_aerospace.sh`: generates a display-aware active AeroSpace config
 - `opencode/`: local OpenCode agent/tool config
 - `pi/`: global pi coding agent config (`settings.json`, `AGENTS.md`, prompts/skills/extensions/themes)
 
@@ -68,7 +69,6 @@ ln -sf ~/dev/macOS-dots/.zshrc ~/.zshrc
 ln -sf ~/dev/macOS-dots/.tmux.conf ~/.tmux.conf
 ln -sf ~/dev/macOS-dots/.gitconfig ~/.gitconfig
 ln -sf ~/dev/macOS-dots/starship.toml ~/.config/starship.toml
-ln -sf ~/dev/macOS-dots/aerospace/aerospace.toml ~/.config/aerospace/aerospace.toml
 [ -f ~/.config/herdr/config.toml ] && [ ! -L ~/.config/herdr/config.toml ] && mv ~/.config/herdr/config.toml ~/.config/herdr/config.toml.backup.$(date +%Y%m%d-%H%M%S)
 ln -sf ~/dev/macOS-dots/herdr/config.toml ~/.config/herdr/config.toml
 ln -sf ~/dev/macOS-dots/scripts/open_iterm2.sh ~/.config/scripts/open_iterm2.sh
@@ -76,6 +76,8 @@ ln -sf ~/dev/macOS-dots/scripts/refresh_simple_bar.sh ~/.config/scripts/refresh_
 [ -d ~/.pi/agent ] && [ ! -L ~/.pi/agent ] && mv ~/.pi/agent ~/.pi/agent.backup.$(date +%Y%m%d-%H%M%S)
 ln -sfn ~/dev/macOS-dots/pi ~/.pi/agent
 chmod +x ~/.config/scripts/open_iterm2.sh ~/.config/scripts/refresh_simple_bar.sh
+chmod +x ~/dev/macOS-dots/scripts/configure_aerospace.sh ~/dev/macOS-dots/scripts/aerospace_top_gap.swift
+~/dev/macOS-dots/scripts/configure_aerospace.sh
 ```
 
 ### 4) Start AeroSpace and finalize
@@ -144,7 +146,8 @@ ls -la ~/.tmux/plugins/tpm
 - Mission Control's `Option + 1..6` desktop shortcuts should stay disabled so AeroSpace owns `alt + number`.
 - Prefer using a single native macOS Desktop per display; use AeroSpace workspaces for day-to-day workspace switching.
 - AeroSpace's docs recommend disabling `Displays have separate Spaces` for multi-monitor stability; this requires logging out before it takes effect.
-- AeroSpace uses a smaller built-in-display top gap because notched MacBook screens already reserve the menu bar/notch area before `gaps.outer.top` is applied; external displays keep the larger simple-bar reservation.
+- `scripts/configure_aerospace.sh` calculates the built-in-display top gap from the same AppKit geometry Übersicht uses. Non-notched displays and external displays keep the 40-point simple-bar reservation; notched displays use the notch area only when the menu bar is hidden.
+- AeroSpace regenerates that config at startup. After changing menu-bar visibility or connecting/disconnecting displays while AeroSpace is running, use either AeroSpace reload shortcut to recalculate and apply the gap.
 - AeroSpace uses the docs' i3-like bindings, but keeps workspaces `1..10` persistent so simple-bar stays stable.
 - Legacy `yabai/` and `skhd/` configs remain in the repo for rollback but are no longer installed.
 - `open_iterm2.sh` is optional and can be bound if you prefer iTerm2.
@@ -158,4 +161,5 @@ ls -la ~/.tmux/plugins/tpm
 ```bash
 cd ~/dev/macOS-dots
 git pull
+./scripts/configure_aerospace.sh
 ```
