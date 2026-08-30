@@ -47,7 +47,7 @@
     "aerospace-src": {
       "repository": "nikitabobko/AeroSpace",
       "description": "Use for Swift 6 systems code, Accessibility thread confinement, typed command and config parsers, fixture-driven tests, and macOS 13 interop; do not copy its global-state or mutable-tree architecture"
-    }
+    },
     "ghostty-src": {
       "repository": "ghostty-org/ghostty",
       "description": "Use for referencing high quality Zig code, project architecture, design, style guide, patterns and practices."
