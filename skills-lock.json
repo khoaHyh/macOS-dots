@@ -35,7 +35,7 @@
       "source": "khoahyh/skills",
       "sourceType": "github",
       "skillPath": "computa-please/SKILL.md",
-      "computedHash": "7a965da3f1ec61a9e37c620479becd722deee925960573f7cf9d7abe507d0163"
+      "computedHash": "78535a56e21180e4e4d8eca6471c614b8e1b8f2efe90417847afe1c7e54302ef"
     },
     "context7-cli": {
       "source": "upstash/context7",
@@ -149,7 +149,7 @@
       "source": "khoaHyh/skills",
       "sourceType": "github",
       "skillPath": "local-adversarial-review-gauntlet/SKILL.md",
-      "computedHash": "e06de5d7d5a2aabb7785c124a53dc5ae4c81e547570cd777687fe0b0c0260abe"
+      "computedHash": "fcde4fab57e0b4180409996754f4cddd7f32cb0268fdff3c01e50798a3ff7c47"
     },
     "motel-debug": {
       "source": "kitlangton/motel",

@@ -21,6 +21,8 @@ Example: `~/dev/worktrees/platform__scheduling-eng-292-selected-crew-booking-tra
 Keep `~/dev/<repo>` on `main`. Do development in the linked worktree. Use
 another path only when the human asks.
 
+One task uses one linked worktree. Local agents working on that task share it.
+
 Cloud isolation (`.cursor/worktrees`, `~/.cursor/cursorfs-clone/...`) is a
 different layout. After `cursorfs-clone`, call `move_agent_to_cloned_root`.
 To resume locally, move back to the matching `~/dev/worktrees/...` path.
@@ -28,8 +30,8 @@ To resume locally, move back to the matching `~/dev/worktrees/...` path.
 ## Create or reuse a worktree
 
 1. Create `~/dev/worktrees` if it is missing.
-2. Reuse a matching path when it is clean and already on `<branch>`.
-3. Otherwise, from `~/dev/<repo>` (leave it on `main`):
+2. Inspect any matching path. Reuse it when it is already on `<branch>` and task ownership is established by the user-selected path, current task context, or its handoff. Account for every existing change as shared task state; scoped in-progress changes are not grounds for a second checkout. Stop when ownership is ambiguous.
+3. Only when no matching path exists, create one from `~/dev/<repo>` (leave it on `main`):
 
 ```bash
 git worktree add -b <branch> ~/dev/worktrees/<repo-slug>__<branch-slug>
@@ -43,9 +45,9 @@ Omit `-b` when `<branch>` already exists.
 git status --short --branch
 ```
 
-Creation is complete when `git worktree list` contains the path and its
-expected branch, and status is clean unless the branch already carried
-changes.
+Creation or reuse is complete when `git worktree list` contains the path and
+its expected branch, and every staged, unstaged, and untracked change is
+accounted for. A newly created worktree starts clean.
 
 ## Remove a worktree
 
