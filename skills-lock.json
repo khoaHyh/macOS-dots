@@ -35,7 +35,7 @@
       "source": "khoahyh/skills",
       "sourceType": "github",
       "skillPath": "computa-please/SKILL.md",
-      "computedHash": "78535a56e21180e4e4d8eca6471c614b8e1b8f2efe90417847afe1c7e54302ef"
+      "computedHash": "306ac8b866ac9e6689fd3ab939308734b8c0960ac1be72d66604a172580c5f78"
     },
     "context7-cli": {
       "source": "upstash/context7",

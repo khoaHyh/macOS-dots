@@ -6,7 +6,7 @@ disable-model-invocation: true
 
 # Computa Please
 
-Route work through the least process that can prove the result: inspect before deciding, subtract before adding, ship one vertical slice, verify at the strongest seam, and reserve judgment for the user.
+Route work through the least process that can prove the result: inspect before deciding, subtract before adding, ship one vertical slice, spend proof in proportion to risk, and reserve judgment for the user.
 
 Use this language consistently:
 
@@ -38,12 +38,12 @@ Default evaluative or ambiguous work to Discuss. Resolve inspectable facts yours
 Evaluate all matching Gates after selecting a Mode. Read each matched reference in full before its gated action; a mention or link is not a read.
 
 - **Design:** When a request may introduce new behavior; change a public contract, domain rule, or retained datum; affect trust, security, money, deletion, deployment, or ownership; create or move a seam; make a nontrivial refactor or redesign; or enter Spec/Implement without an accepted contract, follow [Design Readiness](references/design-readiness.md) before substantial design or mutation. Production code stays read-only until the request is exempt or its user checkpoint passes.
-- **Worktree/VCS:** On Recall/Pickup, follow [VCS Actions](references/vcs.md) before artifact recovery. Otherwise follow it before the first repository or Durable State mutation, and before any branch or worktree creation, synchronization, commit, push, or PR publication.
+- **Worktree/VCS:** Treat the invocation checkout as inspection/bootstrap only. Follow [VCS Actions](references/vcs.md) to establish the Task Worktree before Recall/Pickup artifact recovery or any repository-content or Durable State write, then re-anchor every tool, artifact, and delegate path there. Follow it again before later VCS mutation or publication.
 - **Finish Loop:** After explicit Finish Loop authorization and before its first mutation or external action, follow [Finish Loop](references/finish-loop.md).
 - **PR description:** Before drafting, returning, creating, or updating a PR body, follow [PR Description](references/pr-description.md) through **Verify** (`check-pr-body` exits 0).
 - **Comprehension map:** A requested map selects or resumes Spec. At its checkpoint, or when a complex spec needs a visual misunderstanding check, follow [Comprehension Map](references/comprehension-map.md) before rendering.
 
-Re-evaluate Gates after compaction, Recall/Pickup, a Mode change, or a change in mutation or persistence authority. Reuse a prior read only when working context or a durable handoff records the reference, active step, and still-live constraints.
+After compaction or on Recall/Pickup, reload `computa-please` once before continuing, then re-select the Mode and re-evaluate Gates from the current references. Re-evaluate Gates after any other Mode or mutation/persistence authority change. Reuse a prior reference read only when working context or a durable handoff records it, the active step, and still-live constraints.
 
 **Complete when:** every matched reference has been read and its applicable entry condition or completion criterion is in working context.
 
@@ -104,7 +104,7 @@ Read artifacts and live state first. Reconstruct done, pending, blocked, and ris
 
 ### Reflect
 
-Use corrections, retries, churn, and successful recipes as evidence. Prefer deleting instructions or enforcing behavior with tests, scripts, metadata, or tools. Propose skill changes and evals before editing unless implementation is already authorized.
+Use corrections, retries, churn, and successful recipes as evidence. Prefer deleting or replacing instructions in place. Encode a surviving invariant in a mechanical control only when that replaces instruction load with cheaper, repeatable enforcement. Propose skill changes and evals before editing unless implementation is already authorized.
 
 **Complete when:** each proposed or authorized change traces to observed workflow evidence and names how its effect will be evaluated.
 
@@ -116,8 +116,8 @@ Name every field before nontrivial code work:
 - **Scope:** allowed surface and explicit non-goals.
 - **Compatibility:** Direct cutover or Protected evolution.
 - **Slice:** changed contract, owning module, seam, and effects.
-- **Budget:** reasonable file, concept, search, and tool limits; zero speculative abstractions.
-- **Proof:** important risk, strongest practical seam, focused command, required final checks, and `pending` status. Replace `pending` with the observed result after execution; cache the exact command, exit status, and justified omissions for target attestation.
+- **Budget:** reasonable file, concept, search, tool, and maintenance limits; zero speculative abstractions.
+- **Proof:** important risk, selected proving seam, focused command, required final checks, and `pending` status. Replace `pending` with the observed result after execution; cache the exact command, exit status, and justified omissions for target attestation.
 
 ### Compatibility
 
@@ -132,7 +132,7 @@ Failure to find a dependency is not evidence of absence when external consumers 
 
 ## Subtraction
 
-For an addition, refactor, or rewrite, inspect what can be deleted, collapsed, inlined, or narrowed before proposing new structure. When subtraction could change the target shape, inventory every affected entrypoint and every changed concept, path, interface, dependency, and file; assign each the highest safe rung: delete, collapse, inline, narrow, or add. Sequence proven subtraction before construction.
+Test code is an addition. Before adding, refactoring, or rewriting, inspect what can be deleted, collapsed, inlined, narrowed, or proved by an existing path. When subtraction could change the target shape, inventory every affected entrypoint and every changed concept, path, interface, dependency, and file; assign each the highest safe rung: delete, collapse, inline, narrow, or add. Sequence proven subtraction before construction.
 
 **Complete when:** every addition, refactor, or rewrite has a proven subtraction sequenced first or a Work Frame reason none is safe, and every remaining addition is required by the reduced base.
 
@@ -145,24 +145,25 @@ Treat the request, contracts, docs, code, tests, prior reviews, and your first a
 Select lenses by observed risk: behavior and spec; ownership and invariants; state and lifecycle; concurrency and retries; errors and recovery; trust boundaries; data and compatibility; operability; and performance.
 
 - Prefer repository idioms and canonical upstream guidance.
-- Pin behavior before a refactor with an end-to-end, integration, characterization, snapshot, replay, or equivalence check. Typecheck and lint are not behavior pins.
+- Pin behavior before a refactor only where existing proof cannot expose drift; use the smallest independent end-to-end, integration, characterization, snapshot, replay, or equivalence check that closes the gap. Typecheck and lint are not behavior pins.
 - Build one complete vertical Slice. Keep adjacent cleanup outside Scope.
 - Add an abstraction only when it hides current complexity that would otherwise spread to callers.
 - Keep a refactor only when it reduces reader load through fewer concepts, branches, paths, representations, or indirection hops.
 - Keep expected failures typed and boundary translation local. Add telemetry only to distinguish an operationally relevant outcome; use `observability-logging` for signal design.
 
-Choose the strongest practical proving seam:
+Choose Proof by information gain per maintenance cost. Reuse a required check when it exercises the changed path and exposes the named risk. A new test earns its maintenance cost only when it uniquely closes a named detection, repeatability, or diagnosis gap; prefer the highest-value affordable real path:
 
-1. End-to-end through the affected public entrypoint.
-2. Integration through the real adapter or boundary.
-3. Contract or property tests for isolated domain behavior.
-4. Unit tests for behavior a stronger seam cannot prove.
+- End-to-end through the public entrypoint for system behavior.
+- Integration through real adapters or boundaries for most new behavior.
+- A focused unit, contract, or property test only for a complex, high-consequence local invariant that broader proof does not naturally exercise or make diagnosable.
 
-Use Red-Green-Refactor when a useful red test can express the risk. For migrations, configuration, generated output, runtime-only failures, or a behavior-preserving refactor with a pin, use the strongest applicable repro, equivalence check, trace query, contract check, or repository command.
+Before writing a test, name the production failure it uniquely detects, why existing end-to-end or integration Proof misses it, and its maintenance cost. When that case cannot be made, keep the existing check or repro as Proof. Cover one representative from cases that share an implementation path; cover each case only when it has distinct repository-owned behavior or consequence. For CI/CD wiring, use the pipeline's own validation or a safe observed run when it exposes the outcome. Tests that only match source text, enumerate a declarative schema or library's behavior, or replay embedded implementation logic add no independent evidence.
+
+Use Red-Green-Refactor when a test meets that criterion. For migrations, configuration, generated output, runtime-only failures, or a behavior-preserving refactor with a pin, use the least costly applicable repro, equivalence check, trace query, contract check, or repository command.
 
 Cache focused and final commands with their outcomes. Rerun them only when relevant inputs change. Before completion, inspect status and the complete diff, run the focused Proof and required final checks, and report every omitted check. When the Review Gate selects the gauntlet, bind those observed outcomes and omissions to the resulting target commit and tree; stale Proof returns to this Gate instead of being rerun inside review.
 
-**Complete when:** the Slice works through its strongest practical seam; every new abstraction hides current complexity; each refactor reduces at least one named reader-load dimension without moving the burden; final checks have no new failure; and residual risk is explicit.
+**Complete when:** the selected Proof can expose the named risk; each added test uniquely exposes a named production failure at the highest-value affordable seam and earns its maintenance cost; every new abstraction hides current complexity; each refactor reduces at least one named reader-load dimension without moving the burden; final checks have no new failure; and residual risk is explicit.
 
 ## Review Gate
 

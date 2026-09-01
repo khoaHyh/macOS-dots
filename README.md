@@ -21,6 +21,24 @@ Personal macOS setup for shell, terminal, window management, and CLI tooling.
 - macOS (Sonoma/Sequoia/Tahoe)
 - Homebrew
 
+Secret-enabled `ocs`, `occs`, `pis`, and `pics` sessions also require 1Password
+CLI `2.33.0-beta.02` or later with Environment support, a read-only service
+account for the selected Environment, and `OPENCODE_1P_ENV_ID` in
+`~/.zshrc.private`. Store the service account token in the login Keychain
+without placing it in shell history:
+
+```bash
+security add-generic-password \
+  -a "$USER" \
+  -s "opencode.1password.service-account" \
+  -U \
+  -w
+```
+
+Use `agentenv` and `agentclear` to manage the same authentication in a direct
+interactive shell. Secret-enabled agent launchers scope it to the agent process
+and clear it automatically on exit.
+
 ## TODOs
 
 - Need a setup/bootstrap script to setup the symlinks and install all the necessary dependencies (`brew install ...`)

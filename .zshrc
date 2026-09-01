@@ -42,7 +42,7 @@ if [[ -f "$HOME/.zshrc.private" ]]; then
 fi
 
 # Allow re-sourcing this file even if older alias-based helpers are loaded.
-unalias oc occ ocs occs ocenv occlear mcpenv mcpclear pienv piclear pis pics 2>/dev/null
+unalias oc occ ocs occs agentenv agentclear ocenv occlear mcpenv mcpclear pienv piclear pis pics 2>/dev/null
 
 typeset -ga _MCP_AGENT_ENV_VARS=(
   EXECUTOR_MCP_AUTHORIZATION
@@ -63,24 +63,51 @@ _executor_mcp_env() {
   export EXECUTOR_MCP_AUTHORIZATION="Bearer $token"
 }
 
+_agent_1p_auth() {
+  setopt localoptions noxtrace
+
+  unset OP_SERVICE_ACCOUNT_TOKEN
+
+  local token
+  token=$(
+    /usr/bin/security find-generic-password \
+      -a "$USER" \
+      -s "opencode.1password.service-account" \
+      -w
+  ) || return 1
+  [[ -n "$token" ]] || return 1
+
+  export OP_SERVICE_ACCOUNT_TOKEN="$token"
+}
+
 mcpenv() {
-  local env_id="${MCP_1P_ENV_ID:-${OPENCODE_1P_ENV_ID:-}}"
+  setopt localoptions noxtrace
+
+  mcpclear
+
+  local env_id="${OPENCODE_1P_ENV_ID:-${MCP_1P_ENV_ID:-}}"
 
   if [[ -z "$env_id" ]]; then
-    print -u2 "MCP_1P_ENV_ID or OPENCODE_1P_ENV_ID is not set. Add one to ~/.zshrc.private."
+    print -u2 "OPENCODE_1P_ENV_ID or MCP_1P_ENV_ID is not set. Add one to ~/.zshrc.private."
     return 1
   fi
+
+  _agent_1p_auth || return
 
   local env_output line key value allowed_key loaded=0
 
-  if ! env_output=$(op environment read "$env_id"); then
+  if ! env_output=$(
+    op run --no-masking --environment "$env_id" -- \
+      /usr/bin/env -u OP_SERVICE_ACCOUNT_TOKEN \
+      /bin/sh -c '
+        for key do
+          value=$(/usr/bin/printenv "$key") || continue
+          printf "%s=%s\n" "$key" "$value"
+        done
+      ' sh "${_MCP_AGENT_ENV_VARS[@]}"
+  ); then
+    mcpclear
     return 1
-  fi
-
-  if [[ "$env_output" == *"<concealed by 1Password>"* ]]; then
-    if ! env_output=$(op run --no-masking --environment "$env_id" -- env); then
-      return 1
-    fi
   fi
 
   for key in "${_MCP_AGENT_ENV_VARS[@]}"; do
@@ -106,6 +133,7 @@ mcpenv() {
 
   if (( ! loaded )); then
     print -u2 "No MCP variables were loaded from 1Password."
+    mcpclear
     return 1
   fi
 }
@@ -116,14 +144,24 @@ mcpclear() {
   for key in "${_MCP_AGENT_ENV_VARS[@]}"; do
     unset "$key"
   done
+
+  unset OP_SERVICE_ACCOUNT_TOKEN
 }
 
-ocenv() {
+agentenv() {
   mcpenv
 }
 
-occlear() {
+agentclear() {
   mcpclear
+}
+
+ocenv() {
+  agentenv
+}
+
+occlear() {
+  agentclear
 }
 
 oc() {
@@ -141,31 +179,39 @@ occ() {
 }
 
 ocs() {
-  ocenv || return
-  opencode "$@"
+  (
+    ocenv || return
+    opencode "$@"
+  )
 }
 
 occs() {
-  ocenv || return
-  caffeinate -id -- opencode "$@"
+  (
+    ocenv || return
+    caffeinate -id -- opencode "$@"
+  )
 }
 
 pienv() {
-  mcpenv
+  agentenv
 }
 
 piclear() {
-  mcpclear
+  agentclear
 }
 
 pis() {
-  pienv || return
-  pi "$@"
+  (
+    pienv || return
+    pi "$@"
+  )
 }
 
 pics() {
-  pienv || return
-  caffeinate -id -- pi "$@"
+  (
+    pienv || return
+    caffeinate -id -- pi "$@"
+  )
 }
 
 export EDITOR=/usr/local/bin/vim
