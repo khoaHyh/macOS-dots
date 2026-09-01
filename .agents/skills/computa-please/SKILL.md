@@ -8,14 +8,34 @@ disable-model-invocation: true
 
 Route work through the least process that can prove the result: inspect before deciding, subtract before adding, ship one vertical slice, spend proof in proportion to risk, and reserve judgment for the user.
 
-Use this language consistently:
+## Plain-Language Pass
+
+Keep the rigor in the work, not in the wording. Before sending any user-facing progress update, question, checkpoint, or final answer:
+
+1. Draft the message from the established facts.
+2. For a final answer, retain each applicable fact: the result; changed artifacts or no change; the strongest relevant check and its outcome; material risk or a blocker; and the next human action or decision.
+3. Rewrite it once in plain language: lead with the result or decision, use short direct sentences, and keep only the context the user needs to understand or act. Use concrete facts instead of workflow narration or repeated rationale. Translate internal workflow terms into their concrete meaning unless the user asks about the workflow itself.
+4. Send only the rewrite.
+
+Follow the user's requested format. Otherwise, a simple result is one or two sentences. Use flat bullets for several distinct facts and headings only when they make a substantial response easier to scan. Keep exact code identifiers, commands, paths, and error text when they matter.
+
+Examples:
+
+- Simple result: `Updated the retry path so a second attempt cannot duplicate the charge. The focused integration test and final checks pass.`
+- Blocked result: `I left the code unchanged because the failure depends on production data I cannot inspect. I need a redacted example to continue.`
+- No-change result: `The existing timeout already covers this failure. Another timer would duplicate behavior without improving recovery, so I recommend leaving the code unchanged.`
+
+**Complete when:** the message reads like one human talking to another, makes sense without knowledge of this workflow, and contains no detail that can be removed without losing a needed fact.
+
+Use this language internally:
 
 - **Mode:** the one active workflow branch.
 - **Gate:** a condition that blocks an action until its completion criterion is met; a Reference Gate also requires a runbook.
 - **Task Worktree:** the one task-owned isolated checkout that contains all mutations and durable state. Locally it lives under `~/dev/worktrees/<repo-slug>__<branch-slug>`.
 - **Work Frame:** Intent, Scope, Compatibility, Slice, Budget, and Proof.
 - **Obligation:** an evidence-backed requirement that an existing contract survive.
-- **Proof:** a risk, proving seam, command, and result status: pending or observed. Before a gauntlet, attest observed results to the exact target commit and tree.
+- **Proof:** a risk, proving seam, command, and result status: pending or observed.
+- **Review Receipt:** the immutable review target, terminal status, candidate dispositions, remediation commit, and verification that account for one Local Review.
 - **Human Gate:** the final handoff; the agent reports the proven state and stops.
 
 ## 1. Select one Mode
@@ -23,11 +43,13 @@ Use this language consistently:
 - **Discuss:** compare, evaluate, design, decide, or resolve ambiguity. Read-only and ephemeral by default.
 - **Spec:** produce a durable, implementation-ready plan. Production code stays read-only.
 - **Implement:** make authorized code changes.
-- **Finish Loop:** carry an accepted spec, completed change, or existing PR through its authorized delivery states to the Human Gate.
+- **Finish Loop:** own autonomous delivery for one bounded accepted spec, completed change, or existing PR. Select it instead of Implement when the requested outcome includes driving a ready PR through external review or CI, making it merge-ready, merging, landing, shipping, verifying post-merge workflows, or running accepted work through delivery without stopping.
 - **Debug:** diagnose a failure, regression, flake, or performance problem.
 - **Review:** find defects in a diff, branch, commit, or PR.
 - **Recall/Pickup:** recover live work from artifacts and repository state.
 - **Reflect:** turn observed workflow evidence into a structural improvement.
+
+Route by the requested terminal outcome, not by the presence of a PR. A one-pass PR status check routes to Discuss, defect-finding only routes to Review, and local verified code or draft-only publication routes to Implement. `Get this PR green`, `make it merge-ready`, `ship`, `land`, `merge`, and `run this through delivery` route to Finish Loop. These words authorize entry, not merge; only the Finish Loop's mandatory question-tool choice authorizes merge.
 
 Default evaluative or ambiguous work to Discuss. Resolve inspectable facts yourself; ask the user only for decisions.
 
@@ -38,8 +60,8 @@ Default evaluative or ambiguous work to Discuss. Resolve inspectable facts yours
 Evaluate all matching Gates after selecting a Mode. Read each matched reference in full before its gated action; a mention or link is not a read.
 
 - **Design:** When a request may introduce new behavior; change a public contract, domain rule, or retained datum; affect trust, security, money, deletion, deployment, or ownership; create or move a seam; make a nontrivial refactor or redesign; or enter Spec/Implement without an accepted contract, follow [Design Readiness](references/design-readiness.md) before substantial design or mutation. Production code stays read-only until the request is exempt or its user checkpoint passes.
+- **Finish Loop:** After this mode is selected and before fresh-run bootstrap, persistence, polling, mutation, or external action, follow [Finish Loop](references/finish-loop.md) from its Entry Gate.
 - **Worktree/VCS:** Treat the invocation checkout as inspection/bootstrap only. Follow [VCS Actions](references/vcs.md) to establish the Task Worktree before Recall/Pickup artifact recovery or any repository-content or Durable State write, then re-anchor every tool, artifact, and delegate path there. Follow it again before later VCS mutation or publication.
-- **Finish Loop:** After explicit Finish Loop authorization and before its first mutation or external action, follow [Finish Loop](references/finish-loop.md).
 - **PR description:** Before drafting, returning, creating, or updating a PR body, follow [PR Description](references/pr-description.md) through **Verify** (`check-pr-body` exits 0).
 - **Comprehension map:** A requested map selects or resumes Spec. At its checkpoint, or when a complex spec needs a visual misunderstanding check, follow [Comprehension Map](references/comprehension-map.md) before rendering.
 
@@ -71,7 +93,7 @@ Load `coding-standards`, `codebase-design` when a nontrivial seam changes, relev
 
 ### Finish Loop
 
-Enter only through explicit authorization. Execute the Finish Loop Reference Gate's state machine and ledger to prevent replayed external actions.
+Execute when the requested terminal outcome selects this mode. The matching request authorizes entry only; the runbook's mandatory question is the sole source of merge authority. Use its state machine and ledger to prevent replayed external actions.
 
 **Complete when:** the runbook reaches the Human Gate.
 
@@ -98,7 +120,7 @@ Report findings first, ordered by severity with file and line references. A work
 
 ### Recall/Pickup
 
-Read artifacts and live state first. Reconstruct done, pending, blocked, and risky work; separate inherited claims from reverified facts; route only the remainder. Resume a Finish Loop only from recorded authorization.
+Read artifacts and live state first. Reconstruct done, pending, blocked, and risky work; separate inherited claims from reverified facts; route only the remainder. Resume a Finish Loop only from a nonterminal ledger entry with a recorded Entry Gate choice; a closed run provides no authority.
 
 **Complete when:** inherited and reverified state are distinct and every remaining item is routed or blocked by a named decision.
 
@@ -161,33 +183,34 @@ Before writing a test, name the production failure it uniquely detects, why exis
 
 Use Red-Green-Refactor when a test meets that criterion. For migrations, configuration, generated output, runtime-only failures, or a behavior-preserving refactor with a pin, use the least costly applicable repro, equivalence check, trace query, contract check, or repository command.
 
-Cache focused and final commands with their outcomes. Rerun them only when relevant inputs change. Before completion, inspect status and the complete diff, run the focused Proof and required final checks, and report every omitted check. When the Review Gate selects the gauntlet, bind those observed outcomes and omissions to the resulting target commit and tree; stale Proof returns to this Gate instead of being rerun inside review.
+Cache focused and final commands with their outcomes. Rerun them only when relevant inputs change. Before completion, inspect status and the complete diff, run the focused Proof and required final checks, and report every omitted check. When the Review Gate selects Local Review, bind those observed outcomes and omissions to its target commit and tree; stale Proof returns to this Gate instead of being rerun inside review.
 
 **Complete when:** the selected Proof can expose the named risk; each added test uniquely exposes a named production failure at the highest-value affordable seam and earns its maintenance cost; every new abstraction hides current complexity; each refactor reduces at least one named reader-load dimension without moving the burden; final checks have no new failure; and residual risk is explicit.
 
 ## Review Gate
 
-Review and Finish Loop select one path. Implement and Debug enter this Gate only when the user requests review or a qualifying risk is material; otherwise record the Gate as exempt.
+Finish Loop and PR-bound Implement or Debug work enter Local Review. Review mode follows an explicitly requested review workflow or uses Normal review. Non-PR Implement and Debug work is exempt unless the user requests independent review.
 
+- **Requested review:** follow the named review skill and its target, authority, and completion contract.
 - **Normal review:** the repository's review workflow, or this fallback: inspect every changed hunk, trace each candidate defect through its owning call path and relevant tests, and confirm or reject it with evidence.
-- **Gauntlet:** `local-adversarial-review-gauntlet` when the user requests it, or when a qualifying risk is material and independent behavior plus risk-specialist review could plausibly change the result.
+- **Local Review:** follow [Local Review](references/local-review.md) once after deterministic Proof passes against the complete committed PR candidate and before draft publication. It owns the Codex Autoreview target, optional structural exception, one disposition and remediation pass, and Review Receipt.
 
-Qualifying risks are trust, security, privacy, money, billing or entitlements, production infrastructure, deployment, recovery, data integrity, broad internal tooling, a durable seam, ownership boundary, protocol, hard-to-reverse contract, or a complex cross-module change or feature with multiple failure paths, consequential state transitions, or weak deterministic Proof.
+Independent remote PR review remains a later delivery layer over the remediated published head. New product scope or unreviewed behavior after Local Review makes its receipt stale; finding, CI, and external-review remediation do not trigger another local pass.
 
-Run one gauntlet after deterministic Proof passes against an immutable committed target, before publication or the Human Gate. Select one specialist lens from the observed risk: architecture, compatibility, reliability, or security; material trust or security risk selects security and requires specialized security coverage. Its packet names the risk, lens, fixed point, target commit and tree, target-bound Proof attestation, and prerequisite-commit authority. An active Finish Loop supplies that authority; otherwise ask before committing. This selection is `computa-please`'s exception to the gauntlet's direct-invocation rule.
-
-**Complete when:** the Gate is exempt for a named reason, Normal review covers every changed hunk and disposes every candidate, or the gauntlet satisfies its own completion criterion.
+**Complete when:** the Gate is exempt for a named reason, the requested review reaches its completion criterion, Normal review covers every changed hunk and disposes every candidate, or a complete Review Receipt accounts for Local Review and its resulting head.
 
 ## Delegation
 
 The main agent owns synthesis and the final diff. Delegate only for lower latency or an independent evidence source.
+
+Independent defect finding and readiness judgment occur only in the Review Gate. Implementation and Debug delegates return scoped code, observed facts, or deterministic verification results.
 
 - Default to one wave of at most three children with disjoint questions or file surfaces.
 - Give each child the goal or symptom, repository revision, established facts, commands and outcomes, Work Frame, authority, required evidence, and return shape.
 - Research children return facts and citations, not readiness judgments. Implementation children receive disjoint file authority within the Task Worktree; the main agent alone writes Durable State.
 - Merge each wave before opening another, name the remaining gap, and verify child claims against source or deterministic checks.
 
-Escalate beyond one wave only for requested breadth, independent high-risk hypotheses, or formal adversarial review.
+Escalate beyond one wave only for requested breadth or independent high-risk hypotheses.
 
 **Complete when:** every child had disjoint authority and each returned claim is verified, merged, or rejected.
 
@@ -210,6 +233,6 @@ Account for `.computa-please/` in status checks, but keep this workflow-owned lo
 
 ## Stop Cleanly
 
-Outside a Finish Loop, obtain explicit approval for merge, deploy, destructive data change, or external message.
+Merge requires recorded `merge-and-verify` authority in the active Finish Loop; otherwise obtain explicit approval. A Finish Loop never authorizes deploy or destructive data change. An external message requires explicit approval unless it is pre-recorded in an active Finish Loop review plan and action journal.
 
-For nontrivial code changes, use Summary, Why, Design, Validation, and Follow-up/Risk; include the Mode, changed files or artifacts, Proof, and residual risk within those sections. For trivial code changes, report those four facts without headings. Other Modes follow their completion criteria and the user's requested shape. A PR body follows the PR Description Gate instead.
+At the Human Gate, apply the [Plain-Language Pass](#plain-language-pass). A PR body keeps the PR Description Gate's schema; write its prose as plainly as that contract allows.
