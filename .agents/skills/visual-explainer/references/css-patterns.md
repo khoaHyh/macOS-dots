@@ -9,7 +9,7 @@ Always define both light and dark palettes via custom properties. Start with whi
 ```css
 :root {
   --font-body: 'Outfit', system-ui, sans-serif;
-  --font-mono: 'Space Mono', 'SF Mono', Consolas, monospace;
+  --font-mono: 'JetBrains Mono', 'SF Mono', Consolas, monospace;
 
   --bg: #f8f9fa;
   --surface: #ffffff;
@@ -49,6 +49,26 @@ Always define both light and dark palettes via custom properties. Start with whi
   }
 }
 ```
+
+## Type Scale (rem, one knob for scrollable pages)
+
+For non-slide, scrollable pages, size ordinary page text in `rem` against one root value so one line rescales the page without making reading text too small. The concrete selectors below are copyable CSS and meet the minimum effective sizes at a 16px root. Mermaid SVG labels remain in px because Mermaid sizes them through configuration. Slide decks are a separate contract: preserve their viewport-responsive `clamp(...px, ...vw, ...px)` typography and required `autoFit()` runtime fitting from `slide-patterns.md` and `slide-deck.html` instead of converting slide styles to rem.
+
+```css
+/* ONE TYPE KNOB: change this single value to rescale ordinary page text. */
+html { font-size: 16px; } /* choose a value in the 16–18px range */
+
+/* Role selectors below meet the minimums at a 16px root. */
+h1              { font-size: 2rem;      } /* 32px page title */
+h2, .sec-head   { font-size: 1.25rem;   } /* 20px section heads */
+h3, .card-title { font-size: 0.95rem;   } /* 15.2px card titles */
+body            { font-size: 0.875rem;  } /* 14px reading text */
+.secondary      { font-size: 0.75rem;   } /* 12px secondary text */
+code, pre       { font-size: 0.75rem;   } /* 12px code/mono */
+.label, .tag    { font-size: 0.6875rem; } /* 11px labels/tags */
+```
+
+When copying older reference snippets, convert ordinary page px values to this scale rather than copying them verbatim. Keep px where a rendering engine or the slide contract requires it.
 
 ## Background Atmosphere
 
@@ -684,7 +704,10 @@ function initDiagram(shell) {
 
       const id = 'diagram-' + Date.now() + '-' + Math.random().toString(36).slice(2, 8);
       const { svg } = await mermaid.render(id, code);
-      canvas.innerHTML = svg;
+      const parsed = new DOMParser().parseFromString(svg, 'text/html');
+      const parsedSvg = parsed.body.querySelector('svg');
+      if (!parsedSvg) throw new Error('Mermaid produced no SVG');
+      canvas.replaceChildren(document.adoptNode(parsedSvg));
 
       // readSvgNaturalSize(svgNode) + setAdaptiveHeight() + fitDiagram()
       // wire controls from data-action attributes
@@ -702,6 +725,12 @@ document.querySelectorAll('.diagram-shell').forEach(initDiagram);
 ```
 
 This pattern removes all hardcoded IDs and supports unlimited diagrams per page. For the full implementation (including smart fit, pinch zoom, and shared drag state), use `templates/mermaid-flowchart.html` as the canonical source.
+
+### Mermaid SVG insertion
+
+Mermaid 10+ can emit HTML inside SVG `<foreignObject>` labels, including unclosed HTML tags such as `<br>`. Do not parse Mermaid output with `DOMParser(..., 'image/svg+xml')`: the strict XML parser can silently truncate labels or edges. Avoid `canvas.innerHTML = svg` in reusable templates too, because security scanners often flag it as an HTML sink.
+
+Use `DOMParser(..., 'text/html')`, then adopt the parsed `<svg>` node into the canvas. The HTML parser accepts Mermaid's label markup and preserves the SVG namespace for browser rendering.
 
 ## Grid Layouts
 

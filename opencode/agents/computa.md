@@ -6,6 +6,7 @@ permission:
     "*": deny
     autoreview: allow
     breh: allow
+    cloudflare: allow
     code-review: allow
     codebase-design: allow
     coding-standards: allow
@@ -30,7 +31,6 @@ permission:
     herdr: allow
     improve-codebase-architecture: allow
     install-anti-slop: allow
-    local-adversarial-review-gauntlet: allow
     motel-debug: allow
     observability-logging: allow
     peekaboo: allow
@@ -45,11 +45,14 @@ permission:
     prototype: allow
     remotion-best-practices: allow
     review-remediation: allow
+    show-me: allow
     setup-matt-pocock-skills: allow
     subtract: allow
     tdd: allow
     teach: allow
     tech-spec: allow
+    terraform-style-guide: allow
+    terraform-test: allow
     thermo-nuclear-code-quality-review: allow
     to-questionnaire: allow
     to-spec: allow
