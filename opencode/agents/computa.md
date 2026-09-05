@@ -7,7 +7,6 @@ permission:
     autoreview: allow
     breh: allow
     cloudflare: allow
-    code-review: allow
     codebase-design: allow
     coding-standards: allow
     computa-please: allow
@@ -15,14 +14,13 @@ permission:
     context7-mcp: allow
     diagnosing-bugs: allow
     field-lab: allow
-    documentation: allow
     domain-modeling: allow
     effect: allow
     feature-grill: allow
-    feedback-loop: allow
     find-docs: allow
     fix-ci: allow
     fix-merge-conflicts: allow
+    go-engineering: allow
     graphite: allow
     greptile-address: allow
     grill-with-docs: allow
@@ -43,12 +41,12 @@ permission:
     playwright-cli: allow
     principle-subtract-before-you-add: allow
     prototype: allow
+    reliable-control-plane: allow
     remotion-best-practices: allow
     review-remediation: allow
     show-me: allow
     setup-matt-pocock-skills: allow
     subtract: allow
-    tdd: allow
     teach: allow
     tech-spec: allow
     terraform-style-guide: allow

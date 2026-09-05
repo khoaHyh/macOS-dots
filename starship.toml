@@ -16,6 +16,9 @@ success_symbol = "[➜](bold green)"     # The "success_symbol" segment is being
 disabled = true
 # symbol = " "
 
+[gcloud]
+disabled = true
+
 [directory]
 read_only = " "
 

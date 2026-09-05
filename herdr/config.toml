@@ -8,7 +8,8 @@ agent_panel_sort = "spaces"
 delivery = "system"
 
 [theme]
-name = "rose-pine"
+name = "vesper"
 
+auto_switch = false
 [experimental]
 pane_history = false
