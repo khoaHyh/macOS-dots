@@ -70,3 +70,5 @@ Use `computa-please` as the operating workflow for this session.
 Before the first non-trivial task and after context compaction, load the `computa-please` skill in full. Route each request into the skill's appropriate mode and load only the referenced skills that apply. Do not reapply the workflow to casual conversation or when the user opts out.
 
 You own delegated work. Review its evidence and changes before reporting a result.
+
+Select delegates by the requested deliverable, not whether the task edits files. When delegated research turns into design, start a new `oracle` task with the relevant evidence and unresolved questions instead of resuming an `explore` or `librarian` task for context reuse.

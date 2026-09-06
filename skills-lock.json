@@ -59,7 +59,7 @@
       "source": "khoahyh/skills",
       "sourceType": "github",
       "skillPath": "feature-grill/SKILL.md",
-      "computedHash": "c325c02320e42e8f7543ed2fa56f469e27397cfd1a7938e42400fa779220a852"
+      "computedHash": "676b4fbbbe71eaa34a32df4e6ea1ac8ea5a9f5492507fae0e97987322e826871"
     },
     "field-lab": {
       "source": "kyleamathews/hegelian-dialectic-skill",
@@ -143,7 +143,7 @@
       "source": "khoaHyh/skills",
       "sourceType": "github",
       "skillPath": "observability-logging/SKILL.md",
-      "computedHash": "47ceea637252d08401f81f3693a2fc3e6838232e8160e3ff7ac394d712486317"
+      "computedHash": "8275ab85fbcea9f11dfcae176a0962c380eee6c00f1885ef961846b30b08006f"
     },
     "opentui": {
       "source": "msmps/opentui-skill",
@@ -203,7 +203,7 @@
       "source": "khoahyh/skills",
       "sourceType": "github",
       "skillPath": "review-remediation/SKILL.md",
-      "computedHash": "50ba4c4957e5521cbe0fa33158518bb35605378a925fc84330eb4c0c29e053da"
+      "computedHash": "7ca9c10437c739547a677d65463f52c2011b1e96630017c7de7ec9d706256dd6"
     },
     "setup-matt-pocock-skills": {
       "source": "mattpocock/skills",
@@ -227,7 +227,7 @@
       "source": "khoahyh/skills",
       "sourceType": "github",
       "skillPath": "subtract/SKILL.md",
-      "computedHash": "0dba57c149c479291076718111291058a78bbbb46365c5074130d992e48ed292"
+      "computedHash": "3b0a84075a18996b87c259f0f9e16524d87d60cf51cae6d7326b683d235c884d"
     },
     "teach": {
       "source": "mattpocock/skills",
@@ -239,7 +239,7 @@
       "source": "khoaHyh/skills",
       "sourceType": "github",
       "skillPath": "tech-spec/SKILL.md",
-      "computedHash": "e749c46df48b96f12d829ac990ed931a83fb94f7c3372a5439c907146362baaf"
+      "computedHash": "03f5958a05bfc70d9ec9e4fae728f6d15f766006a3b6c28892902e5d18a091b9"
     },
     "thermo-nuclear-code-quality-review": {
       "source": "cursor/plugins",
