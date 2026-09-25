@@ -1,8 +1,8 @@
 {
   "defaultProvider": "openai-codex",
-  "defaultModel": "gpt-5.6-sol",
+  "defaultModel": "gpt-6-sol",
   "defaultThinkingLevel": "high",
-  "hideThinkingBlock": false,
+  "hideThinkingBlock": true,
   "theme": "rose-pine-dawn",
   "quietStartup": true,
   "liteline": {
@@ -12,7 +12,7 @@
     "fiveHourLimitTokens": 5000000,
     "weeklyLimitTokens": 50000000
   },
-  "lastChangelogVersion": "0.80.5",
+  "lastChangelogVersion": "0.85.1",
   "packages": [
     {
       "source": "npm:@plannotator/pi-extension",
@@ -23,3 +23,4 @@
     "npm:@juicesharp/rpiv-ask-user-question@1.17.1"
   ]
 }
+

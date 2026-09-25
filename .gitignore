@@ -28,6 +28,8 @@ pi/mcp-oauth/
 pi/mcp-cache.json
 pi/mcp-npx-cache.json
 pi/mcp-auth.json
+pi/models-store.json
+pi/trust.json
 
 # file-backed todo extension state
 .pi/todos/

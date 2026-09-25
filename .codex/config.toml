@@ -1,8 +1,5 @@
-model = "gpt-5.4"
+model = "gpt-6-sol"
 model_reasoning_effort = "high"
-tool_output_token_limit = 25000
-# Leave room for native compaction near the 272–273k context window.
-model_auto_compact_token_limit = 800000
 web_search = "live"
 [features]
 # Use PTY-backed execution instead of pipes - programs think they're in a real terminal,
@@ -11,13 +8,13 @@ unified_exec = true
 apply_patch_freeform = true
 skills = true
 shell_snapshot = true
-
-# use oauth login instead of api key (`codex mcp login context7`)
-[mcp_servers.context7]
-url = "https://mcp.context7.com/mcp"
+goals = true
 
 [mcp_servers.notion]
 url = "https://mcp.notion.com/mcp"
+
+[mcp_servers.linear]
+url = "https://mcp.linear.app/mcp"
 
 [projects."/Users/khuynh/dev/skills"]
 trust_level = "trusted"
@@ -30,3 +27,82 @@ trust_level = "trusted"
 
 [projects."/Users/khuynh/dev/digital-garden"]
 trust_level = "trusted"
+
+[projects."/Users/khuynh/dev/platform"]
+trust_level = "trusted"
+
+[projects."/"]
+trust_level = "trusted"
+
+[projects."/Users/khuynh/dev/frontdoor"]
+trust_level = "trusted"
+
+[projects."/Users/khuynh/Documents/Codex/2026-04-23/google-drive-plugin-google-drive-openai"]
+trust_level = "trusted"
+
+[projects."/Users/khuynh/Documents/Codex/2026-04-24/i-want-to-enable-my-design"]
+trust_level = "trusted"
+
+[projects."/Users/khuynh/Documents/Codex/2026-04-28/slack-plugin-slack-openai-curated-notion"]
+trust_level = "trusted"
+
+[projects."/Users/khuynh/dev/infrastructure"]
+trust_level = "trusted"
+
+[marketplaces.openai-bundled]
+last_updated = "2026-05-09T16:46:05Z"
+source_type = "local"
+source = "/Users/khuynh/.codex/.tmp/bundled-marketplaces/openai-bundled"
+
+[marketplaces.openai-primary-runtime]
+last_updated = "2026-05-08T20:06:28Z"
+source_type = "local"
+source = "/Users/khuynh/.cache/codex-runtimes/codex-primary-runtime/plugins/openai-primary-runtime"
+
+[plugins."slack@openai-curated"]
+enabled = true
+
+[plugins."notion@openai-curated"]
+enabled = true
+
+[plugins."gmail@openai-curated"]
+enabled = true
+
+[plugins."google-drive@openai-curated"]
+enabled = true
+
+[plugins."linear@openai-curated"]
+enabled = true
+
+[plugins."figma@openai-curated"]
+enabled = true
+
+[plugins."computer-use@openai-bundled"]
+enabled = true
+
+[plugins."github@openai-curated"]
+enabled = true
+
+[plugins."documents@openai-primary-runtime"]
+enabled = true
+
+[plugins."spreadsheets@openai-primary-runtime"]
+enabled = true
+
+[plugins."presentations@openai-primary-runtime"]
+enabled = true
+
+[plugins."browser-use@openai-bundled"]
+enabled = true
+
+[plugins."cloudflare@openai-curated"]
+enabled = true
+
+[plugins."codex-security@openai-curated"]
+enabled = true
+
+[tui.model_availability_nux]
+"gpt-5.5" = 4
+
+[apps.asdk_app_69a089a326dc8191b32a3f2553f5be2c.tools.linear_research]
+approval_mode = "approve"
