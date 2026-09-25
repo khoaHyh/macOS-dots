@@ -1,10 +1,8 @@
 {
   "$schema": "https://opencode.ai/config.json",
-  "plugin": [
+  "plugins": [
     "@plannotator/opencode@latest"
   ],
-  "small_model": "openai/gpt-5.6-luna-fast",
-  "lsp": false,
   "references": {
     "effect-src": {
       "repository": "Effect-TS/effect",
@@ -35,78 +33,61 @@
       "description": "Use for referencing high quality Zig code, project architecture, design, style guide, patterns and practices."
     }
   },
-  "permission": {
-    "websearch": "allow",
-    "question": "allow",
-    "external_directory": {
-      "~/.local/share/agent-skills/personal-drafting/**": "allow"
+  "permissions": [
+    { "action": "websearch", "resource": "*", "effect": "allow" },
+    { "action": "question", "resource": "*", "effect": "allow" },
+    { "action": "external_directory", "resource": "~/.local/share/agent-skills/personal-drafting/*", "effect": "allow" },
+    { "action": "skill", "resource": "*", "effect": "allow" },
+    { "action": "skill", "resource": "personal-drafting", "effect": "deny" },
+    { "action": "skill", "resource": "principle-subtract-before-you-add", "effect": "deny" }
+  ],
+  "agents": {
+    "title": {
+      "model": "openai/gpt-5.6-luna-fast"
     },
-    "skill": {
-      "*": "allow",
-      "personal-drafting": "deny",
-      "principle-subtract-before-you-add": "deny"
-    }
-  },
-  "agent": {
     "build": {
-      "permission": {
-        "skill": {
-          "personal-drafting": "allow"
-        }
-      }
+      "permissions": [
+        { "action": "skill", "resource": "personal-drafting", "effect": "allow" }
+      ]
     },
     "explore": {
       "mode": "subagent",
-      "description": "Read-only local codebase evidence gathering: locate files, trace existing behavior, and report interfaces, tests, and constraints with references. Use oracle for proposed architecture, schemas, migrations, and design reviews, including when research turns into design.",
-      "model": "openai/gpt-5.6-luna-fast",
-      "variant": "xhigh",
-      "prompt": "{file:./prompts/explore-harness.md}"
+      "description": "Read-only local codebase evidence gathering: locate files, trace existing behavior, and return interfaces, tests, constraints, and unresolved decisions to the primary.",
+      "model": "openai/gpt-6-luna-fast#xhigh",
+      "system": "{file:./prompts/explore-harness.md}"
     },
     "librarian": {
       "mode": "subagent",
-      "model": "openai/gpt-5.6-terra-fast",
-      "variant": "high",
-      "description": "Retrieve and verify external documentation, upstream source, API contracts, and version-specific examples with citations. Report evidence and uncertainties; use oracle for project-specific architecture and trade-off decisions.",
-      "prompt": "{file:./prompts/librarian-harness.md}"
+      "description": "Read-only external research: retrieve current documentation, upstream source, API contracts, and version-specific examples, then return evidence and unresolved decisions to the primary.",
+      "model": "openai/gpt-6-luna-fast#max",
+      "system": "{file:./prompts/librarian-harness.md}"
     },
     "oracle": {
       "mode": "subagent",
-      "description": "Technical design and critical reasoning: propose or review architecture, schemas, typed interfaces, migrations, concurrency guarantees, and recovery strategies. Use for design-only work too, not just blocked implementation.",
-      "model": "openai/gpt-6-astra",
-      "variant": "xhigh",
-      "prompt": "{file:./prompts/oracle-harness.md}"
+      "description": "Read-only second opinion on consequential unresolved engineering decisions. The primary retains decisions, authority, implementation, and verification.",
+      "model": "openai/gpt-6-astra#medium",
+      "system": "{file:./prompts/oracle-harness.md}",
+      "permissions": [
+        { "action": "edit", "resource": "*", "effect": "deny" },
+        { "action": "shell", "resource": "*", "effect": "deny" },
+        { "action": "subagent", "resource": "*", "effect": "deny" },
+        { "action": "question", "resource": "*", "effect": "deny" },
+        { "action": "executor_*", "resource": "*", "effect": "deny" }
+      ]
     },
     "general": {
-      "description": "Implement and verify bounded engineering tasks, including multi-file changes and tests. Use explore for factual reconnaissance and oracle for unresolved design decisions.",
-      "model": "openai/gpt-6-astra-fast",
-      "variant": "high"
+      "description": "Implement and verify bounded engineering tasks, including multi-file changes and tests. Use explore for factual reconnaissance and return consequential unresolved decisions to the primary.",
+      "model": "openai/gpt-6-sol#high"
     }
   },
   "mcp": {
-    "executor": {
-      "type": "remote",
-      "url": "http://127.0.0.1:4789/mcp",
-      "enabled": true,
-      "timeout": 30000,
-      "headers": {
-        "Authorization": "{env:EXECUTOR_MCP_AUTHORIZATION}"
-      }
-    },
-    "slack": {
-      "type": "local",
-      "command": [
-        "npx",
-        "-y",
-        "slack-mcp-server@latest",
-        "--transport",
-        "stdio"
-      ],
-      "environment": {
-        "SLACK_MCP_ENABLED_TOOLS": "channels_list,conversations_history,conversations_replies,conversations_search_messages,usergroups_list,usergroups_me",
-        "SLACK_MCP_XOXP_TOKEN": "{env:SLACK_MCP_XOXP_TOKEN}",
-        "SLACK_MCP_XOXB_TOKEN": "{env:SLACK_MCP_XOXB_TOKEN}",
-        "SLACK_MCP_XOXC_TOKEN": "{env:SLACK_MCP_XOXC_TOKEN}",
-        "SLACK_MCP_XOXD_TOKEN": "{env:SLACK_MCP_XOXD_TOKEN}"
+    "servers": {
+      "executor": {
+        "type": "local",
+        "command": [
+          "/Applications/Executor.app/Contents/Resources/executor/executor",
+          "mcp"
+        ]
       }
     }
   }

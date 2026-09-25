@@ -1,4 +1,8 @@
-import type { Plugin } from "@opencode-ai/plugin"
+import { execFile } from "node:child_process"
+import { promisify } from "node:util"
+import { Plugin } from "@opencode/plugin"
+
+const run = promisify(execFile)
 
 // RTK OpenCode plugin — rewrites commands to use rtk for token savings.
 // Requires: rtk >= 0.23.0 in PATH.
@@ -7,33 +11,31 @@ import type { Plugin } from "@opencode-ai/plugin"
 // which is the single source of truth (src/discover/registry.rs).
 // To add or change rewrite rules, edit the Rust registry — not this file.
 
-export const RtkOpenCodePlugin: Plugin = async ({ $ }) => {
-  try {
-    await $`which rtk`.quiet()
-  } catch {
-    console.warn("[rtk] rtk binary not found in PATH — plugin disabled")
-    return {}
-  }
+export default Plugin.define({
+  id: "local.rtk",
+  async setup(ctx) {
+    try {
+      await run("rtk", ["--version"])
+    } catch {
+      console.warn("[rtk] rtk binary not found in PATH — plugin disabled")
+      return
+    }
 
-  return {
-    "tool.execute.before": async (input, output) => {
-      const tool = String(input?.tool ?? "").toLowerCase()
-      if (tool !== "bash" && tool !== "shell") return
-      const args = output?.args
-      if (!args || typeof args !== "object") return
-
-      const command = (args as Record<string, unknown>).command
+    await ctx.tool.hook("execute.before", async (event) => {
+      if (event.tool !== "bash" && event.tool !== "shell") return
+      const input = event.input as { command?: unknown }
+      const command = input.command
       if (typeof command !== "string" || !command) return
 
       try {
-        const result = await $`rtk rewrite ${command}`.quiet().nothrow()
-        const rewritten = String(result.stdout).trim()
-        if (rewritten && rewritten !== command) {
-          ;(args as Record<string, unknown>).command = rewritten
-        }
+        const stdout = await new Promise<string>((resolve) => {
+          execFile("rtk", ["rewrite", command], { timeout: 2_000 }, (_error, output) => resolve(output))
+        })
+        const rewritten = stdout.trim()
+        if (rewritten && rewritten !== command) input.command = rewritten
       } catch {
-        // rtk rewrite failed — pass through unchanged
+        // A rewrite failure must not block the original command.
       }
-    },
-  }
-}
+    })
+  },
+})

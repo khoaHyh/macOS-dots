@@ -21,19 +21,24 @@ Personal macOS setup for shell, terminal, window management, and CLI tooling.
 - macOS (Sonoma/Sequoia/Tahoe)
 - Homebrew
 
-Secret-enabled `ocs`, `occs`, `pis`, and `pics` sessions also require 1Password
+Secret-enabled `pis` and `pics` sessions also require 1Password
 CLI `2.33.0-beta.02` or later with Environment support, a read-only service
 account for the selected Environment, and `OPENCODE_1P_ENV_ID` in
-`~/.zshrc.private`. Store the service account token in the login Keychain
-without placing it in shell history:
+`~/.zshrc.private`. The launchers export that Environment selector to the agent
+process so repository wrappers can use `op run --environment` without another
+setup step.
 
-```bash
-security add-generic-password \
-  -a "$USER" \
-  -s "opencode.1password.service-account" \
-  -U \
-  -w
-```
+Store the complete service account token in the login Keychain without placing
+it in shell history or a command argument:
+
+1. Copy the complete `ops_` token from 1Password.
+2. Open Keychain Access and select the login Keychain.
+3. Create or update a Password item named
+   `opencode.1password.service-account` with the macOS username as its account.
+4. Paste the token into the password field and save the item.
+
+Do not use `security add-generic-password -w` without a value for this token.
+Its interactive password reader truncates long values.
 
 Use `agentenv` and `agentclear` to manage the same authentication in a direct
 interactive shell. Secret-enabled agent launchers scope it to the agent process
@@ -86,14 +91,16 @@ mkdir -p ~/.config/aerospace ~/.config/herdr ~/.config/scripts ~/.pi
 ln -sf ~/dev/macOS-dots/.zshrc ~/.zshrc
 ln -sf ~/dev/macOS-dots/.tmux.conf ~/.tmux.conf
 ln -sf ~/dev/macOS-dots/.gitconfig ~/.gitconfig
+ln -sf ~/dev/macOS-dots/.simplebarrc ~/.simplebarrc
 ln -sf ~/dev/macOS-dots/starship.toml ~/.config/starship.toml
 [ -f ~/.config/herdr/config.toml ] && [ ! -L ~/.config/herdr/config.toml ] && mv ~/.config/herdr/config.toml ~/.config/herdr/config.toml.backup.$(date +%Y%m%d-%H%M%S)
 ln -sf ~/dev/macOS-dots/herdr/config.toml ~/.config/herdr/config.toml
 ln -sf ~/dev/macOS-dots/scripts/open_iterm2.sh ~/.config/scripts/open_iterm2.sh
 ln -sf ~/dev/macOS-dots/scripts/refresh_simple_bar.sh ~/.config/scripts/refresh_simple_bar.sh
+ln -sf ~/dev/macOS-dots/scripts/simple_bar_htop.sh ~/.config/scripts/simple_bar_htop.sh
 [ -d ~/.pi/agent ] && [ ! -L ~/.pi/agent ] && mv ~/.pi/agent ~/.pi/agent.backup.$(date +%Y%m%d-%H%M%S)
 ln -sfn ~/dev/macOS-dots/pi ~/.pi/agent
-chmod +x ~/.config/scripts/open_iterm2.sh ~/.config/scripts/refresh_simple_bar.sh
+chmod +x ~/.config/scripts/open_iterm2.sh ~/.config/scripts/refresh_simple_bar.sh ~/.config/scripts/simple_bar_htop.sh
 chmod +x ~/dev/macOS-dots/scripts/configure_aerospace.sh ~/dev/macOS-dots/scripts/aerospace_top_gap.swift
 ~/dev/macOS-dots/scripts/configure_aerospace.sh
 ```
@@ -150,7 +157,7 @@ Open tmux and press `prefix + I` to install plugins.
 ## Verify setup
 
 ```bash
-ls -l ~/.zshrc ~/.tmux.conf ~/.gitconfig ~/.config/starship.toml ~/.config/aerospace/aerospace.toml ~/.config/herdr/config.toml
+ls -l ~/.zshrc ~/.tmux.conf ~/.gitconfig ~/.simplebarrc ~/.config/starship.toml ~/.config/aerospace/aerospace.toml ~/.config/herdr/config.toml
 ls -ld ~/.pi/agent
 pgrep -x AeroSpace
 ls -la ~/.tmux/plugins/tpm

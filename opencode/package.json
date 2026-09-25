@@ -6,7 +6,6 @@
     "test": "bun test"
   },
   "dependencies": {
-    "@opencode-ai/plugin": "1.4.6",
-    "@plannotator/opencode": "^0.16.7"
+    "@opencode/plugin": "2.0.16"
   }
 }

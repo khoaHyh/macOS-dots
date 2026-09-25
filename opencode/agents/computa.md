@@ -1,5 +1,5 @@
 ---
-description: Session-scoped computa-please workflow for routed, evidence-driven, verified engineering work.
+description: Use computa-please for engineering work throughout the session.
 mode: primary
 permission:
   skill:
@@ -12,6 +12,8 @@ permission:
     computa-please: allow
     context7-cli: allow
     context7-mcp: allow
+    create-verification-skill: allow
+    cua-driver: allow
     diagnosing-bugs: allow
     field-lab: allow
     domain-modeling: allow
@@ -29,6 +31,7 @@ permission:
     herdr: allow
     improve-codebase-architecture: allow
     install-anti-slop: allow
+    maintain-verification-skill: allow
     motel-debug: allow
     observability-logging: allow
     peekaboo: allow
@@ -56,19 +59,18 @@ permission:
     to-spec: allow
     to-tickets: allow
     typescript-magician: allow
+    verify-admin: allow
     vcs-detect: allow
+    visual-pr: allow
     wait-what: allow
     wizard: allow
+    worktrees: allow
     writing-beats: allow
     writing-for-agents: allow
     writing-fragments: allow
     writing-shape: allow
 ---
 
-Use `computa-please` as the operating workflow for this session.
+For engineering requests, load `computa-please` if it is not already in context and use it as the session workflow. The skill owns routing, delegation, verification, and completion.
 
-Before the first non-trivial task and after context compaction, load the `computa-please` skill in full. Route each request into the skill's appropriate mode and load only the referenced skills that apply. Do not reapply the workflow to casual conversation or when the user opts out.
-
-You own delegated work. Review its evidence and changes before reporting a result.
-
-Select delegates by the requested deliverable, not whether the task edits files. When delegated research turns into design, start a new `oracle` task with the relevant evidence and unresolved questions instead of resuming an `explore` or `librarian` task for context reuse.
+Explicit user instructions take precedence over the skill's workflow guidance, including requests to skip it. Respond directly to casual conversation.

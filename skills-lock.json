@@ -5,7 +5,7 @@
       "source": "openclaw/agent-skills",
       "sourceType": "github",
       "skillPath": "skills/autoreview/SKILL.md",
-      "computedHash": "501a730ddf57da7794dfe476aab3070854cc66eaae8900b364d6a79cf6013098"
+      "computedHash": "951a495b036a101b1dffb4e808652249fca61ba28d33e2aedb419654ce47033a"
     },
     "codebase-design": {
       "source": "mattpocock/skills",
@@ -23,7 +23,7 @@
       "source": "khoahyh/skills",
       "sourceType": "github",
       "skillPath": "computa-please/SKILL.md",
-      "computedHash": "20403b072d37e6eed0d99f2d4aad7e356856a188210edef6b508a20ad90ab0f8"
+      "computedHash": "afe30fd10d6d0552e5431d6ef1b8b08fd22950c1f3fff213a265eed25efc8b38"
     },
     "context7-cli": {
       "source": "upstash/context7",
@@ -36,6 +36,12 @@
       "sourceType": "github",
       "skillPath": "skills/context7-mcp/SKILL.md",
       "computedHash": "38728e71e4773f70b3e7d2a2c90b1b0466ba7829603d790b05e0a3ab12f8e569"
+    },
+    "cua-driver": {
+      "source": "trycua/cua",
+      "sourceType": "github",
+      "skillPath": "libs/cua-driver/rust/Skills/cua-driver/SKILL.md",
+      "computedHash": "4dcd2f38614bffe58dbc7ad7660baa8f5fefd9a73c183f0a7350536d493cf373"
     },
     "diagnosing-bugs": {
       "source": "mattpocock/skills",
@@ -53,7 +59,7 @@
       "source": "kitlangton/skills",
       "sourceType": "github",
       "skillPath": "skills/effect/SKILL.md",
-      "computedHash": "1b789df989e009e38ad988ea8986430bde2accad67eb924b07f1458c019ad026"
+      "computedHash": "f4e0cfeee135a1569fc9e511c26d74fcd29d5ce03bc8066aea268fc87a88019e"
     },
     "feature-grill": {
       "source": "khoahyh/skills",
@@ -119,7 +125,7 @@
       "source": "herdrdev/herdr",
       "sourceType": "github",
       "skillPath": "skills/herdr/SKILL.md",
-      "computedHash": "77b9fb624aebcbfccfbc84d7ef3b938c70ecb9198c8bbfee95b11751ba20bfb7"
+      "computedHash": "c741134cc22372c08da2f469d49aac9f9bbddd4f5e1da0558cf1132836fa3287"
     },
     "improve-codebase-architecture": {
       "source": "mattpocock/skills",
@@ -149,7 +155,7 @@
       "source": "msmps/opentui-skill",
       "sourceType": "github",
       "skillPath": "skill/opentui/SKILL.md",
-      "computedHash": "ccd85cd91952b9a711aa88d9ce6f01862e3cdc8136ac580ef830067cb5d9bd3f"
+      "computedHash": "7244056422f5d578beaffc95ae20a4b421923f70a8eb6a4decf49b3d79c0d2db"
     },
     "peekaboo": {
       "source": "openclaw/peekaboo",
@@ -221,13 +227,13 @@
       "source": "humanlayer/skills",
       "sourceType": "github",
       "skillPath": "plugins/show-me/skills/show-me/SKILL.md",
-      "computedHash": "de32a72f802801f08a84641b467f2c6306d35a58ce5e59ea607ac3a993a18c91"
+      "computedHash": "43766f53afe7eb9feba0bb7716590c35cbb8d39d4a91eddef50e9566a6f6ae19"
     },
     "subtract": {
       "source": "khoahyh/skills",
       "sourceType": "github",
       "skillPath": "subtract/SKILL.md",
-      "computedHash": "3b0a84075a18996b87c259f0f9e16524d87d60cf51cae6d7326b683d235c884d"
+      "computedHash": "66702372f4690248f113502efec5c65f61535120b7a87b2ae7df00647a19e76e"
     },
     "teach": {
       "source": "mattpocock/skills",
@@ -240,6 +246,13 @@
       "sourceType": "github",
       "skillPath": "tech-spec/SKILL.md",
       "computedHash": "03f5958a05bfc70d9ec9e4fae728f6d15f766006a3b6c28892902e5d18a091b9"
+    },
+    "test-audit": {
+      "source": "openclaw/openclaw",
+      "ref": "main",
+      "sourceType": "github",
+      "skillPath": ".agents/skills/test-audit/SKILL.md",
+      "computedHash": "1c493e8f99f4c5ac2b1d9e2928a88312cf72d823f1486106d9edfebf08d20c27"
     },
     "thermo-nuclear-code-quality-review": {
       "source": "cursor/plugins",
@@ -270,6 +283,12 @@
       "sourceType": "github",
       "skillPath": "skills/engineering/triage/SKILL.md",
       "computedHash": "b954d74c219c805bf353d6642251a713c9b2e9cfdb11babfe588bcfe7dfd16d5"
+    },
+    "visual-pr": {
+      "source": "humanlayer/skills",
+      "sourceType": "github",
+      "skillPath": "plugins/visual-pr/skills/visual-pr/SKILL.md",
+      "computedHash": "197904ade976018d9ce28e706323f969a6a87947994f46e3ffad78c46e70a716"
     },
     "wizard": {
       "source": "mattpocock/skills",

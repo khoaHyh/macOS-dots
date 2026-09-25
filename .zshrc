@@ -32,10 +32,6 @@ alias gwp='git worktree prune'
 alias vi=/usr/local/bin/vim
 alias vim=/usr/local/bin/vim
 
-## opencode
-export OPENCODE_ENABLE_EXA=1
-export OPENCODE_EXPERIMENTAL_BACKGROUND_SUBAGENTS=1
-
 # Local-only shell overrides (not tracked in dotfiles)
 if [[ -f "$HOME/.zshrc.private" ]]; then
   source "$HOME/.zshrc.private"
@@ -43,6 +39,8 @@ fi
 
 # Allow re-sourcing this file even if older alias-based helpers are loaded.
 unalias oc occ ocs occs agentenv agentclear ocenv occlear mcpenv mcpclear pienv piclear pis pics 2>/dev/null
+# Drop OpenCode v1-era credential wrappers no longer defined here.
+unfunction ocs occs ocenv occlear 2>/dev/null
 
 typeset -ga _MCP_AGENT_ENV_VARS=(
   EXECUTOR_MCP_AUTHORIZATION
@@ -77,6 +75,11 @@ _agent_1p_auth() {
   ) || return 1
   [[ -n "$token" ]] || return 1
 
+  if [[ "$token" != ops_* || ${#token} -le 128 ]]; then
+    print -u2 "The opencode.1password.service-account Keychain token is invalid or truncated. Replace it with the complete ops_ token in Keychain Access."
+    return 1
+  fi
+
   export OP_SERVICE_ACCOUNT_TOKEN="$token"
 }
 
@@ -92,6 +95,7 @@ mcpenv() {
     return 1
   fi
 
+  export OPENCODE_1P_ENV_ID="$env_id"
   _agent_1p_auth || return
 
   local env_output line key value allowed_key loaded=0
@@ -156,40 +160,13 @@ agentclear() {
   mcpclear
 }
 
-ocenv() {
-  agentenv
-}
-
-occlear() {
-  agentclear
-}
-
+# OpenCode v2 uses Executor's stdio MCP connection; only pi needs mcpenv.
 oc() {
-  (
-    _executor_mcp_env 2>/dev/null || true
-    opencode "$@"
-  )
+  opencode "$@"
 }
 
 occ() {
-  (
-    _executor_mcp_env 2>/dev/null || true
-    caffeinate -id -- opencode "$@"
-  )
-}
-
-ocs() {
-  (
-    ocenv || return
-    opencode "$@"
-  )
-}
-
-occs() {
-  (
-    ocenv || return
-    caffeinate -id -- opencode "$@"
-  )
+  caffeinate -id -- opencode "$@"
 }
 
 pienv() {
