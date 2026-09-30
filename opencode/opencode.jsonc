@@ -77,7 +77,7 @@
     },
     "general": {
       "description": "Implement and verify bounded engineering tasks, including multi-file changes and tests. Use explore for factual reconnaissance and return consequential unresolved decisions to the primary.",
-      "model": "openai/gpt-6-sol#high"
+      "model": "openai/gpt-6.1-sol#high"
     }
   },
   "mcp": {

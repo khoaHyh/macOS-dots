@@ -44,10 +44,6 @@ unfunction ocs occs ocenv occlear 2>/dev/null
 
 typeset -ga _MCP_AGENT_ENV_VARS=(
   EXECUTOR_MCP_AUTHORIZATION
-  SLACK_MCP_XOXP_TOKEN
-  SLACK_MCP_XOXB_TOKEN
-  SLACK_MCP_XOXC_TOKEN
-  SLACK_MCP_XOXD_TOKEN
 )
 
 _executor_mcp_env() {
@@ -149,6 +145,7 @@ mcpclear() {
     unset "$key"
   done
 
+  unset SLACK_MCP_XOXP_TOKEN SLACK_MCP_XOXB_TOKEN SLACK_MCP_XOXC_TOKEN SLACK_MCP_XOXD_TOKEN
   unset OP_SERVICE_ACCOUNT_TOKEN
 }
 
@@ -238,3 +235,4 @@ export PATH="$PATH:$ANDROID_HOME/platform-tools"
 
 # Added by Cap
 export PATH="/Users/khuynh/.cap/bin:$PATH"
+export PATH=$PATH:$HOME/.maestro/bin

@@ -24,7 +24,6 @@ permission:
     fix-merge-conflicts: allow
     go-engineering: allow
     graphite: allow
-    greptile-address: allow
     grill-with-docs: allow
     grilling: allow
     handoff: allow
@@ -44,14 +43,18 @@ permission:
     playwright-cli: allow
     principle-subtract-before-you-add: allow
     prototype: allow
+    record-verification: allow
     reliable-control-plane: allow
     remotion-best-practices: allow
     review-remediation: allow
+    scope-prune: allow
     show-me: allow
     setup-matt-pocock-skills: allow
     subtract: allow
     teach: allow
     tech-spec: allow
+    terminal-control: allow
+    test-audit: allow
     terraform-style-guide: allow
     terraform-test: allow
     thermo-nuclear-code-quality-review: allow
