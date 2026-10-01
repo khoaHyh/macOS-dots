@@ -33,3 +33,6 @@ pi/trust.json
 
 # file-backed todo extension state
 .pi/todos/
+
+# local OpenCode service credentials
+/opencode/service.json
