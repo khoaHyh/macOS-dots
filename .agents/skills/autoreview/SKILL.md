@@ -10,6 +10,9 @@ This is code review, not Guardian approval routing. Let the reviewer choose how
 to analyze the change; provide the target, relevant context, and desired severity.
 Findings are advice to verify, not instructions to apply blindly.
 
+Before starting a review, read the complete [diagnostic and result guidance](references/diagnostics-and-results.md). It is part of this skill; follow its
+output-path, status, failure, usage, and diagnostic rules.
+
 ## Run
 
 Use `scripts/autoreview` beside this skill. Keep its custom `codex exec` path:
@@ -61,6 +64,16 @@ repository configuration is not changed. Source paths and text retain literal
 whitespace. An empty present
 source uses line 1, column 1, and an empty excerpt; empty physical lines also
 use an empty excerpt at column 1. Source identity remains mandatory.
+
+Binary deletions remain in scope as Git deletion metadata; their former contents
+are not included or reviewed. Each local transition is checked independently:
+deleting a file in the working tree cannot hide a staged binary change.
+
+Finding locations may use native absolute paths that resolve inside the reviewed
+repository; these become repository-relative paths before scope and attribution
+checks, preserving a changed symlink's path when its target is also inside.
+Parent traversal and paths resolving outside the repository remain invalid.
+An invalid location still fails the report; findings are never silently dropped.
 
 Local selection honors `core.autocrlf` from external operator Git configuration,
 with repository-local values and attributes retaining precedence. Only its
@@ -121,7 +134,10 @@ source-provenance contract, not secret-content scanning.
 
 The default threshold is **P0 only**: material blockers to normal operation or
 safety. Use `--max-priority P1`, `P2`, or `P3` when the caller requests a wider
-review. Do not add unrelated redesign goals or prescribe file counts, reading
+review. `AUTOREVIEW_MAX_PRIORITY` accepts the same `P0`–`P3` values; an explicit
+flag overrides it. Invalid resolved priorities fail during argument parsing,
+before preparation or reviewer startup.
+Do not add unrelated redesign goals or prescribe file counts, reading
 sequences, or ritual extra passes. Historical blame requires a verified
 parent-relative patch; otherwise leave the attribution unknown.
 
@@ -138,12 +154,13 @@ it or Codex is unavailable for the review; report the concrete availability fail
 before switching. Do not switch because a review is slow, rate-limited, or returns
 findings, or to bypass a safety refusal or isolation failure.
 
-Codex defaults to `gpt-6-sol`, high reasoning, with a `gpt-6-luna` retry
-only for an account-access failure. Explicit `gpt-6-sol` selections use the same
-retry; other explicit models, including Luna and Astra, have no model fallback.
+Codex defaults to `gpt-6.1-sol`, high reasoning, with a single `gpt-6-sol` retry
+only for an account-access failure. Explicit `gpt-6.1-sol` selections use the same
+retry. Explicit `gpt-6-sol` selections retain their access-only `gpt-6-luna` retry;
+other explicit models, including Luna and Astra, have no model fallback.
 Explicit `gpt-5.6-sol` selections retain their access-only `gpt-5.6-terra` retry.
-GPT-6 Sol and Luna reject unsupported `minimal` effort before review preparation;
-an effort-only override no longer selects an older model.
+GPT-6.1 Sol rejects `none` and `minimal` effort before review preparation;
+GPT-6 Sol and Luna reject `minimal`. An effort-only override keeps the default model.
 Honor explicit user engine/model choices.
 The helper does not automatically fall back between engines.
 
@@ -158,14 +175,16 @@ GPT-6 Astra without a model fallback, select it explicitly:
 "$AUTOREVIEW" --mode local --model gpt-6-astra --thinking high
 ```
 
-GPT-6 Sol and Luna support `none`, `low`, `medium`, `high`, `xhigh`, and `max`;
-neither supports `minimal`. Astra also excludes `none`. AutoReview defaults to
+GPT-6.1 Sol and GPT-6 Astra support `low`, `medium`, `high`, `xhigh`, and `max`;
+neither supports `none` or `minimal`. GPT-6 Sol and Luna additionally support `none`,
+but not `minimal`. AutoReview defaults to
 `high` and does not fall back from an explicit Luna or Astra selection.
 Codex's `ultra` mode uses automatic
 delegation and is outside this helper's supported effort levels. Use `max`
 for its deepest supported review. For EU data residency, use
 `--codex-speed default`; GPT-6 fast mode is unavailable there.
-See the [GPT-6 Sol](https://developers.openai.com/api/docs/models/gpt-6-sol) and
+See the [GPT-6.1 Sol](https://developers.openai.com/api/docs/models/gpt-6.1-sol),
+[GPT-6 Sol](https://developers.openai.com/api/docs/models/gpt-6-sol), and
 [GPT-6 Luna](https://developers.openai.com/api/docs/models/gpt-6-luna) model docs
 and [Codex reasoning modes](https://learn.chatgpt.com/docs/models#know-when-to-use-max-or-ultra).
 
@@ -211,7 +230,15 @@ split context overrides are unsupported when projection is selected.
 | Claude          | CLI 2.1.169+; safe mode with web-only tools                                                           |
 | Amp             | `AMP_API_KEY` for a plugin-free account; local POSIX execution, no custom endpoint or cloud/orb agent |
 | Pi              | CLI 0.79.0+; configured model; no tools or project resources                                          |
-| Kimi            | CLI 0.30.0+; configured model; Python 3.11+ or `tomli` for TOML config                                |
+
+`--engine kimi` remains recognized but is refused for reviews and `--dry-run`
+before any Kimi process, configuration read or authentication setup. The supported
+Kimi Code prompt mode accepts review content only as a command-line argument;
+the helper has no supported private prompt input channel for it. This intentionally
+retires the previous Kimi execution path rather than exposing the bundle in process
+arguments. Existing `--kimi-bin` arguments remain accepted for the same clear refusal;
+the helper never silently selects another engine. A custom agent file is not an
+equivalent replacement because it changes the input into a templated system prompt.
 
 ## Image review
 
@@ -230,8 +257,10 @@ Every pass receives the path, media type, byte count and SHA-256 manifest alongs
 the image attachments and text diff. Image findings use the original path and line 1.
 Text-only review does not require Pillow.
 
-Other binaries, modified/deleted images, local/commit image changes and image review
-with other engines remain unsupported and fail closed. Missing Pillow or provider
+Binary deletions, including images, are reviewed as deletion metadata in every
+mode without image attachments or Pillow. Other binaries, modified images,
+local/commit image additions or modifications, and image review with other engines
+remain unsupported and fail closed. Missing Pillow or provider
 image limits fail the review rather than silently dropping assets. Sensitive-path,
 source-mutation, authentication and sandbox controls remain enabled.
 
@@ -299,80 +328,7 @@ There is no default pass ceiling. `--engine-timeout-seconds` remains an optional
 deadline per process attempt. Pass counts, prompt bytes, and deadlines are not
 token hard caps; they do not bound model reasoning or tool use.
 
-## Results
+## Diagnostics and results
 
-`--output`, `--json-output`, and `--status-output` paths must be outside the
-reviewed repository. When using `--status-output`, all output paths must differ;
-case-only and Unicode normalization aliases are conservatively refused on every
-platform, even when the filesystem would permit distinct files.
-
-| Exit | Meaning                                                                            |
-| ---- | ---------------------------------------------------------------------------------- |
-| `0`  | `scoped-clean`, or a correct verdict with only filtered lower-priority findings    |
-| `1`  | Accepted findings, an incorrect provider verdict, or a failed review attempt       |
-| `2`  | Unfinished assessment, incomplete scope/attribution, or a missing required finding |
-
-Treat `scoped-clean` as clean only for the selected target and requested priority.
-`filtered` is not clean; resolve `incomplete` before claiming completion.
-Verify findings against the actual code and task before changing anything.
-No extra review rounds for a nicer verdict; follow the owning workflow after fixes.
-
-Use `--status-output /outside/repo/status.json` for a separate, versioned
-machine-readable outcome. It preserves the existing exit codes and
-`--json-output` validated-report format. Completed reviews report `scoped-clean`,
-`findings`, `filtered`, `incorrect`, or `incomplete`; a launched reviewer that
-fails or returns an invalid report reports `reviewer_unavailable` with exit 1.
-A failed later pass never publishes a partial review report.
-
-Codex runs collect usage with live display on or off. The final report, status
-sidecar, and terminal summary include `usage`: process attempts, reported,
-unknown and partial attempt counts, `complete`, and observed token totals.
-Each fresh attempt contributes its last valid cumulative snapshot once, including
-access retries and failed passes. Cached input and reasoning output are subsets
-of input and output, not extra totals to add. These are observed tokens, not a
-billing estimate or a cache-hit promise. Missing telemetry, including Codex's
-all-zero defaults when no sample exists, is unknown, never measured zero;
-`tokens: null` means no attempt supplied usable totals. When `complete` is false,
-available totals are a lower bound. Interrupted runs print retained usage but
-still publish no status or review report. Other engines do not yet aggregate usage.
-
-```json
-{
-  "schema_version": 1,
-  "status": "reviewer_unavailable",
-  "exit_code": 1,
-  "engine": "codex",
-  "report_produced": false,
-  "reason": "engine_failed",
-  "reviewer_exit_code": 124,
-  "timed_out": true
-}
-```
-
-`reason` is `engine_failed`, `invalid_report`, or `runtime_validation_failed`
-for unavailable reviewers and null for completed reviews. The last reason means
-Amp's post-launch isolation attestation or private-result validation refused
-the result; it is not a transient-provider classification. These guards still
-run before report acceptance and retain their existing failure diagnostics.
-`reviewer_exit_code` is the last reviewer process's exit code when retained,
-including zero for rejected output, otherwise null. `timed_out` identifies the
-helper's deadline, not a reviewer that happens to exit 124. Completed envelopes
-have `report_produced: true`; this means a validated final report exists, not
-that its verdict is clean. `--expect-findings` changes exit codes as before;
-inspect `status` independently of `exit_code`.
-
-An unfinished assessment retains its validated provider observations with
-`incomplete`, exit 2, and `report_produced: true`, even when findings exist.
-The private completion field is not copied into public reports. Missing or
-invalid completion is an invalid report, not an unfinished assessment.
-
-The sidecar contains no provider logs, prompts, findings, or model identifiers.
-Existing bounded, display-safe diagnostics remain on stderr; command-auth
-diagnostic suppression remains in force. Use a fresh status path per invocation:
-after argument and output-path validation, a previous sidecar is removed before
-target selection. Dry runs, preflight refusals, pre-launch isolation failures, source mutations,
-interruptions, and output failures produce no new status. Absence means no
-outcome was published, never a clean review. No retry policy is added.
-
-Report material findings and status plainly. Do not add transcripts, proof
-ledgers, commits, pushes, or a new workstream unless requested.
+Follow the [diagnostic and result guidance](references/diagnostics-and-results.md)
+for local stage observation, output paths, exit codes, status, and usage.

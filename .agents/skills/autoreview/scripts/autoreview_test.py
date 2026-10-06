@@ -8,6 +8,7 @@ import copy
 import hashlib
 import importlib.util
 import io
+import itertools
 import json
 import os
 import runpy
@@ -22,6 +23,7 @@ from unittest import mock
 
 
 SCRIPT_PATH = Path(__file__).with_name("autoreview")
+fixture_git = runpy.run_path(str(SCRIPT_PATH.with_name("test-review-harness.py")))["fixture_git"]
 LOADER = SourceFileLoader("autoreview_module", str(SCRIPT_PATH))
 SPEC = importlib.util.spec_from_loader(LOADER.name, LOADER)
 assert SPEC is not None
@@ -261,13 +263,15 @@ class AutoreviewImageGitTests(unittest.TestCase):
         self.git("init", "-q")
         self.git("config", "user.email", "test@example.invalid")
         self.git("config", "user.name", "Test")
-        (self.repo / "text.txt").write_text("old\n")
+        (self.repo / "text.txt").write_bytes(b"old\n")
         self.git("add", ".")
         self.git("commit", "-qm", "base")
         self.base = self.git("rev-parse", "HEAD").strip()
 
     def git(self, *args):
-        return subprocess.check_output(["git", *args], cwd=self.repo, text=True)
+        return fixture_git(
+            self.repo, *args, check=True, stdout=subprocess.PIPE, text=True,
+        ).stdout
 
     def commit(self, path, content):
         file = self.repo / path
@@ -348,7 +352,7 @@ class AutoreviewImageGitTests(unittest.TestCase):
         with self.assertRaisesRegex(SystemExit, "non-UTF-8 Git output"):
             AUTOREVIEW.branch_bundle(self.repo, self.base)
 
-    def test_modified_and_deleted_images_remain_rejected(self):
+    def test_modified_images_refuse_but_deletions_keep_only_metadata(self):
         self.commit("portrait.png", AutoreviewImageEvidenceTests.PNG)
         base = self.git("rev-parse", "HEAD").strip()
         self.commit("portrait.png", AutoreviewImageEvidenceTests.PNG + b"x")
@@ -356,8 +360,11 @@ class AutoreviewImageGitTests(unittest.TestCase):
             AUTOREVIEW.branch_bundle(self.repo, base)
         self.git("rm", "portrait.png")
         self.git("commit", "-qm", "delete")
-        with self.assertRaisesRegex(SystemExit, "only added images"):
-            AUTOREVIEW.branch_bundle(self.repo, base)
+        with mock.patch.object(AUTOREVIEW, "image_media_type", side_effect=AssertionError("decoded deletion")):
+            captured = AUTOREVIEW.branch_bundle(self.repo, base)
+        self.assertEqual(captured.images, ())
+        self.assertIn("portrait.png", captured.paths)
+        self.assertIn("Binary files ", captured.text)
 
     def test_sensitive_images_are_not_attached(self):
         self.commit(".ssh/portrait.png", AutoreviewImageEvidenceTests.PNG)
@@ -411,9 +418,61 @@ class AutoreviewImageGitTests(unittest.TestCase):
 
 class AutoreviewPriorityTests(unittest.TestCase):
     def test_default_priority_is_p0(self) -> None:
-        with mock.patch.object(sys, "argv", ["autoreview"]):
+        with mock.patch.dict(os.environ, {}, clear=True), mock.patch.object(sys, "argv", ["autoreview"]):
             args = AUTOREVIEW.parse_args()
         self.assertEqual(args.max_priority, "P0")
+
+    def test_priority_environment_values_and_explicit_overrides(self) -> None:
+        for priority in ("P0", "P1", "P2", "P3"):
+            for env_priority, options in (
+                (priority, []),
+                ("P4", ["--max-priority", priority]),
+                ("", ["--max-priority", priority]),
+            ):
+                with self.subTest(priority=priority, env=env_priority), mock.patch.dict(
+                    os.environ, {"AUTOREVIEW_MAX_PRIORITY": env_priority}, clear=True,
+                ), mock.patch.object(sys, "argv", ["autoreview", *options]):
+                    self.assertEqual(AUTOREVIEW.parse_args().max_priority, priority)
+
+    def test_invalid_priority_defaults_refuse_before_preparation(self) -> None:
+        for priority in ("P4", "", " ", "p2"):
+            for dry_run in (False, True):
+                with self.subTest(priority=priority, dry_run=dry_run), tempfile.TemporaryDirectory() as tmp:
+                    status = Path(tmp) / "status.json"
+                    status.write_text("existing status\n")
+                    activity = {
+                        name: mock.Mock(side_effect=AssertionError(f"unexpected {name}"))
+                        for name in (
+                            "EngineStage", "persist_engine_stage", "reviewer_args", "preflight_git",
+                            "prepare_output_paths", "run_engine",
+                        )
+                    }
+                    argv = [
+                        "autoreview", "--status-output", str(status), "--stream-engine-output",
+                        "--engine-stage-dir", str(Path(tmp) / "stage"),
+                        *(["--dry-run"] if dry_run else []),
+                    ]
+                    stderr = io.StringIO()
+                    with mock.patch.dict(os.environ, {"AUTOREVIEW_MAX_PRIORITY": priority}, clear=True), \
+                            mock.patch.object(sys, "argv", argv), \
+                            mock.patch.multiple(AUTOREVIEW, **activity), contextlib.redirect_stderr(stderr):
+                        with self.assertRaises(SystemExit) as caught:
+                            AUTOREVIEW.main_impl()
+                    self.assertEqual(caught.exception.code, 2)
+                    self.assertIn("invalid --max-priority/AUTOREVIEW_MAX_PRIORITY", stderr.getvalue())
+                    for call in activity.values():
+                        call.assert_not_called()
+                    self.assertEqual(status.read_text(), "existing status\n")
+                    self.assertEqual(sorted(item.name for item in Path(tmp).iterdir()), ["status.json"])
+
+    def test_priority_help_ignores_invalid_environment_default(self) -> None:
+        with mock.patch.dict(os.environ, {"AUTOREVIEW_MAX_PRIORITY": "P4"}, clear=True), \
+                mock.patch.object(sys, "argv", ["autoreview", "--help"]), \
+                contextlib.redirect_stdout(io.StringIO()) as stdout:
+            with self.assertRaises(SystemExit) as caught:
+                AUTOREVIEW.parse_args()
+        self.assertEqual(caught.exception.code, 0)
+        self.assertIn("--max-priority {P0,P1,P2,P3}", stdout.getvalue())
 
     def test_priority_filter_preserves_lower_findings_and_provider_verdict(self) -> None:
         report = copy.deepcopy(DRAFT_REPORT)
@@ -676,7 +735,7 @@ class AutoreviewTargetResultTests(unittest.TestCase):
         outside = self.finding(code_location={"file_path": "outside.py", "line": 1})
         provider = {**FINAL_REPORT, "findings": [valid, stale, outside],
                     "overall_correctness": "patch is incorrect", "overall_confidence": 0.43}
-        for engine in AUTOREVIEW.ENGINES:
+        for engine in ("codex", "claude", "amp", "pi"):
             with self.subTest(engine=engine), mock.patch.object(
                     AUTOREVIEW, "run_engine", return_value=json.dumps({**provider, "review_completion": "complete"})), \
                     mock.patch.object(AUTOREVIEW, "verify_mixed_sources"), contextlib.redirect_stderr(io.StringIO()):
@@ -710,6 +769,8 @@ def amp_test_stream(
     tool_result_id: str = "amp-tool-use",
     tool_error: bool = False,
     tool_result_content: str | None = None,
+    final_text: str = "Completed.",
+    ensure_ascii: bool = True,
 ) -> str:
     if tool_input is None:
         tool_input = {}
@@ -728,7 +789,8 @@ def amp_test_stream(
                     "tools": ["autoreview_generate"] if tools is None else tools,
                     "mcp_servers": [] if mcp_servers is None else mcp_servers,
                     "agent_mode": "medium",
-                }
+                },
+                ensure_ascii=ensure_ascii,
             ),
             json.dumps(
                 {
@@ -739,7 +801,8 @@ def amp_test_stream(
                     },
                     "parent_tool_use_id": None,
                     "session_id": "amp-test-session",
-                }
+                },
+                ensure_ascii=ensure_ascii,
             ),
             json.dumps(
                 {
@@ -757,7 +820,8 @@ def amp_test_stream(
                     },
                     "parent_tool_use_id": None,
                     "session_id": "amp-test-session",
-                }
+                },
+                ensure_ascii=ensure_ascii,
             ),
             json.dumps(
                 {
@@ -775,27 +839,30 @@ def amp_test_stream(
                     },
                     "parent_tool_use_id": None,
                     "session_id": "amp-test-session",
-                }
+                },
+                ensure_ascii=ensure_ascii,
             ),
             json.dumps(
                 {
                     "type": "assistant",
                     "message": {
                         "role": "assistant",
-                        "content": [{"type": "text", "text": "Completed."}],
+                        "content": [{"type": "text", "text": final_text}],
                     },
                     "parent_tool_use_id": None,
                     "session_id": "amp-test-session",
-                }
+                },
+                ensure_ascii=ensure_ascii,
             ),
             json.dumps(
                 {
                     "type": "result",
                     "subtype": "success",
                     "is_error": False,
-                    "result": "Completed.",
+                    "result": final_text,
                     "session_id": "amp-test-session",
-                }
+                },
+                ensure_ascii=ensure_ascii,
             ),
         ]
     ) + "\n"
@@ -831,6 +898,50 @@ def amp_test_mcp_denial_result(
 
 
 class AutoreviewAmpTests(unittest.TestCase):
+    def test_amp_dry_run_and_runtime_reject_the_same_model_grammar(self) -> None:
+        for model, diagnostic in (
+            (None, "amp engine requires a model"),
+            ("", "amp engine requires a model"),
+            ("synthetic-model", "amp engine model must use a supported provider/model format"),
+            ("unsupported/synthetic-model", "amp engine model must use a supported provider/model format"),
+        ):
+            args = argparse.Namespace(engine="amp", amp_bin="amp", model=model, thinking="high")
+            with self.subTest(model=model), mock.patch.object(
+                AUTOREVIEW, "find_command", return_value="/usr/bin/amp",
+            ), mock.patch.dict(AUTOREVIEW.ENGINE_ISOLATION_PROBES, {
+                "amp": lambda *_args: "/usr/bin/amp",
+            }), mock.patch.object(
+                AUTOREVIEW, "ensure_amp_isolation_supported", return_value="/usr/bin/amp",
+            ), mock.patch.object(AUTOREVIEW, "safe_temp_root") as staging:
+                self.assertEqual(AUTOREVIEW.resolve_engine_binary(args, Path.cwd()), (False, diagnostic))
+                with self.assertRaises(SystemExit) as caught:
+                    AUTOREVIEW.run_amp(args, Path.cwd(), "synthetic prompt")
+                self.assertEqual(str(caught.exception.code), diagnostic)
+                staging.assert_not_called()
+
+    def test_amp_dry_run_validates_the_resolved_model_without_changing_precedence(self) -> None:
+        valid, invalid = "openai/synthetic-model", "synthetic-model"
+        cases = (
+            ({}, [], "openai/gpt-5.6-sol", True),
+            ({}, ["--model", valid], valid, True),
+            ({}, ["--model", invalid], invalid, False),
+            ({"AUTOREVIEW_MODEL": invalid}, [], invalid, False),
+            ({"AUTOREVIEW_AMP_MODEL": invalid}, [], invalid, False),
+            ({"AUTOREVIEW_MODEL": invalid, "AUTOREVIEW_AMP_MODEL": valid}, [], valid, True),
+            ({"AUTOREVIEW_AMP_MODEL": invalid}, ["--model", valid], valid, True),
+            ({"AUTOREVIEW_AMP_MODEL": valid}, ["--model", invalid], invalid, False),
+            ({}, ["--model", invalid, "--model", "amp=" + valid], valid, True),
+        )
+        for env, options, expected_model, available in cases:
+            with self.subTest(env=env, options=options), mock.patch.dict(os.environ, env, clear=True), \
+                    mock.patch.object(sys, "argv", ["autoreview", "--engine", "amp", "--dry-run", *options]), \
+                    mock.patch.object(AUTOREVIEW, "find_command", return_value="/usr/bin/amp"), \
+                    mock.patch.dict(AUTOREVIEW.ENGINE_ISOLATION_PROBES, {"amp": lambda *_args: "/usr/bin/amp"}):
+                reviewer = AUTOREVIEW.reviewer_args(AUTOREVIEW.parse_args())[0]
+                self.assertEqual(reviewer.model, expected_model)
+                expected_error = None if available else "amp engine model must use a supported provider/model format"
+                self.assertEqual(AUTOREVIEW.resolve_engine_binary(reviewer, Path.cwd()), (available, expected_error))
+
     def test_amp_bin_cli_option_and_defaults(self) -> None:
         with mock.patch.object(
             sys,
@@ -1104,6 +1215,64 @@ class AutoreviewAmpTests(unittest.TestCase):
             AUTOREVIEW.attest_amp_stream(amp_test_stream(cwd, tool_error=True), cwd)
         )
 
+    def test_amp_stream_attestation_preserves_unicode_json_strings(self) -> None:
+        cwd = Path("/tmp/amp-review-empty")
+        for separator in ("\u0085", "\u2028", "\u2029"):
+            final_text = f"Completed.{separator}Synthetic response."
+            escaped = amp_test_stream(cwd, final_text=final_text)
+            literal = amp_test_stream(cwd, final_text=final_text, ensure_ascii=False)
+            self.assertNotIn(separator, escaped)
+            self.assertIn(separator, literal)
+            escaped_events = [json.loads(line) for line in escaped.split("\n") if line]
+            literal_events = [json.loads(line) for line in literal.split("\n") if line]
+            self.assertEqual(len(escaped_events), 6)
+            self.assertEqual(escaped_events, literal_events)
+            for encoding, stream in (("escaped", escaped), ("literal", literal)):
+                with self.subTest(separator=f"U+{ord(separator):04X}", encoding=encoding):
+                    self.assertTrue(AUTOREVIEW.attest_amp_stream(stream, cwd))
+
+    def test_amp_stream_attestation_keeps_line_framing_and_noise_guards(self) -> None:
+        cwd = Path("/tmp/amp-review-empty")
+        records = amp_test_stream(cwd).split("\n")[:-1]
+        for line_ending in ("\n", "\r\n"):
+            for blank_line in ("", " \t"):
+                framed = (line_ending + blank_line + line_ending).join(records)
+                framed = blank_line + line_ending + framed + line_ending + blank_line
+                with self.subTest(line_ending=repr(line_ending), blank_line=blank_line):
+                    self.assertTrue(AUTOREVIEW.attest_amp_stream(framed, cwd))
+                noisy = line_ending.join([blank_line, *records[:2], "not-json", *records[2:]])
+                with self.subTest(line_ending=repr(line_ending), noise=True), self.assertRaisesRegex(
+                    SystemExit, "amp isolation attestation failed: malformed stream JSON",
+                ):
+                    AUTOREVIEW.attest_amp_stream(noisy, cwd)
+
+    @unittest.skipIf(os.name == "nt", "Amp runtime is unsupported on native Windows")
+    def test_amp_review_result_preserves_unicode_stream_and_private_report(self) -> None:
+        with tempfile.TemporaryDirectory(prefix="autoreview-amp-unicode-test.") as tmpdir:
+            root = Path(tmpdir)
+            result_path = root / "result.json"
+            for separator in ("\u0085", "\u2028", "\u2029"):
+                explanation = f"Completed.{separator}Synthetic response."
+                report = {
+                    **FINAL_REPORT,
+                    "overall_explanation": explanation,
+                    "review_completion": "complete",
+                }
+                raw_report = json.dumps(report, ensure_ascii=False)
+                result_path.write_text(raw_report, encoding="utf-8")
+                result_path.chmod(0o600)
+                for ensure_ascii in (True, False):
+                    stream = amp_test_stream(
+                        root, final_text=explanation, ensure_ascii=ensure_ascii,
+                    )
+                    process = subprocess.CompletedProcess([], 0, stream, "")
+                    with self.subTest(separator=f"U+{ord(separator):04X}", ensure_ascii=ensure_ascii):
+                        output = AUTOREVIEW.amp_review_result(
+                            process, root, root / "error", result_path,
+                        )
+                        self.assertEqual(output, raw_report)
+                        self.assertEqual(json.loads(output), report)
+
     @unittest.skipIf(os.name == "nt", "Amp runtime is unsupported on native Windows")
     def test_amp_run_reports_timeout_before_stream_attestation(self) -> None:
         args = argparse.Namespace(
@@ -1288,7 +1457,7 @@ class AutoreviewInputTests(unittest.TestCase):
 
 
     def test_every_provider_reviews_each_pack_without_a_scanner(self) -> None:
-        for engine in ("codex", "claude", "amp", "pi", "kimi"):
+        for engine in ("codex", "claude", "amp", "pi"):
             with self.subTest(engine=engine), tempfile.TemporaryDirectory() as tempdir:
                 args = argparse.Namespace(engine=engine, max_priority="P0")
                 prompts = [f"complete pack {index}: unicode π\r\n-context\n+change\n" for index in range(2)]
@@ -1447,47 +1616,122 @@ class AutoreviewEfficiencyTests(unittest.TestCase):
                     AUTOREVIEW.parse_args()
 
 
+class AutoreviewKimiRefusalTests(unittest.TestCase):
+    @contextlib.contextmanager
+    def no_engine_activity(self):
+        names = (
+            "find_command", "resolve_command", "run", "run_with_heartbeat", "run_with_stream",
+            "safe_temp_root", "run_codex", "run_claude", "run_amp", "run_pi",
+        )
+        guards = {name: mock.Mock(side_effect=AssertionError(f"refused engine reached {name}"))
+                  for name in names}
+        with contextlib.ExitStack() as stack:
+            for name, guard in guards.items():
+                stack.enter_context(mock.patch.object(AUTOREVIEW, name, guard))
+            for name in ("open", "read_text", "read_bytes"):
+                guard = mock.Mock(side_effect=AssertionError("refused engine read configuration/auth"))
+                guards[f"Path.{name}"] = guard
+                stack.enter_context(mock.patch.object(Path, name, guard))
+            guard = mock.Mock(side_effect=AssertionError("refused engine staged a runtime"))
+            guards["TemporaryDirectory"] = guard
+            stack.enter_context(mock.patch.object(AUTOREVIEW.tempfile, "TemporaryDirectory", guard))
+            yield guards
+
+    def assert_private_input_diagnostic(self, message):
+        self.assertIn("kimi review is unavailable", str(message).lower())
+        self.assertIn("private input channel", str(message).lower())
+
+    def test_kimi_explicit_and_environment_selection_refuse_private_input(self):
+        for environment in (False, True):
+            for dry_run in (False, True):
+                with self.subTest(environment=environment, dry_run=dry_run):
+                    env = {"AUTOREVIEW_ENGINE": "kimi"} if environment else {}
+                    argv = ["autoreview", "--kimi-bin", "synthetic-kimi"]
+                    if not environment:
+                        argv += ["--engine", "kimi"]
+                    if dry_run:
+                        argv += ["--dry-run"]
+                    with mock.patch.dict(os.environ, env, clear=True), mock.patch.object(sys, "argv", argv):
+                        args = AUTOREVIEW.parse_args()
+                        self.assertEqual((args.engine, args.kimi_bin), ("kimi", "synthetic-kimi"))
+                        with self.no_engine_activity() as guards:
+                            with self.assertRaises(SystemExit) as caught:
+                                AUTOREVIEW.reviewer_args(args)
+                    self.assert_private_input_diagnostic(caught.exception.code)
+                    for guard in guards.values():
+                        guard.assert_not_called()
+
+    def test_kimi_direct_dispatch_refuses_before_engine_activity(self):
+        args = argparse.Namespace(engine="kimi", kimi_bin="synthetic-kimi", model=None,
+                                  thinking=None, stream_engine_output=False)
+        with self.no_engine_activity() as guards:
+            with self.assertRaises(SystemExit) as caught:
+                AUTOREVIEW.run_engine(args, Path.cwd(), "synthetic private review text")
+        self.assert_private_input_diagnostic(caught.exception.code)
+        for guard in guards.values():
+            guard.assert_not_called()
+
+    def test_kimi_preflight_refuses_before_engine_activity(self):
+        args = argparse.Namespace(engine="kimi", kimi_bin="synthetic-kimi")
+        with self.no_engine_activity() as guards:
+            available, reason = AUTOREVIEW.resolve_engine_binary(args, Path.cwd())
+        self.assertFalse(available)
+        self.assert_private_input_diagnostic(reason)
+        for guard in guards.values():
+            guard.assert_not_called()
+
+
 class AutoreviewCompatibilityTests(unittest.TestCase):
-    def test_default_reviewer_uses_sol_high_with_luna_access_retry(self) -> None:
+    def test_default_reviewer_uses_sol_61_high_with_sol_6_access_retry(self) -> None:
         with mock.patch.dict(os.environ, {}, clear=True), mock.patch.object(sys, "argv", ["autoreview"]):
             reviewer = AUTOREVIEW.reviewer_args(AUTOREVIEW.parse_args())[0]
         self.assertEqual(reviewer.engine, "codex")
-        self.assertEqual(reviewer.model, "gpt-6-sol")
+        self.assertEqual(reviewer.model, "gpt-6.1-sol")
         self.assertEqual(reviewer.thinking, "high")
-        self.assertEqual(reviewer.fallback_model, "gpt-6-luna")
+        self.assertEqual(reviewer.fallback_model, "gpt-6-sol")
 
-    def test_astra_rejects_unsupported_effort_from_cli_and_environment(self) -> None:
+    def test_sol_61_and_astra_reject_unsupported_effort_before_preparation(self) -> None:
         with tempfile.TemporaryDirectory(prefix="autoreview-invalid-effort.") as tempdir:
-            for effort in ("none", "minimal", "ultra"):
-                sources = ("cli", "keyed-cli", "environment", "global-environment")
-                for source in sources:
-                    with self.subTest(effort=effort, source=source):
-                        argv = [sys.executable, str(SCRIPT_PATH), "--engine", "codex",
-                                "--codex-bin", str(Path(tempdir) / "missing-codex")]
-                        env = {key: value for key, value in os.environ.items()
-                               if not key.startswith("AUTOREVIEW_")}
-                        if source in {"cli", "keyed-cli"}:
-                            prefix = "codex=" if source == "keyed-cli" else ""
-                            argv += ["--model", prefix + "gpt-6-astra", "--thinking", prefix + effort]
-                        else:
-                            prefix = "AUTOREVIEW_CODEX_" if source == "environment" else "AUTOREVIEW_"
-                            env.update({prefix + "MODEL": "gpt-6-astra", prefix + "THINKING": effort})
-                        # No Git repository or engine exists: rejection must precede preparation.
-                        result = subprocess.run(argv, cwd=tempdir, env=env, text=True,
-                                                capture_output=True, timeout=30)
-                        self.assertEqual(result.returncode, 1, result.stderr)
-                        self.assertEqual(result.stdout, "")
-                        self.assertEqual(result.stderr.strip(),
-                                         f"invalid thinking level for codex model gpt-6-astra: {effort} "
-                                         "(valid: high, low, max, medium, xhigh)")
+            for model, effort, source in itertools.product(
+                (None, "gpt-6.1-sol", "gpt-6-astra"),
+                ("none", "minimal", "ultra"),
+                ("cli", "keyed-cli", "environment", "global-environment"),
+            ):
+                with self.subTest(model=model, effort=effort, source=source):
+                    argv = [sys.executable, str(SCRIPT_PATH), "--engine", "codex",
+                            "--codex-bin", str(Path(tempdir) / "missing-codex")]
+                    env = {key: value for key, value in os.environ.items()
+                           if not key.startswith("AUTOREVIEW_")}
+                    if source in {"cli", "keyed-cli"}:
+                        prefix = "codex=" if source == "keyed-cli" else ""
+                        argv += ["--thinking", prefix + effort]
+                        if model:
+                            argv += ["--model", prefix + model]
+                    else:
+                        prefix = "AUTOREVIEW_CODEX_" if source == "environment" else "AUTOREVIEW_"
+                        env[prefix + "THINKING"] = effort
+                        if model:
+                            env[prefix + "MODEL"] = model
+                    # No Git repository or engine exists: rejection must precede preparation.
+                    result = subprocess.run(argv, cwd=tempdir, env=env, text=True,
+                                            capture_output=True, timeout=30)
+                    self.assertEqual(result.returncode, 1, result.stderr)
+                    self.assertEqual(result.stdout, "")
+                    self.assertEqual(result.stderr.strip(),
+                                     f"invalid thinking level for codex model {model or 'gpt-6.1-sol'}: {effort} "
+                                     "(valid: high, low, max, medium, xhigh)")
 
     def test_model_validation_uses_effective_cli_overrides(self) -> None:
         cases = (
-            ({}, ["--thinking", "minimal", "--thinking", "codex=high"], "gpt-6-sol", "high"),
+            ({}, ["--thinking", "minimal", "--thinking", "codex=high"], "gpt-6.1-sol", "high"),
             ({"AUTOREVIEW_THINKING": "none", "AUTOREVIEW_CODEX_THINKING": "high"},
-             [], "gpt-6-sol", "high"),
+             [], "gpt-6.1-sol", "high"),
             ({"AUTOREVIEW_CODEX_THINKING": "minimal"},
-             ["--thinking", "high"], "gpt-6-sol", "high"),
+             ["--thinking", "high"], "gpt-6.1-sol", "high"),
+            ({"AUTOREVIEW_CODEX_MODEL": "gpt-6.1-sol", "AUTOREVIEW_CODEX_THINKING": "none"},
+             ["--thinking", "high"], "gpt-6.1-sol", "high"),
+            ({"AUTOREVIEW_CODEX_MODEL": "gpt-6.1-sol", "AUTOREVIEW_CODEX_THINKING": "none"},
+             ["--model", "gpt-6-sol"], "gpt-6-sol", "none"),
             ({"AUTOREVIEW_CODEX_MODEL": "gpt-6-astra", "AUTOREVIEW_CODEX_THINKING": "none"},
              ["--thinking", "high"], "gpt-6-astra", "high"),
             ({"AUTOREVIEW_CODEX_MODEL": "gpt-6-astra", "AUTOREVIEW_CODEX_THINKING": "minimal"},
@@ -1513,17 +1757,17 @@ class AutoreviewCompatibilityTests(unittest.TestCase):
                     with mock.patch.dict(os.environ, env, clear=True), mock.patch.object(
                         sys, "argv", ["autoreview", *thinking_args],
                     ):
-                        if effort == "minimal":
-                            with self.assertRaisesRegex(SystemExit, "invalid thinking level for codex model gpt-6-sol"):
+                        if effort in {"none", "minimal"}:
+                            with self.assertRaisesRegex(SystemExit, "invalid thinking level for codex model gpt-6.1-sol"):
                                 AUTOREVIEW.reviewer_args(AUTOREVIEW.parse_args())
                             continue
                         reviewer = AUTOREVIEW.reviewer_args(AUTOREVIEW.parse_args())[0]
-                    self.assertEqual(reviewer.model, "gpt-6-sol")
+                    self.assertEqual(reviewer.model, "gpt-6.1-sol")
                     self.assertEqual(reviewer.thinking, effort)
-                    self.assertEqual(reviewer.fallback_model, "gpt-6-luna")
+                    self.assertEqual(reviewer.fallback_model, "gpt-6-sol")
 
     def test_sol_and_luna_validate_effort_and_explicit_model_selections(self) -> None:
-        for model, fallback in (("gpt-6-sol", "gpt-6-luna"), ("gpt-6-luna", None)):
+        for model, fallback in (("gpt-6.1-sol", "gpt-6-sol"), ("gpt-6-sol", "gpt-6-luna"), ("gpt-6-luna", None)):
             selections = (
                 (["--model", model], {}),
                 (["--model", "codex=" + model], {}),
@@ -1537,7 +1781,7 @@ class AutoreviewCompatibilityTests(unittest.TestCase):
                         if effort:
                             argv += ["--thinking", effort]
                         with mock.patch.dict(os.environ, env, clear=True), mock.patch.object(sys, "argv", argv):
-                            if effort in {"minimal", "ultra"}:
+                            if effort in {"minimal", "ultra"} or (model == "gpt-6.1-sol" and effort == "none"):
                                 with self.assertRaisesRegex(SystemExit, f"invalid thinking level for codex model {model}"):
                                     AUTOREVIEW.reviewer_args(AUTOREVIEW.parse_args())
                                 continue
@@ -1606,162 +1850,11 @@ class AutoreviewCompatibilityTests(unittest.TestCase):
             args = AUTOREVIEW.parse_args()
         self.assertEqual(args.kimi_bin, "/tmp/trusted-kimi")
 
-    def test_kimi_reviewer_disables_tools(self) -> None:
-        args = argparse.Namespace(
-            engine="kimi",
-            model=None,
-            thinking=["on"],
-            fallback_model=None,
-            codex_config=None,
-            codex_speed=None,
-            tools=True,
-        )
-
-        reviewer = AUTOREVIEW.reviewer_args(args)[0]
-
-        self.assertEqual(reviewer.engine, "kimi")
-        self.assertEqual(reviewer.thinking, "on")
-        self.assertFalse(reviewer.tools)
-
-    def test_kimi_isolation_requires_current_cli_contract(self) -> None:
-        args = argparse.Namespace(kimi_bin="kimi")
-        required_flags = " ".join(
-            [
-                "--agent-file",
-                "--skills-dir",
-                "--prompt",
-                "--output-format",
-                "--model",
-            ]
-        )
-
-        def fake_run(command: list[str], *_args: object, **_kwargs: object) -> subprocess.CompletedProcess[str]:
-            if "--version" in command:
-                return subprocess.CompletedProcess(command, 0, "0.31.1", "")
-            return subprocess.CompletedProcess(command, 0, required_flags, "")
-
-        with tempfile.TemporaryDirectory(prefix="autoreview-kimi-probe-test.") as tmpdir, mock.patch.object(
-            AUTOREVIEW,
-            "resolve_command",
-            return_value="/usr/bin/kimi",
-        ), mock.patch.object(
-            AUTOREVIEW,
-            "safe_engine_env",
-            return_value={},
-        ), mock.patch.object(
-            AUTOREVIEW,
-            "safe_temp_root",
-            return_value=Path(tmpdir),
-        ), mock.patch.object(
-            AUTOREVIEW,
-            "run",
-            side_effect=fake_run,
-        ):
-            self.assertEqual(
-                AUTOREVIEW.ensure_kimi_isolation_supported(args, Path(tmpdir)),
-                "/usr/bin/kimi",
-            )
-
-    def test_kimi_invalid_streams_are_unavailable_after_launch(self) -> None:
-        args = argparse.Namespace(engine="kimi", kimi_bin="kimi", model="kimi-model",
-                                  stream_engine_output=False, thinking="on", max_priority="P2")
-        with tempfile.TemporaryDirectory() as tmpdir:
-            repo = Path(tmpdir) / "repo"
-            repo.mkdir()
-            for stream in ("malformed JSON", '{"role":"meta"}\n', '{"role":"assistant","content":"{}"}'):
-                with self.subTest(stream=stream), mock.patch.object(
-                    AUTOREVIEW, "ensure_kimi_isolation_supported", return_value="/usr/bin/kimi",
-                ), mock.patch.object(
-                    AUTOREVIEW, "load_kimi_review_config", return_value=({"telemetry": False}, None),
-                ), mock.patch.object(
-                    AUTOREVIEW, "run_with_heartbeat", return_value=subprocess.CompletedProcess([], 0, stream, ""),
-                ):
-                    with self.assertRaises(AUTOREVIEW.ReviewerUnavailable) as caught:
-                        AUTOREVIEW.run_reviewer(args, repo, "synthetic pack", set(), [])
-                    self.assertEqual(caught.exception.reason, "invalid_report")
-
-    def test_kimi_runs_with_empty_tools_skills_and_mcp(self) -> None:
-        args = argparse.Namespace(
-            kimi_bin="kimi",
-            model="kimi-model",
-            stream_engine_output=False,
-            thinking="on",
-        )
-        observed: dict[str, object] = {}
-
-        def fake_run(
-            command: list[str],
-            cwd: Path,
-            **kwargs: object,
-        ) -> subprocess.CompletedProcess[str]:
-            observed["command"] = command
-            observed["cwd"] = cwd
-            observed["env"] = kwargs["env"]
-            env = kwargs["env"]
-            assert isinstance(env, dict)
-            home = Path(str(env["KIMI_CODE_HOME"]))
-            observed["agent"] = (home / "reviewer.md").read_text(encoding="utf-8")
-            observed["config"] = (home / "config.toml").read_text(encoding="utf-8")
-            observed["skills"] = list((home / "skills").iterdir())
-            observed["workspace"] = list(cwd.iterdir())
-            stream = (
-                json.dumps({"role": "meta", "type": "system.version", "version": "0.31.1"})
-                + "\n"
-                + json.dumps({"role": "assistant", "content": json.dumps(FINAL_REPORT)})
-                + "\n"
-            )
-            return subprocess.CompletedProcess(command, 0, stream, "")
-
-        with tempfile.TemporaryDirectory(prefix="autoreview-kimi-run-test.") as tmpdir:
-            repo = Path(tmpdir) / "repo"
-            repo.mkdir()
-            with mock.patch.object(
-                AUTOREVIEW,
-                "ensure_kimi_isolation_supported",
-                return_value="/usr/bin/kimi",
-            ), mock.patch.object(
-                AUTOREVIEW,
-                "load_kimi_review_config",
-                return_value=({"telemetry": False}, None),
-            ), mock.patch.object(
-                AUTOREVIEW,
-                "run_with_heartbeat",
-                side_effect=fake_run,
-            ):
-                output = AUTOREVIEW.run_kimi(args, repo, "review prompt")
-
-        self.assertEqual(json.loads(output), FINAL_REPORT)
-        command = observed["command"]
-        self.assertIsInstance(command, list)
-        assert isinstance(command, list)
-        self.assertEqual(command[command.index("--prompt") + 1], "review prompt")
-        self.assertEqual(command[command.index("--output-format") + 1], "stream-json")
-        self.assertEqual(command[command.index("--model") + 1], "kimi-model")
-        self.assertNotIn("--thinking", command)
-        agent = observed["agent"]
-        self.assertIsInstance(agent, str)
-        assert isinstance(agent, str)
-        self.assertIn("tools: []", agent)
-        self.assertIn("subagents: []", agent)
-        config = observed["config"]
-        self.assertIsInstance(config, str)
-        assert isinstance(config, str)
-        self.assertIn("[thinking]", config)
-        self.assertIn("enabled = true", config)
-        self.assertEqual(observed["skills"], [])
-        self.assertEqual(observed["workspace"], [])
-        env = observed["env"]
-        self.assertIsInstance(env, dict)
-        assert isinstance(env, dict)
-        self.assertEqual(env["KIMI_DISABLE_TELEMETRY"], "1")
-        self.assertEqual(env["KIMI_CODE_NO_AUTO_UPDATE"], "1")
-        self.assertNotEqual(Path(str(env["KIMI_CODE_HOME"])), repo)
-
     def test_codex_config_status_exposes_keys_only(self) -> None:
         args = argparse.Namespace(codex_config=['model_verbosity="low"'])
         self.assertEqual(AUTOREVIEW.codex_config_keys(args), ["model_verbosity"])
 
-    def test_codex_retries_luna_after_default_sol_access_failure(self) -> None:
+    def test_codex_retries_sol_6_after_default_sol_61_access_failure(self) -> None:
         with mock.patch.dict(os.environ, {}, clear=True), mock.patch.object(
             sys, "argv", ["autoreview", "--no-web-search"],
         ):
@@ -1775,10 +1868,10 @@ class AutoreviewCompatibilityTests(unittest.TestCase):
                 model = command[command.index("--model") + 1]
                 events.append(model)
                 self.assertIn('model_reasoning_effort="high"', command)
-                if model == "gpt-6-sol":
+                if model == "gpt-6.1-sol":
                     return subprocess.CompletedProcess(
                         command, 1, AutoreviewEfficiencyTests.usage_event(),
-                        "The model `gpt-6-sol` does not exist or you do not have access to it.",
+                        "The model `gpt-6.1-sol` does not exist or you do not have access to it.",
                     )
                 output_path = Path(command[command.index("--output-last-message") + 1])
                 output_path.write_text(json.dumps({**FINAL_REPORT, "review_completion": "complete"}))
@@ -1793,12 +1886,43 @@ class AutoreviewCompatibilityTests(unittest.TestCase):
                 result = AUTOREVIEW.run_reviewer(args, Path(tmpdir), prompt, set(), [])
                 self.assertTrue(result.complete)
                 self.assertEqual(result.report["findings"], [])
-            self.assertEqual(events, ["gpt-6-sol", "gpt-6-luna"])
+            self.assertEqual(events, ["gpt-6.1-sol", "gpt-6-sol"])
             usage = AUTOREVIEW.review_usage_summary(args)
             self.assertEqual(usage["attempts"], 2)
             self.assertEqual(usage["tokens"]["input_tokens"], 300)
             self.assertEqual(usage["partial_attempts"], 1)
             self.assertFalse(usage["complete"])
+
+    def test_default_sol_61_retries_only_access_failure_without_chaining(self) -> None:
+        failures = (
+            ("network timeout", False),
+            ("rate limit exceeded for {model}", False),
+            ("model_not_available: {model} is temporarily unavailable due to capacity", False),
+            ("Unsupported value: 'none' is not supported with the '{model}' model", False),
+            ("The '{model}' model is not supported when using Codex with a ChatGPT account.", True),
+        )
+        for message, retries in failures:
+            with self.subTest(message=message), mock.patch.dict(os.environ, {}, clear=True), mock.patch.object(
+                sys, "argv", ["autoreview", "--no-web-search"],
+            ):
+                args = AUTOREVIEW.reviewer_args(AUTOREVIEW.parse_args())[0]
+                models = []
+
+                def fake_run(command, *_args, **_kwargs):
+                    model = command[command.index("--model") + 1]
+                    models.append(model)
+                    event = {"type": "error", "message": message.format(model=model)}
+                    return subprocess.CompletedProcess(command, 1, json.dumps(event), "")
+
+                with tempfile.TemporaryDirectory(prefix="autoreview-codex-fallback.") as tmpdir, \
+                        mock.patch.object(AUTOREVIEW, "resolve_command", return_value="/usr/bin/codex"), \
+                        mock.patch.object(AUTOREVIEW, "ensure_codex_isolation_supported", return_value="/usr/bin/codex"), \
+                        mock.patch.object(AUTOREVIEW, "codex_auth_config_flags", return_value=[]), \
+                        mock.patch.object(AUTOREVIEW, "prepare_codex_runtime_auth", return_value=None), \
+                        mock.patch.object(AUTOREVIEW, "run_with_heartbeat", side_effect=fake_run):
+                    with self.assertRaises(AUTOREVIEW.ReviewerUnavailable):
+                        AUTOREVIEW.run_codex(args, Path(tmpdir), "review")
+                self.assertEqual(models, ["gpt-6.1-sol", "gpt-6-sol"] if retries else ["gpt-6.1-sol"])
 
     def test_codex_runs_outside_repo_with_bundle_only_workspace(self) -> None:
         args = argparse.Namespace(

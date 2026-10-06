@@ -39,6 +39,11 @@ function requireStrings(value: unknown, field: string): string[] {
 	return value;
 }
 
+function optionalString(value: unknown, field: string): string | undefined {
+	if (value === undefined) return undefined;
+	return requireString(value, field);
+}
+
 const taskGrants = new Set<TaskGrant>([
 	"examine",
 	"synthesize",
@@ -82,8 +87,40 @@ export function parseExplicitConformanceEvent(
 				type: value.type,
 				fixedMethodIds: requireStrings(value.fixedMethodIds, "fixedMethodIds"),
 			};
+		case "user.validation-set.granted":
+			return {
+				type: value.type,
+				candidateIds: requireStrings(value.candidateIds, "candidateIds"),
+			};
 		case "user.record.granted":
+			return {
+				type: value.type,
+				recordId: optionalString(value.recordId, "recordId"),
+			};
 		case "assistant.record.mutated":
+			return {
+				type: value.type,
+				recordId: optionalString(value.recordId, "recordId"),
+			};
+		case "user.workflow.resumed":
+		case "assistant.workflow.paused":
+			return {
+				type: value.type,
+				stageId: requireString(value.stageId, "stageId"),
+			};
+		case "assistant.candidate-map.presented":
+			if (typeof value.ranked !== "boolean")
+				throw new Error("Candidate presentation metadata requires ranked.");
+			return {
+				type: value.type,
+				candidateIds: requireStrings(value.candidateIds, "candidateIds"),
+				ranked: value.ranked,
+			};
+		case "assistant.candidates.validated":
+			return {
+				type: value.type,
+				candidateIds: requireStrings(value.candidateIds, "candidateIds"),
+			};
 		case "assistant.direct.answer":
 		case "assistant.stopped":
 			return { type: value.type };

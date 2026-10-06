@@ -88,6 +88,13 @@
           "/Applications/Executor.app/Contents/Resources/executor/executor",
           "mcp"
         ]
+      },
+      "paper": {
+        "type": "local",
+        "command": [
+          "/Users/khuynh/.paper/bin/paper",
+          "mcp"
+        ]
       }
     }
   }

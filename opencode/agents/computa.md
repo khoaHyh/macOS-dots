@@ -4,6 +4,7 @@ mode: primary
 permission:
   skill:
     "*": deny
+    animate-expo: allow
     autoreview: allow
     breh: allow
     cloudflare: allow
@@ -18,6 +19,7 @@ permission:
     field-lab: allow
     domain-modeling: allow
     effect: allow
+    emil-design-eng: allow
     feature-grill: allow
     find-docs: allow
     fix-ci: allow
@@ -31,6 +33,7 @@ permission:
     improve-codebase-architecture: allow
     install-anti-slop: allow
     maintain-verification-skill: allow
+    mobile-native: allow
     motel-debug: allow
     observability-logging: allow
     peekaboo: allow

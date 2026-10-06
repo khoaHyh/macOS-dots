@@ -36,6 +36,7 @@ interface MarkdownContext {
 	content: FileContent;
 	capability: string;
 	staticContents?: Record<string, string>;
+	knownPaths?: ReadonlySet<string>;
 }
 
 function MarkdownPreview({
@@ -90,6 +91,7 @@ function MarkdownPreview({
 					view="rendered"
 					capability={context.capability}
 					staticContents={context.staticContents}
+					knownPaths={context.knownPaths}
 				/>
 			</div>
 			{isTruncated && onOpen ? (
@@ -307,7 +309,15 @@ function FieldLogDashboard({
 		query.from({ file: db.collections.files }),
 	);
 	const knownPaths = useMemo(
-		() => new Set(workspaceFiles.map((workspaceFile) => workspaceFile.path)),
+		() =>
+			new Set(
+				workspaceFiles
+					.filter(
+						(workspaceFile) =>
+							workspaceFile.kind === "file" && workspaceFile.readable,
+					)
+					.map((workspaceFile) => workspaceFile.path),
+			),
 		[workspaceFiles],
 	);
 	const selectedSourcePath = selectedSource
@@ -328,7 +338,13 @@ function FieldLogDashboard({
 				(entry.kind === "synthesis" || entry.kind === "engine") &&
 				entry.summary === projection.synthesis,
 		);
-	const markdownContext = { file, content, capability, staticContents };
+	const markdownContext = {
+		file,
+		content,
+		capability,
+		staticContents,
+		knownPaths,
+	};
 
 	useEffect(() => {
 		if (!search.entry) return;
@@ -382,7 +398,10 @@ function FieldLogDashboard({
 						<p>
 							{activeRuns.length
 								? activeRuns
-										.map((run) => `${run.instrumentId} · ${run.status}`)
+										.map(
+											(run) =>
+												`${run.instrumentId} · Run ${run.runId} · ${run.status}`,
+										)
 										.join(", ")
 								: (projection.plan.find(
 										(item) => !/complete|removed/i.test(item.status ?? ""),
@@ -535,6 +554,7 @@ function FieldLogDashboard({
 										content,
 										capability,
 										staticContents,
+										knownPaths,
 									}}
 									selected={
 										search.entry === item.entry.id &&
@@ -584,7 +604,7 @@ function FieldLogDashboard({
 							<div>
 								<span className="eyebrow">
 									{selectedReadout
-										? `${selectedReadout.instrumentId} · ${selectedReadout.status}`
+										? `${selectedReadout.instrumentId} · Run ${selectedReadout.runId} · ${selectedReadout.status}`
 										: selectedDrawerEntry?.kind === "comment"
 											? "User comment"
 											: selectedDrawerEntry?.kind === "note"
@@ -628,6 +648,7 @@ function FieldLogDashboard({
 								view="rendered"
 								capability={capability}
 								staticContents={staticContents}
+								knownPaths={knownPaths}
 							/>
 						</div>
 					</Dialog.Content>
@@ -785,6 +806,7 @@ export function JournalEntry({
 				<span className="journal-meta">
 					{formatDate(entry.recordedAt)}
 					{entry.instrumentId ? ` · ${entry.instrumentId}` : ""}
+					{entry.runId != null ? ` · Run ${entry.runId}` : ""}
 				</span>
 				{entry.kind === "comment" ? (
 					<>

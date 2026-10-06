@@ -67,6 +67,8 @@ describe("Field Log journal entries", () => {
 					id: "instrument-1",
 					kind: "instrument",
 					recordedAt: "2026-07-30T08:00:00-06:00",
+					runId: 17,
+					instrumentId: "design-grammar",
 					title: "Design Grammar",
 					summary:
 						"Read in this order:\n\n1. **Frozen baseline**\n2. [Primitives](notes.md)",
@@ -82,10 +84,42 @@ describe("Field Log journal entries", () => {
 		);
 
 		expect(screen.getByText("Frozen baseline").tagName).toBe("STRONG");
+		expect(screen.getByText(/design-grammar · Run 17/)).toBeInTheDocument();
 		expect(screen.getByRole("list")).toBeInTheDocument();
 		expect(screen.getByRole("link", { name: "Primitives" })).toHaveAttribute(
 			"href",
 			"?file=trip%2Fnotes.md&cap=test-cap",
+		);
+	});
+
+	it("links an indexed artifact path in a journal summary", () => {
+		render(
+			<JournalEntry
+				entry={{
+					id: "instrument-2",
+					kind: "instrument",
+					recordedAt: "2026-07-30T08:00:00-06:00",
+					runId: 18,
+					instrumentId: "evidence-sufficiency",
+					title: "Validation",
+					summary: "Saved in `probes/validation-ledger.md`.",
+				}}
+				selected={false}
+				openReadout={vi.fn()}
+				markdownContext={{
+					file,
+					content,
+					capability: "test-cap",
+					knownPaths: new Set(["trip/probes/validation-ledger.md"]),
+				}}
+			/>,
+		);
+
+		expect(
+			screen.getByRole("link", { name: "probes/validation-ledger.md" }),
+		).toHaveAttribute(
+			"href",
+			"?file=trip%2Fprobes%2Fvalidation-ledger.md&cap=test-cap",
 		);
 	});
 
