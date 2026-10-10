@@ -39,6 +39,8 @@ Bounded restacks, publication, and description updates need only their applicabl
 
 Finish all authorized delivery, carrying same-task permission through fixes and resumes. Standing draft-publication permission is recorded under [Authority](references/vcs.md#authority); it grants neither readiness nor merge. PR bodies follow the repository’s workflow; use `visual-pr` when the user explicitly selects it, against the final diff.
 
+Before opening or updating any PR, run `scope-prune` and `test-audit` on the session’s own diff. Include a **Locked decisions** block in the PR body copied word for word from Khoa’s chat, plus a net-line budget. If the diff exceeds that budget or contradicts a locked decision, stop and ask Khoa instead of publishing.
+
 Production effects, including merge-triggered deployment, follow the owning project’s operations contract and explicit authority for the action and target. Verify the actual effect; green CI alone does not establish production delivery.
 
 Use concise diagrams when helpful and `show-me` or Paper for requested visual explanations. Create richer visual artifacts only when requested.
