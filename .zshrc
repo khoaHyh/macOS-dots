@@ -157,13 +157,27 @@ agentclear() {
   mcpclear
 }
 
+# Agents - Staging 1Password service account, scoped to the opencode process only.
+# The token lives in Keychain; this file only names the item.
+_agent_op_run() {
+  setopt localoptions noxtrace
+  local token
+  token=$(/usr/bin/security find-generic-password -a "$USER" -s "opencode.1password.agents-staging" -w 2>/dev/null)
+  if [[ "$token" != ops_* || ${#token} -le 128 ]]; then
+    print -u2 "opencode.1password.agents-staging Keychain token missing or truncated; starting without it."
+    "$@"
+    return
+  fi
+  OP_SERVICE_ACCOUNT_TOKEN="$token" "$@"
+}
+
 # OpenCode v2 uses Executor's stdio MCP connection; only pi needs mcpenv.
 oc() {
-  opencode "$@"
+  _agent_op_run opencode "$@"
 }
 
 occ() {
-  caffeinate -id -- opencode "$@"
+  _agent_op_run caffeinate -id -- opencode "$@"
 }
 
 pienv() {

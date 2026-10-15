@@ -11,7 +11,7 @@
       "source": "openclaw/agent-skills",
       "sourceType": "github",
       "skillPath": "skills/autoreview/SKILL.md",
-      "computedHash": "8a82eee98eba128ffd277ddd37ae47e302c7e08d891a249e171461b3a0e0de94"
+      "computedHash": "3435f3e2e25bae5f91e7b4d07a240fc8a48d3c10e32d39873a6ecb80d43b96b5"
     },
     "codebase-design": {
       "source": "mattpocock/skills",
@@ -19,30 +19,23 @@
       "skillPath": "skills/engineering/codebase-design/SKILL.md",
       "computedHash": "b2888e4f4e8c0af3bfd557575a64b905c44e6248c3101d72077816882b3a92b9"
     },
-    "coding-standards": {
-      "source": "dmmulroy/.dotfiles",
-      "ref": "main",
-      "sourceType": "github",
-      "skillPath": "home/.agents/skills/coding-standards/SKILL.md",
-      "computedHash": "63e671de165bb3c3808ae9645e4dc7826d24684bf6cbd22c0469a13a7b524b5c"
-    },
     "computa-please": {
       "source": "khoahyh/skills",
       "sourceType": "github",
       "skillPath": "computa-please/SKILL.md",
-      "computedHash": "77841548e317329f40c368bf17a75903c880dbb0839060f299568d80a9214922"
+      "computedHash": "1827382f0c25c2f26f1d26a1ace500a3c944362359b16447a6b0c43f6580eb0d"
     },
     "cua-driver": {
       "source": "trycua/cua",
       "sourceType": "github",
       "skillPath": "libs/cua-driver/rust/Skills/cua-driver/SKILL.md",
-      "computedHash": "d6c30dc53d303c5d74d9045215952dcba8d3e13d9fa2dcea274704602a46464d"
+      "computedHash": "7a437c80f75c2dee3846b15d4c8baefddd31c7c8befa15929f99edcb4b54455e"
     },
     "diagnosing-bugs": {
       "source": "mattpocock/skills",
       "sourceType": "github",
       "skillPath": "skills/engineering/diagnosing-bugs/SKILL.md",
-      "computedHash": "b35c6a6e37c61ca3169532fbab2300dea26f2ad190e1d2dac065800b8b2bb0aa"
+      "computedHash": "ede7254edbd22fcab97a0941511f7d440d8f9a249348fea97c50987ad5501674"
     },
     "domain-modeling": {
       "source": "mattpocock/skills",
@@ -78,7 +71,7 @@
       "source": "upstash/context7",
       "sourceType": "github",
       "skillPath": "skills/find-docs/SKILL.md",
-      "computedHash": "93ec2d2786d7e83973252383875c4f345a2ee7cbbd08a1ab38e5201b214640ee"
+      "computedHash": "e4a9a707d8e5d575d166a175f2fec66e0a13de46597f7dbc910c735ccf01bb93"
     },
     "graphite": {
       "source": "withgraphite/agent-skills",
@@ -96,13 +89,13 @@
       "source": "mattpocock/skills",
       "sourceType": "github",
       "skillPath": "skills/productivity/grilling/SKILL.md",
-      "computedHash": "4dd886b0196bf43729d954ae326016f2bd9f5f79d892500b407c33a753362f14"
+      "computedHash": "ef1641a2047b71b60f1942cd35efb47d3afc9d584dff5a0b01f8c7db923aaa08"
     },
     "herdr": {
       "source": "herdrdev/herdr",
       "sourceType": "github",
       "skillPath": "skills/herdr/SKILL.md",
-      "computedHash": "66715d76e5947497431ec0db32f2693b9c916ad799c3f32b99e6174b4b9c607f"
+      "computedHash": "72177e911f55467de8737174072ec6bb08e30bbf62bceabcb69678e944398b18"
     },
     "improve-codebase-architecture": {
       "source": "mattpocock/skills",
@@ -134,6 +127,12 @@
       "sourceType": "github",
       "skillPath": "record-verification/SKILL.md",
       "computedHash": "d692b986a590a8cc7d31bb9de0791d4a2ced274ef44e439de00f32a4f3c98b0d"
+    },
+    "retro": {
+      "source": "mattpocock/skills",
+      "sourceType": "github",
+      "skillPath": "skills/engineering/retro/SKILL.md",
+      "computedHash": "b8d55851a2909e26c2dbb2e8563719c87b3b700559f604e4df344f8c27e21047"
     },
     "review-remediation": {
       "source": "khoahyh/skills",
@@ -170,7 +169,7 @@
       "ref": "main",
       "sourceType": "github",
       "skillPath": ".agents/skills/test-audit/SKILL.md",
-      "computedHash": "1c493e8f99f4c5ac2b1d9e2928a88312cf72d823f1486106d9edfebf08d20c27"
+      "computedHash": "c1f706b2a12cf90d21168aa91e58952f26559b6bb2e773fc691fdc43af8914fb"
     },
     "visual-pr": {
       "source": "humanlayer/skills",

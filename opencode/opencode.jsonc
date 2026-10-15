@@ -1,5 +1,6 @@
 {
   "$schema": "https://opencode.ai/config.json",
+  "default_agent": "computa",
   "plugins": [
     "@plannotator/opencode@latest"
   ],
@@ -65,7 +66,7 @@
     "oracle": {
       "mode": "subagent",
       "description": "Read-only second opinion on consequential unresolved engineering decisions. The primary retains decisions, authority, implementation, and verification.",
-      "model": "openai/gpt-6-astra#medium",
+      "model": "openai/gpt-6-astra#high",
       "system": "{file:./prompts/oracle-harness.md}",
       "permissions": [
         { "action": "edit", "resource": "*", "effect": "deny" },
