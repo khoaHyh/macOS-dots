@@ -11,7 +11,7 @@
       "source": "openclaw/agent-skills",
       "sourceType": "github",
       "skillPath": "skills/autoreview/SKILL.md",
-      "computedHash": "3435f3e2e25bae5f91e7b4d07a240fc8a48d3c10e32d39873a6ecb80d43b96b5"
+      "computedHash": "289c7af81503a2226f34163edd1fcffcf07dd0db956729e4673ed1aa823158bb"
     },
     "codebase-design": {
       "source": "mattpocock/skills",
@@ -29,7 +29,7 @@
       "source": "trycua/cua",
       "sourceType": "github",
       "skillPath": "libs/cua-driver/rust/Skills/cua-driver/SKILL.md",
-      "computedHash": "7a437c80f75c2dee3846b15d4c8baefddd31c7c8befa15929f99edcb4b54455e"
+      "computedHash": "d529c6f3acc8546c043258e93d10eea3f76b10f8167f60c75641dc73f6215369"
     },
     "diagnosing-bugs": {
       "source": "mattpocock/skills",
@@ -169,7 +169,7 @@
       "ref": "main",
       "sourceType": "github",
       "skillPath": ".agents/skills/test-audit/SKILL.md",
-      "computedHash": "c1f706b2a12cf90d21168aa91e58952f26559b6bb2e773fc691fdc43af8914fb"
+      "computedHash": "2b203b479ebf0c524fe5a2a91461300c327b3179df2b92b48d0503663a6423c0"
     },
     "visual-pr": {
       "source": "humanlayer/skills",
