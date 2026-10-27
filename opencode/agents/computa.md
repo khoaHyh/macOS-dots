@@ -4,7 +4,9 @@ mode: primary
 permission:
   skill:
     "*": deny
+    "verify-*": allow
     animate-expo: allow
+    animation-vocabulary: allow
     autoreview: allow
     breh: allow
     cloudflare: allow
@@ -21,8 +23,8 @@ permission:
     effect: allow
     emil-design-eng: allow
     feature-grill: allow
+    find-animation-opportunities: allow
     find-docs: allow
-    fix-ci: allow
     fix-merge-conflicts: allow
     go-engineering: allow
     graphite: allow
@@ -38,11 +40,7 @@ permission:
     observability-logging: allow
     peekaboo: allow
     personal-drafting: allow
-    plannotator-annotate: allow
-    plannotator-compound: allow
-    plannotator-last: allow
-    plannotator-review: allow
-    plannotator-visual-explainer: allow
+    pick-ui-library: allow
     playwright-cli: allow
     principle-subtract-before-you-add: allow
     prototype: allow
@@ -50,7 +48,9 @@ permission:
     reliable-control-plane: allow
     remotion-best-practices: allow
     review-remediation: allow
+    rex: allow
     scope-prune: allow
+    security-audit: allow
     show-me: allow
     setup-matt-pocock-skills: allow
     subtract: allow
@@ -61,20 +61,11 @@ permission:
     terraform-style-guide: allow
     terraform-test: allow
     thermo-nuclear-code-quality-review: allow
-    to-questionnaire: allow
-    to-spec: allow
-    to-tickets: allow
     typescript-magician: allow
-    verify-admin: allow
     vcs-detect: allow
-    visual-pr: allow
     wait-what: allow
-    wizard: allow
     worktrees: allow
-    writing-beats: allow
     writing-for-agents: allow
-    writing-fragments: allow
-    writing-shape: allow
 ---
 
 For engineering requests, load `computa-please` if it is not already in context and use it as the session workflow. The skill owns routing, delegation, verification, and completion.

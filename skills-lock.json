@@ -7,11 +7,11 @@
       "skillPath": "skills/animate-expo/SKILL.md",
       "computedHash": "5de09593d564091f9db60aabede7bed760251e118548272050a247c653c417d2"
     },
-    "autoreview": {
-      "source": "openclaw/agent-skills",
+    "animation-vocabulary": {
+      "source": "emilkowalski/skill",
       "sourceType": "github",
-      "skillPath": "skills/autoreview/SKILL.md",
-      "computedHash": "289c7af81503a2226f34163edd1fcffcf07dd0db956729e4673ed1aa823158bb"
+      "skillPath": "skills/animation-vocabulary/SKILL.md",
+      "computedHash": "0058036865ecbb864fd0c4132efcc62425355d6e99c7e6ef6a936742d62a5dea"
     },
     "codebase-design": {
       "source": "mattpocock/skills",
@@ -23,13 +23,13 @@
       "source": "khoahyh/skills",
       "sourceType": "github",
       "skillPath": "computa-please/SKILL.md",
-      "computedHash": "47bc88979e45ab2171ad51ab1708b2e500c88142613f9623d534f8c56533a0f3"
+      "computedHash": "e169e31abfc157efa2b0ceaa1030b80b3b2621dc91c87eebbe78ddb8ea020537"
     },
     "cua-driver": {
       "source": "trycua/cua",
       "sourceType": "github",
       "skillPath": "libs/cua-driver/rust/Skills/cua-driver/SKILL.md",
-      "computedHash": "d529c6f3acc8546c043258e93d10eea3f76b10f8167f60c75641dc73f6215369"
+      "computedHash": "9d4ded323b7ed9209d5611598cdb890410245a6d15c0376cb6828a849d5b9bf4"
     },
     "diagnosing-bugs": {
       "source": "mattpocock/skills",
@@ -66,6 +66,12 @@
       "sourceType": "github",
       "skillPath": "SKILL.md",
       "computedHash": "69afc0b9fad6948609df32a0fa3c6143927f073cb0dc9a87dce7cde1b3a3da4e"
+    },
+    "find-animation-opportunities": {
+      "source": "emilkowalski/skill",
+      "sourceType": "github",
+      "skillPath": "skills/find-animation-opportunities/SKILL.md",
+      "computedHash": "465d087c41768e4f14ed640dd049036009f613feb55baaa5831b68b33178f9d2"
     },
     "find-docs": {
       "source": "upstash/context7",
@@ -115,12 +121,24 @@
       "skillPath": "observability-logging/SKILL.md",
       "computedHash": "8275ab85fbcea9f11dfcae176a0962c380eee6c00f1885ef961846b30b08006f"
     },
+    "pick-ui-library": {
+      "source": "emilkowalski/skill",
+      "sourceType": "github",
+      "skillPath": "skills/pick-ui-library/SKILL.md",
+      "computedHash": "5d2a77bf0ecafbda85aa95fb49999b6d77945d9066ec83d970b62e5b388cd686"
+    },
     "playwright-cli": {
       "source": "microsoft/playwright-cli",
       "ref": "main",
       "sourceType": "github",
       "skillPath": "skills/playwright-cli/SKILL.md",
       "computedHash": "ffbd59a973d4e2c19c6ecc31254a14497069c362f1d1820b6a6cfbe62de34a73"
+    },
+    "pr-body": {
+      "source": "khoahyh/skills",
+      "sourceType": "github",
+      "skillPath": "pr-body/SKILL.md",
+      "computedHash": "083f5876e55ba782cd306137d408957cd119e6d0530598f31e39e93b522f95ea"
     },
     "record-verification": {
       "source": "khoahyh/skills",
@@ -138,13 +156,19 @@
       "source": "khoahyh/skills",
       "sourceType": "github",
       "skillPath": "review-remediation/SKILL.md",
-      "computedHash": "e2777446ba8f08cb9b7737e48d6428b0778628fda7af2833d08d98164bf203ff"
+      "computedHash": "672d2050dddaa55a674c8456bcbcb5815504416f89285eddbcd3d3bb42c3a595"
     },
     "scope-prune": {
       "source": "khoahyh/skills",
       "sourceType": "github",
       "skillPath": "scope-prune/SKILL.md",
       "computedHash": "b290f35dc05fb90bd454a02f47af1b4a0697119ca4526962079875539853d7c6"
+    },
+    "security-audit": {
+      "source": "cloudflare/security-audit-skill",
+      "sourceType": "github",
+      "skillPath": "skills/security-audit/SKILL.md",
+      "computedHash": "98b97aad2873b3b9a8e064007c25e7827b493ba27fda8bfbdb41dab586767973"
     },
     "show-me": {
       "source": "humanlayer/skills",
@@ -170,12 +194,6 @@
       "sourceType": "github",
       "skillPath": ".agents/skills/test-audit/SKILL.md",
       "computedHash": "2b203b479ebf0c524fe5a2a91461300c327b3179df2b92b48d0503663a6423c0"
-    },
-    "visual-pr": {
-      "source": "humanlayer/skills",
-      "sourceType": "github",
-      "skillPath": "plugins/visual-pr/skills/visual-pr/SKILL.md",
-      "computedHash": "197904ade976018d9ce28e706323f969a6a87947994f46e3ffad78c46e70a716"
     },
     "writing-for-agents": {
       "source": "mattpocock/skills",

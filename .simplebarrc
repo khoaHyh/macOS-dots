@@ -188,7 +188,7 @@
     "showIcon": true
   },
   "dateWidgetOptions": {
-    "refreshFrequency": 30000,
+    "refreshFrequency": 300000,
     "showOnDisplay": "",
     "showIcon": true,
     "shortDateFormat": true,
@@ -294,10 +294,24 @@
         "active": true,
         "noIcon": false,
         "hideWhenNoOutput": true
+      },
+      "3": {
+        "title": "Disk free",
+        "icon": "Finder",
+        "backgroundColor": "--cyan",
+        "output": "~/.config/scripts/simple_bar_htop.sh disk",
+        "onClickAction": "open -a \"Disk Utility\"",
+        "onRightClickAction": "",
+        "onMiddleClickAction": "",
+        "showOnDisplay": "",
+        "refreshFrequency": 60000,
+        "active": true,
+        "noIcon": false,
+        "hideWhenNoOutput": true
       }
     }
   },
   "customStyles": {
-    "styles": "/* your custom css styles here */\n:root {\n  --item-radius: 30px;\n  --bar-radius: 20px\n}\n.user-widget--1,\n.user-widget--2 {\n  color: var(--black);\n}"
+    "styles": "/* your custom css styles here */\n:root {\n  --item-radius: 30px;\n  --bar-radius: 20px\n}\n.user-widget--1,\n.user-widget--2,\n.user-widget--3 {\n  color: var(--black);\n}"
   }
 }

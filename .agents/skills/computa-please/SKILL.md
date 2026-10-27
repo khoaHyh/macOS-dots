@@ -6,49 +6,72 @@ disable-model-invocation: true
 
 # Computa Please
 
-Deliver the requested result through the least process that can prove it. Start with deletion, reuse, or narrowing; add only what the supported outcome still needs.
+Start with the next concrete useful outcome and closest existing working path, data, and connection. Inspect source inputs and captures before arranging fresh access or tooling.
 
-## Bound The Result
+## Scope
 
-Recover the user’s outcome, explicit decisions, non-goals, success evidence, and authority. Keep this boundary in working context. Plans, examples, tests, and handoffs are means, not permission to add capabilities. If accepted artifacts conflict, surface the specific mismatch rather than silently expanding or dropping requirements.
+Keep the requested outcome, explicit decisions, exclusions, proof, and authority in working context. Discussion and planning are read-only unless edits are authorized. A clear implementation request needs no separate interview or spec.
 
-Resolve facts from repository instructions, the affected path, and existing proof. For issue-backed work, read the issue, comments, and linked decisions; search relevant Slack or Notion context only when a specific intent gap remains. Ask about a decision only when inspection cannot settle it and it changes behavior, a consequential contract or risk, scope, or authority. Recommend an answer through the question tool. Choose routine engineering details yourself; a blocker pauses only the affected work.
+Resolve remaining facts from repository instructions, canonical code, existing proof, and linked context. Choose routine details; ask through the question tool for decisions affecting behavior, scope, consequential risk, or authority, recommending an answer while continuing independent work.
 
-For every non-obvious addition, ask: **what concrete failure of the accepted result would removing this cause?** Supported callers, security, and data integrity can justify it; hypothetical future needs cannot. Judge scope against that result, not a line quota or how many PRs could package the extra work.
+Size complexity for the actual workload and concrete failure modes; synthetic valid bounds are boundary evidence, not expected scale. For each non-obvious addition, ask: **what concrete failure of the agreed outcome would removing this cause?** Preserve evidenced caller, data, security, and rollback obligations at their owning boundary. Surface necessary scope expansion before implementing it; splitting extra work into PRs does not justify it.
 
-Before mutation, establish the task-owned checkout and [VCS authority](references/vcs.md). Follow applicable repository instructions; identify the limiting instruction when it prevents the requested completion.
+## Tools And Access
 
-## Route Only What Is Needed
+Prefer an existing authorized structured tool for external-service work. When the capability or connection is unknown, check Executor when available before choosing computer use, arranging new access, or declaring access missing. Read Executor's own `execute` guide via `skills({ name: "execute" })`; search by service and operation, inspect matching schemas, and consult saved connections when needed. Reuse a known suitable path without repeating discovery.
+
+For example, use Executor's connected Tailscale integration for tailnet administration when it supports the requested operation; configuring or troubleshooting the local VPN client is a separate task.
+
+Use computer use for UI-only operations, requested UI verification, or an evidenced gap in structured tooling. If Executor is absent or lacks the operation, use another authorized existing path. Preserve the intended account and scope across fallbacks; report permission failures rather than routing around them. A connected tool establishes capability, not authority to change state.
+
+## Routing
+
+Load only the guidance that changes this task's approach. Let the selected skill or repository contract own its procedure and output format.
 
 | Request | Route |
 | --- | --- |
-| Discuss, compare, or plan | Read-only by default. Return the requested decision or proportional plan; persist only when authorized. |
-| Implement a clear change | Go directly to [Execution](references/execution.md). No interview, separate spec, or confirmation ritual is required. |
-| Feature with unsettled behavior | Use `feature-grill` for decisions blocking this delivery, then resume the already-authorized task. A single decision needs only a direct question. |
-| Bug or performance regression | Use `diagnosing-bugs`; reproduce or bound the failure before an authorized fix, then verify the original path. |
-| Optimize or search for a solution | Use [Measured Optimization](references/execution.md#measured-optimization) with a baseline, objective, fixed invariants, and stopping condition. |
-| Simplify | Use `subtract`; use `scope-prune` for drift in an existing implementation. |
-| Review or remediate feedback | Follow the requested review or repository workflow. Report evidenced findings first; use `review-remediation` for the selected feedback set. |
-| Get work green, merge-ready, landed, or verified after merge | Use [VCS](references/vcs.md#readiness-and-final-ci) for final CI, readiness, merge, and post-merge proof, only to the requested boundary. |
+| Unsettled product behavior | `feature-grill` for decisions blocking this delivery; a single decision needs only a direct question. |
+| Building, polishing, or reviewing web UI and interactions | `emil-design-eng`. |
+| Mobile web or PWA touch, viewport, scroll, or safe-area behavior | `mobile-native`. |
+| React Native or Expo motion, gestures, transitions, or haptics | `animate-expo`. |
+| Finding places that would benefit from animation | `find-animation-opportunities` for read-only recommendations. |
+| Naming a described web motion effect | `animation-vocabulary`. |
+| Bug or performance regression | `diagnosing-bugs`; verify the original failing path after an authorized fix. |
+| Optimization | Set a baseline, objective, constraints, and stopping condition; measure the actual result. |
+| Simplification | `subtract`, or `scope-prune` for implementation drift. |
+| New or changed tests | `test-audit`'s authoring bar and the target repository's checks. |
+| PR-bound work or requested review | [Review](references/review.md) for reviewer selection and reuse. |
+| Existing review feedback | `review-remediation` for the selected feedback set. |
+| PR body | `pr-body` against the final diff. |
 
-Bounded restacks, publication, and description updates need only their applicable procedure, not an end-to-end delivery cycle. Improve workflow instructions from observed failures; prefer removing a competing rule over adding ceremony.
+For UI work, load only the matching guidance and preserve the project's design system and existing dependencies.
 
-## Prove And Finish
+Keep focused work in one PR. Split independent changes into separate PRs against the repository's default branch. For reviewable changes that depend on one another, use GitHub Stacks and the [official gh-stack guidance](https://github.com/github/gh-stack/blob/main/skills/gh-stack/SKILL.md). Check installed command help when using it.
 
-[Execution](references/execution.md) owns implementation, test selection, UI craft, and verification. For PR-bound work or an explicit review request, [Review](references/review.md) owns risk-based reviewer selection, reuse, and repeat-review decisions. Inspect the complete final diff for necessity as well as defects; passing checks answer neither scope nor mechanism value.
+## Authority
 
-Finish all authorized delivery, carrying same-task permission through fixes and resumes. Standing draft-publication permission is recorded under [Authority](references/vcs.md#authority); it grants neither readiness nor merge. PR bodies follow the repository’s workflow; use `visual-pr` when the user explicitly selects it, against the final diff.
+Before writes, establish the task-owned checkout using `worktrees` and the repository's rules. Preserve unrelated work and stage only task-owned changes.
 
-Before opening or updating any PR, run `scope-prune` and `test-audit` on the session’s own diff. The PR body includes a **Locked decisions** block copied word for word from Khoa’s chat and a net-line budget sized to the slice (never a fixed number: a migration or UI piece runs larger, a pure function or config change smaller) with one line on why that budget. If the diff exceeds the budget or contradicts a locked decision, stop and ask Khoa instead of publishing.
+**Standing grant (Khoa, 2026-10-06):** in `gocustodia/platform`, `gocustodia/infrastructure`, and `gocustodia/trowel`, an implementation or fix request includes scoped additive commits on the task branch (not `main`), push, and opening or updating one draft PR after applicable local verification, including repair of task-caused required checks. Identify the repository by its remote; the grant covers its task worktrees.
 
-Production effects, including merge-triggered deployment, follow the owning project’s operations contract and explicit authority for the action and target. Verify the actual effect; green CI alone does not establish production delivery.
+Carry same-task grants through fixes and resumes. Other repositories need an existing or task-specific grant. Honor narrower task and repository restrictions; name the conflicting instruction when it blocks delivery. Readiness, review requests, merge, deployment, policy bypasses, destructive changes, history rewrites, unrelated work, and external messages need their own authority. Follow the project's operations contract for production effects, including merge-triggered deployments.
 
-Use concise diagrams when helpful and `show-me` or Paper for requested visual explanations. Create richer visual artifacts only when requested.
+New PRs start as drafts. Establish affected branches before stack mutations; selecting Stacks grants no stack-wide publication or history-rewrite permission.
 
-## Keep Context And Ownership Small
+## Verify And Finish
 
-Delegate independent retrieval or isolated work when it shortens the critical path; keep coupled implementation with one owner. Give delegates the path, bounded result, write ownership, authority, and required evidence. Use at most two concurrently unless broader parallelism is requested. The primary verifies pivotal claims, integrates, and owns scope and human reporting; a supervised worker returns its result rather than assuming the whole workflow.
+Choose one risk-matched verification plan: smallest behavioral proof plus owning required gates, run once on the stable candidate. Reuse unchanged proof; rerun only evidence invalidated by material changes. CI may supply wider proof where repository policy allows; optional comfort checks are not gates.
 
-At a real context boundary, retain outcome, decisions, authority, compact evidence, blockers, and next action. Persist only for requested artifacts, recovery, or coordination. On pickup, reconcile live checkout and provider state, distinguish inherited claims from observations, and inspect uncertain external effects before retrying them.
+Diagnose only failures blocking delivery; reuse a supported working fixture or path where sufficient. Retain the causal diagnostic; after two consecutive attempts yield no new evidence, switch paths or report the blocker. Resume diagnosis only with new evidence.
 
-Stop when the accepted result has applicable proof and authorized delivery, or report the concrete blocker. Lead with the outcome, checks actually run, missing required evidence, and any human decision. Adjacent improvements remain follow-ups.
+For changed UI, inspect the rendered result and exercise the affected interaction. Distinguish browser or emulation evidence from checks requiring real hardware.
+
+Inspect the complete final diff against the agreed outcome, then finish through the authorized delivery boundary. Before merging, establish effects and authority; verify the merge and applicable post-merge results against the landed commit. Reconcile uncertain external actions before retrying.
+
+Once proven, finish rather than extending review, polling, or cleanup cycles. If required proof, facts, or authority are missing, report the concrete blocker with the outcome and evidence. A pending action is not completed delivery.
+
+## Coordination
+
+Use delegation, extra review, or artifacts only to resolve a specific uncertainty blocking delivery or satisfy a request or requirement. Limit concurrent subagents to two unless requested otherwise. Keep coupled work and shared resources under one owner; give delegates scope, path, authority, and required evidence, then integrate and verify consequential claims.
+
+Persist only for requested artifacts, recovery, or coordination. Keep one current, compact handoff with the outcome, decisions, authority, state, evidence pointers, blockers, and next action. On pickup, reconcile it with live checkout and provider state. Keep secrets, customer data, and raw transcripts out of shared artifacts.
