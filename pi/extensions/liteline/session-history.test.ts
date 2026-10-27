@@ -39,7 +39,7 @@ test("discoverRecentSessions reads titles, active state, and recency", () => {
           type: "message",
           message: {
             role: "user",
-            content: [{ type: "text", text: "Investigate gt stack footer behavior" }],
+            content: [{ type: "text", text: "Investigate branch footer behavior" }],
           },
         }),
         "",
@@ -59,7 +59,7 @@ test("discoverRecentSessions reads titles, active state, and recency", () => {
     assert.equal(result[0]?.active, true);
     assert.equal(result[0]?.title, "Refactor footer rendering");
     assert.equal(result[1]?.active, false);
-    assert.match(result[1]?.title ?? "", /Investigate gt stack footer/);
+    assert.match(result[1]?.title ?? "", /Investigate branch footer/);
   } finally {
     rmSync(dir, { recursive: true, force: true });
   }

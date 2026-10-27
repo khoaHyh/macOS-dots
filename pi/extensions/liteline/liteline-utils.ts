@@ -65,31 +65,6 @@ export function formatCompactNumber(value: number): string {
   return `${(value / 1_000_000).toFixed(1).replace(/\.0$/, "")}m`;
 }
 
-export function formatPlanWindowUsage(label: string, usedTokens: number, limitTokens: number | undefined): string {
-  const used = Math.max(0, usedTokens);
-
-  if (!limitTokens || limitTokens <= 0) {
-    return `${label} ${formatCompactNumber(used)} used • limit unset`;
-  }
-
-  const total = Math.max(1, limitTokens);
-  const remaining = Math.max(0, total - used);
-  const percent = Math.max(0, Math.min(100, Math.round((used / total) * 100)));
-
-  return `${label} ${percent}% used • ${formatCompactNumber(remaining)} left`;
-}
-
-export function formatRemainingWindowLabel(label: string, usedTokens: number, limitTokens: number | undefined): string {
-  if (!limitTokens || limitTokens <= 0) {
-    return `${label} (limit unset)`;
-  }
-
-  const total = Math.max(1, limitTokens);
-  const remaining = Math.max(0, total - Math.max(0, usedTokens));
-  const percentLeft = Math.max(0, Math.min(100, Math.round((remaining / total) * 100)));
-  return `${label} (${percentLeft}% left)`;
-}
-
 export function formatContextSegment(usage: ContextUsage): string {
   if (usage.tokens == null || usage.percent == null) {
     return `ctx ? ${formatCompactNumber(usage.contextWindow)}`;
@@ -164,31 +139,11 @@ export function formatFooterModelSegment(model: string, thinking: string, glyphM
 
 export function formatFooterVcsSegment(options: {
   gitBranch: string | null;
-  graphiteStack: string | null;
   glyphMode: GlyphMode;
 }): string {
+  if (!options.gitBranch) return "no-vcs";
   const icons = footerGlyphs(options.glyphMode);
-  const parts: string[] = [];
-
-  if (options.gitBranch) {
-    parts.push(`${icons.branch} ${options.gitBranch}`);
-  }
-
-  if (options.graphiteStack) {
-    parts.push(`gt ${options.graphiteStack}`);
-  }
-
-  if (parts.length === 0) {
-    return "no-vcs";
-  }
-
-  return parts.join(" · ");
-}
-
-export function parseGraphiteBranchInfoSummary(rawOutput: string): string | null {
-  const normalized = rawOutput.replace(/\s+/g, " ").trim();
-  if (!normalized) return null;
-  return "stack";
+  return `${icons.branch} ${options.gitBranch}`;
 }
 
 function pluralize(count: number, singular: string, plural: string): string {

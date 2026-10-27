@@ -10,9 +10,7 @@
   "liteline": {
     "glyphPreference": "auto",
     "showModeSegment": true,
-    "showHeader": true,
-    "fiveHourLimitTokens": 5000000,
-    "weeklyLimitTokens": 50000000
+    "showHeader": true
   },
   "lastChangelogVersion": "1.4.0",
   "packages": [

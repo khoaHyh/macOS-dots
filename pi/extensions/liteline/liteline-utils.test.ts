@@ -11,12 +11,9 @@ import {
   formatContextSegment,
   formatFooterModelSegment,
   formatFooterVcsSegment,
-  formatPlanWindowUsage,
-  formatRemainingWindowLabel,
   getStartupLogoAscii,
   limitRecentSessions,
   parseCodexRateLimitPercents,
-  parseGraphiteBranchInfoSummary,
   normalizeGlyphPreference,
   resolveGlyphMode,
 } from "./liteline-utils.ts";
@@ -67,20 +64,19 @@ test("formatFooterModelSegment adds a powerline-style model glyph and compact th
   );
 });
 
-test("formatFooterVcsSegment keeps git and graphite details compact", () => {
+test("formatFooterVcsSegment shows the native Git branch or no-vcs", () => {
   assert.equal(
-    formatFooterVcsSegment({ gitBranch: "main", graphiteStack: "stack", glyphMode: "nerd" }),
-    "\uF126 main · gt stack",
+    formatFooterVcsSegment({ gitBranch: "main", glyphMode: "nerd" }),
+    "\uF126 main",
   );
   assert.equal(
-    formatFooterVcsSegment({ gitBranch: null, graphiteStack: "stack", glyphMode: "ascii" }),
-    "gt stack",
+    formatFooterVcsSegment({ gitBranch: "feature/login", glyphMode: "ascii" }),
+    "⎇ feature/login",
   );
-});
-
-test("parseGraphiteBranchInfoSummary treats any successful branch info output as a stack marker", () => {
-  assert.equal(parseGraphiteBranchInfoSummary(""), null);
-  assert.equal(parseGraphiteBranchInfoSummary("Branch: feature/login"), "stack");
+  assert.equal(
+    formatFooterVcsSegment({ gitBranch: null, glyphMode: "ascii" }),
+    "no-vcs",
+  );
 });
 
 test("abbreviateModel trims provider prefix when present", () => {
@@ -183,18 +179,6 @@ test("limitRecentSessions bounds list for compact welcome header", () => {
   assert.deepEqual(limitRecentSessions([], 3), ["none yet"]);
 });
 
-test("formatPlanWindowUsage shows percent and remaining tokens", () => {
-  assert.equal(
-    formatPlanWindowUsage("5h", 1_000_000, 5_000_000),
-    "5h 20% used • 4m left",
-  );
-});
-
-test("formatPlanWindowUsage handles zero or missing limits", () => {
-  assert.equal(formatPlanWindowUsage("5h", 50_000, 0), "5h 50k used • limit unset");
-  assert.equal(formatPlanWindowUsage("7d", 0, undefined), "7d 0 used • limit unset");
-});
-
 test("getStartupLogoAscii returns the configured liteline logo", () => {
   assert.deepEqual(getStartupLogoAscii(), [
     "▀████████████▀",
@@ -257,21 +241,6 @@ test("formatRecentSessionRow keeps short titles intact", () => {
     }),
     "- Fix header spacing (just now)",
   );
-});
-
-test("formatRemainingWindowLabel shows percent left for bounded usage", () => {
-  assert.equal(
-    formatRemainingWindowLabel("Session", 1_100_000, 5_000_000),
-    "Session (78% left)",
-  );
-  assert.equal(
-    formatRemainingWindowLabel("Weekly", 9_000_000, 50_000_000),
-    "Weekly (82% left)",
-  );
-});
-
-test("formatRemainingWindowLabel handles missing limits concisely", () => {
-  assert.equal(formatRemainingWindowLabel("Session", 10_000, undefined), "Session (limit unset)");
 });
 
 test("parseCodexRateLimitPercents extracts session and weekly remaining from app-server payload", () => {

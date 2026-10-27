@@ -15,19 +15,14 @@ import {
   formatRecentSessionRow,
   getStartupLogoAscii,
   normalizeGlyphPreference,
-  parseGraphiteBranchInfoSummary,
   resolveGlyphMode,
   type GlyphPreference,
 } from "./liteline-utils.ts";
-
-type SegmentColor = "accent" | "success" | "warning" | "error" | "muted";
 
 interface LitelineSettings {
   glyphPreference: GlyphPreference;
   showModeSegment: boolean;
   showHeader: boolean;
-  fiveHourLimitTokens?: number;
-  weeklyLimitTokens?: number;
 }
 
 interface HeaderData {
@@ -35,7 +30,7 @@ interface HeaderData {
   recentSessions: RecentSessionSummary[];
 }
 
-interface NerdSegment {
+interface BlockSegment {
   text: string;
   bg: number;
   fg: number;
@@ -43,7 +38,6 @@ interface NerdSegment {
 
 const ANSI_RESET = "\x1b[0m";
 const MAX_RECENT_SESSIONS = 3;
-const GRAPHITE_REFRESH_MS = 4_000;
 const RATE_LIMIT_REFRESH_MS = 60_000;
 const APP_SERVER_TIMEOUT_MS = 4_000;
 
@@ -63,8 +57,6 @@ const DEFAULT_SETTINGS: LitelineSettings = {
   glyphPreference: "auto",
   showModeSegment: true,
   showHeader: true,
-  fiveHourLimitTokens: undefined,
-  weeklyLimitTokens: undefined,
 };
 
 function fg256(code: number): string {
@@ -94,13 +86,6 @@ function safeReadJson(path: string): Record<string, unknown> {
   return {};
 }
 
-function parseOptionalNumber(value: unknown): number | undefined {
-  if (typeof value !== "number" || !Number.isFinite(value) || value <= 0) {
-    return undefined;
-  }
-  return Math.floor(value);
-}
-
 function readLitelineSettings(cwd: string): LitelineSettings {
   const globalSettings = safeReadJson(join(getAgentDir(), "settings.json"));
   const projectSettings = safeReadJson(join(cwd, ".pi", "settings.json"));
@@ -122,8 +107,6 @@ function readLitelineSettings(cwd: string): LitelineSettings {
     glyphPreference: normalizeGlyphPreference(merged.glyphPreference),
     showModeSegment,
     showHeader,
-    fiveHourLimitTokens: parseOptionalNumber(merged.fiveHourLimitTokens),
-    weeklyLimitTokens: parseOptionalNumber(merged.weeklyLimitTokens),
   };
 }
 
@@ -349,13 +332,6 @@ function renderWelcomeHeader(
   return lines.map((line) => truncateToWidth(line, width, "…", true));
 }
 
-function segmentColorForUsage(percent: number | null | undefined): SegmentColor {
-  if (percent == null) return "muted";
-  if (percent >= 90) return "error";
-  if (percent >= 70) return "warning";
-  return "success";
-}
-
 function segmentBgForUsage(percent: number | null | undefined): number {
   if (percent == null) return PALETTE.contextBg;
   if (percent >= 90) return PALETTE.contextErrorBg;
@@ -363,34 +339,12 @@ function segmentBgForUsage(percent: number | null | undefined): number {
   return PALETTE.contextBg;
 }
 
-function renderNerdSegments(segments: NerdSegment[]): string {
+function renderBlockSegments(segments: BlockSegment[]): string {
   if (segments.length === 0) return "";
 
-  let result = "";
-
-  for (let i = 0; i < segments.length; i++) {
-    const segment = segments[i];
-    result += `${bg256(segment.bg)}${fg256(segment.fg)} ${segment.text} `;
-
-    const next = segments[i + 1];
-    if (next) {
-      result += `${bg256(next.bg)}${fg256(segment.bg)}`;
-    }
-  }
-
-  return result + ANSI_RESET;
-}
-
-function renderAsciiSegments(
-  theme: ExtensionContext["ui"]["theme"],
-  entries: Array<{ text: string; color: SegmentColor }>,
-): string {
-  return entries
-    .map((entry) => {
-      const segmentText = `[${entry.text}]`;
-      return theme.fg(entry.color, segmentText);
-    })
-    .join(" ");
+  return segments
+    .map((segment) => `${bg256(segment.bg)}${fg256(segment.fg)} ${segment.text} `)
+    .join("") + ANSI_RESET;
 }
 
 export default function litelineExtension(pi: ExtensionAPI) {
@@ -402,8 +356,6 @@ export default function litelineExtension(pi: ExtensionAPI) {
   let headerData: HeaderData | null = null;
   let rateLimitUsage: RateLimitUsage = {};
 
-  let graphiteStack: string | null = null;
-  let lastGraphiteRefresh = 0;
   let lastRateLimitRefresh = 0;
   let requestFooterRender: (() => void) | null = null;
   let requestHeaderRender: (() => void) | null = null;
@@ -463,13 +415,10 @@ export default function litelineExtension(pi: ExtensionAPI) {
   }
 
   function installFooter(ctx: ExtensionContext): void {
-    ctx.ui.setFooter((tui, theme, footerData: ReadonlyFooterDataProvider) => {
+    ctx.ui.setFooter((tui, _theme, footerData: ReadonlyFooterDataProvider) => {
       requestFooterRender = () => tui.requestRender();
 
-      const unsubBranch = footerData.onBranchChange(() => {
-        void refreshGraphiteStack();
-        tui.requestRender();
-      });
+      const unsubBranch = footerData.onBranchChange(() => tui.requestRender());
 
       return {
         dispose() {
@@ -488,40 +437,26 @@ export default function litelineExtension(pi: ExtensionAPI) {
           const contextText = formatCompactContextSegment(usage, glyphMode);
 
           const gitBranch = footerData.getGitBranch();
-          const vcsText = formatFooterVcsSegment({ gitBranch, graphiteStack, glyphMode });
+          const vcsText = formatFooterVcsSegment({ gitBranch, glyphMode });
 
-          if (glyphMode === "nerd") {
-            const nerdSegments: NerdSegment[] = [];
-
-            if (settings.showModeSegment) {
-              nerdSegments.push({
-                text: modeText,
-                bg: agentBusy ? PALETTE.modeBusyBg : PALETTE.modeReadyBg,
-                fg: PALETTE.fgLight,
-              });
-            }
-
-            nerdSegments.push({ text: modelText, bg: PALETTE.modelBg, fg: PALETTE.fgLight });
-            nerdSegments.push({
-              text: contextText,
-              bg: segmentBgForUsage(usage?.percent),
+          // Font detection controls icons, not the square background blocks.
+          const segments: BlockSegment[] = [];
+          if (settings.showModeSegment) {
+            segments.push({
+              text: modeText,
+              bg: agentBusy ? PALETTE.modeBusyBg : PALETTE.modeReadyBg,
               fg: PALETTE.fgLight,
             });
-            nerdSegments.push({ text: vcsText, bg: PALETTE.vcsBg, fg: PALETTE.fgLight });
-
-            const rendered = renderNerdSegments(nerdSegments);
-            return [truncateToWidth(rendered, width, "…", true)];
           }
+          segments.push({ text: modelText, bg: PALETTE.modelBg, fg: PALETTE.fgLight });
+          segments.push({
+            text: contextText,
+            bg: segmentBgForUsage(usage?.percent),
+            fg: PALETTE.fgLight,
+          });
+          segments.push({ text: vcsText, bg: PALETTE.vcsBg, fg: PALETTE.fgLight });
 
-          const asciiEntries: Array<{ text: string; color: SegmentColor }> = [];
-          if (settings.showModeSegment) {
-            asciiEntries.push({ text: modeText, color: agentBusy ? "warning" : "accent" });
-          }
-          asciiEntries.push({ text: modelText, color: "accent" });
-          asciiEntries.push({ text: contextText, color: segmentColorForUsage(usage?.percent) });
-          asciiEntries.push({ text: vcsText, color: gitBranch || graphiteStack ? "success" : "muted" });
-
-          const rendered = renderAsciiSegments(theme, asciiEntries);
+          const rendered = renderBlockSegments(segments);
           return [truncateToWidth(rendered, width, "…", true)];
         },
       };
@@ -541,36 +476,11 @@ export default function litelineExtension(pi: ExtensionAPI) {
     void refreshRateLimitUsage(true);
   }
 
-  async function refreshGraphiteStack(force = false): Promise<void> {
-    if (!currentCtx) return;
-
-    const now = Date.now();
-    if (!force && now - lastGraphiteRefresh < GRAPHITE_REFRESH_MS) return;
-    lastGraphiteRefresh = now;
-
-    const branchInfo = await pi.exec("gt", ["branch", "info"], { timeout: 1_200 }).catch(() => null);
-    if (!branchInfo || branchInfo.code !== 0) {
-      if (graphiteStack !== null) {
-        graphiteStack = null;
-        requestFooterRender?.();
-      }
-      return;
-    }
-
-    const nextGraphiteStack = parseGraphiteBranchInfoSummary(branchInfo.stdout);
-
-    if (nextGraphiteStack !== graphiteStack) {
-      graphiteStack = nextGraphiteStack;
-      requestFooterRender?.();
-    }
-  }
-
   function boot(ctx: ExtensionContext): void {
     currentCtx = ctx;
     settings = readLitelineSettings(ctx.cwd);
     recalcGlyphMode();
     applyUi(ctx);
-    void refreshGraphiteStack(true);
   }
 
   pi.on("session_start", async (_event, ctx) => {
@@ -603,12 +513,6 @@ export default function litelineExtension(pi: ExtensionAPI) {
       installHeader(ctx);
     }
     void refreshRateLimitUsage(true);
-  });
-
-  pi.on("tool_result", async (event) => {
-    if (event.toolName === "bash" || event.toolName === "edit" || event.toolName === "write") {
-      void refreshGraphiteStack();
-    }
   });
 
   pi.registerCommand("liteline", {
