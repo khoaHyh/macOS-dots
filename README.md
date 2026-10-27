@@ -10,7 +10,6 @@ Personal macOS setup for shell, terminal, window management, and CLI tooling.
 - `starship.toml`: prompt config
 - `aerospace/aerospace.toml`: source config for tiling and keyboard shortcuts
 - `ghostty/config`: terminal defaults used by the `alt + enter` shortcut
-- `herdr/config.toml`: Herdr UI, notification, and theme config
 - `scripts/open_iterm2.sh`: optional iTerm2 launcher script
 - `scripts/configure_aerospace.sh`: generates a display-aware active AeroSpace config
 - `opencode/`: local OpenCode agent/tool config
@@ -41,8 +40,69 @@ Do not use `security add-generic-password -w` without a value for this token.
 Its interactive password reader truncates long values.
 
 Use `agentenv` and `agentclear` to manage the same authentication in a direct
-interactive shell. Secret-enabled agent launchers scope it to the agent process
-and clear it automatically on exit.
+interactive shell. The Pi launchers scope it to the agent process and clear it
+automatically on exit.
+
+### OpenCode shortcuts
+
+- `opencode`: plain OpenCode, without caffeinate.
+- `oc`: local OpenCode with `caffeinate -id`.
+- `occ`: cloud OpenCode with `caffeinate -id`, using the separately configured
+  Mac launcher at `~/.local/bin/opencode-cloud`.
+
+Run `source ~/.zshrc` in an existing shell to load changes. The old `occc`
+shortcut is retired.
+
+`oc` and `occ` start without inherited 1Password service-account, session,
+account-selection, or Connect authentication, with desktop CLI integration
+disabled. They pass only the nonsecret Environment selector and
+`AGENT_1P_HELPER` location for 1Password access. `oc` preserves normal shared-server
+behavior and all CLI arguments, including explicit `--server` / `--standalone`.
+`occ` forwards arguments to the cloud launcher; model/MCP authentication and tool
+execution remain on the VM. Pi/MCP environment helpers are unchanged.
+
+For local sessions, global `opencode/AGENTS.md` tells the agent to choose a
+context internally:
+`agents` uses the existing `opencode.1password.service-account` Keychain item;
+`staging` uses `opencode.1password.agents-staging`; `environment` uses the first
+account plus `OPENCODE_1P_ENV_ID` (legacy `MCP_1P_ENV_ID` also works). Both items
+use the macOS username as their account. No grants or credentials are changed.
+
+`scripts/agent-1p contexts` reports configuration status without reading secrets
+or checking live access. `scripts/agent-1p <context> -- <trusted-wrapper> [args...]`
+reads one selected token just before executing the consumer and fails closed if
+local configuration is missing or malformed. It clears conflicting inherited
+authentication and never retries another account. Environment mode does **not**
+inject all Environment values: the existing owning wrapper must retrieve only
+its allowed fields. Consumers must keep secrets out of output, logs, and argv.
+Context selection grants neither deployment/apply nor runtime database authority.
+
+This reduces accidental credential inheritance, not malicious same-user access:
+local code can access Keychain or disclose a credential supplied to it. There is
+no sandbox, additional authentication service, or new secret cache.
+
+#### Activation boundary
+
+Implementation in a worktree does not activate this configuration. After review
+and explicit approval, conflict-check the task patch against the canonical
+checkout, apply it there, and confirm `scripts/agent-1p` is executable and the
+existing `~/.zshrc` / `~/.config/opencode` links still target that checkout. Do
+not repoint links or copy runtime `service.json` / credential files.
+
+OpenCode v2.0.29 forwards the client's environment to session shells, but an
+**existing shared daemon and its MCP children can retain old credentials**.
+At an approved interruption point, finish running work, load the updated shell,
+and confirm saved service-environment overrides do not reintroduce 1Password
+authentication (inspect names/status only, not values). Then deliberately restart
+the shared service from that clean launch context (`oc service restart`) and start
+`oc`. This restart needs separate approval;
+changing the client alone does not prove server/MCP cleanup. A daemon started
+outside these clean launchers, or a remote connection (`occ` or explicit
+`--server`), is outside that server-environment guarantee. This does not rotate
+OpenCode's separate local API password or change existing sessions automatically.
+
+Offline regression check: `zsh -f scripts/test-agent-1p.zsh`. It uses an empty
+HOME, fake credentials, and stub consumers; it makes no live 1Password requests.
 
 ## TODOs
 
@@ -86,15 +146,13 @@ curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.3/install.sh | bash
 ### 3) Symlink configs
 
 ```bash
-mkdir -p ~/.config/aerospace ~/.config/herdr ~/.config/scripts ~/.pi
+mkdir -p ~/.config/aerospace ~/.config/scripts ~/.pi
 
 ln -sf ~/dev/macOS-dots/.zshrc ~/.zshrc
 ln -sf ~/dev/macOS-dots/.tmux.conf ~/.tmux.conf
 ln -sf ~/dev/macOS-dots/.gitconfig ~/.gitconfig
 ln -sf ~/dev/macOS-dots/.simplebarrc ~/.simplebarrc
 ln -sf ~/dev/macOS-dots/starship.toml ~/.config/starship.toml
-[ -f ~/.config/herdr/config.toml ] && [ ! -L ~/.config/herdr/config.toml ] && mv ~/.config/herdr/config.toml ~/.config/herdr/config.toml.backup.$(date +%Y%m%d-%H%M%S)
-ln -sf ~/dev/macOS-dots/herdr/config.toml ~/.config/herdr/config.toml
 ln -sf ~/dev/macOS-dots/scripts/open_iterm2.sh ~/.config/scripts/open_iterm2.sh
 ln -sf ~/dev/macOS-dots/scripts/refresh_simple_bar.sh ~/.config/scripts/refresh_simple_bar.sh
 ln -sf ~/dev/macOS-dots/scripts/simple_bar_htop.sh ~/.config/scripts/simple_bar_htop.sh
@@ -157,7 +215,7 @@ Open tmux and press `prefix + I` to install plugins.
 ## Verify setup
 
 ```bash
-ls -l ~/.zshrc ~/.tmux.conf ~/.gitconfig ~/.simplebarrc ~/.config/starship.toml ~/.config/aerospace/aerospace.toml ~/.config/herdr/config.toml
+ls -l ~/.zshrc ~/.tmux.conf ~/.gitconfig ~/.simplebarrc ~/.config/starship.toml ~/.config/aerospace/aerospace.toml
 ls -ld ~/.pi/agent
 pgrep -x AeroSpace
 ls -la ~/.tmux/plugins/tpm
@@ -178,7 +236,6 @@ ls -la ~/.tmux/plugins/tpm
 - `open_iterm2.sh` is optional and can be bound if you prefer iTerm2.
 - `.tmux.conf` currently uses `egel/tmux-gruvbox`; Catppuccin lines are commented out.
 - `~/.pi/agent -> ~/dev/macOS-dots/pi` keeps pi config in this repo; runtime files (`auth.json`, sessions, package installs) are gitignored.
-- `~/.config/herdr/config.toml` points into this repo; Herdr's session state, logs, and sockets remain local in `~/.config/herdr`.
 - AeroSpace needs Accessibility permission in System Settings -> Privacy & Security -> Accessibility.
 
 ## Update

@@ -38,9 +38,11 @@ if [[ -f "$HOME/.zshrc.private" ]]; then
 fi
 
 # Allow re-sourcing this file even if older alias-based helpers are loaded.
-unalias oc occ ocs occs agentenv agentclear ocenv occlear mcpenv mcpclear pienv piclear pis pics 2>/dev/null
-# Drop OpenCode v1-era credential wrappers no longer defined here.
-unfunction ocs occs ocenv occlear 2>/dev/null
+unalias oc occ occc ocs occs agentenv agentclear ocenv occlear mcpenv mcpclear pienv piclear pis pics 2>/dev/null
+# Drop retired credential wrappers and the superseded cloud shortcut.
+unfunction ocs occs ocenv occlear _agent_op_run occc 2>/dev/null
+
+typeset -g _AGENT_1P_HELPER="${${(%):-%x}:A:h}/scripts/agent-1p"
 
 typeset -ga _MCP_AGENT_ENV_VARS=(
   EXECUTOR_MCP_AUTHORIZATION
@@ -157,27 +159,31 @@ agentclear() {
   mcpclear
 }
 
-# Agents - Staging 1Password service account, scoped to the opencode process only.
-# The token lives in Keychain; this file only names the item.
-_agent_op_run() {
+# Native OpenCode session environments follow the client; an existing daemon's
+# own environment still requires a deliberate clean restart (see README).
+_agent_opencode_run() (
   setopt localoptions noxtrace
-  local token
-  token=$(/usr/bin/security find-generic-password -a "$USER" -s "opencode.1password.agents-staging" -w 2>/dev/null)
-  if [[ "$token" != ops_* || ${#token} -le 128 ]]; then
-    print -u2 "opencode.1password.agents-staging Keychain token missing or truncated; starting without it."
-    "$@"
-    return
-  fi
-  OP_SERVICE_ACCOUNT_TOKEN="$token" "$@"
-}
+  local key
+  for key in ${(k)parameters}; do
+    case "$key" in
+      OP_SERVICE_ACCOUNT_TOKEN|OP_SESSION|OP_SESSION_*|OP_ACCOUNT|OP_CONNECT_HOST|OP_CONNECT_TOKEN)
+        unset "$key" ;;
+    esac
+  done
+  export OP_BIOMETRIC_UNLOCK_ENABLED=false
+  export AGENT_1P_HELPER="$_AGENT_1P_HELPER"
+  export OPENCODE_1P_ENV_ID="${OPENCODE_1P_ENV_ID:-${MCP_1P_ENV_ID:-}}"
+  "$@"
+)
 
 # OpenCode v2 uses Executor's stdio MCP connection; only pi needs mcpenv.
 oc() {
-  _agent_op_run opencode "$@"
+  _agent_opencode_run caffeinate -id -- opencode "$@"
 }
 
+# Cloud OpenCode, with the same Mac sleep prevention as oc.
 occ() {
-  _agent_op_run caffeinate -id -- opencode "$@"
+  _agent_opencode_run caffeinate -id -- "$HOME/.local/bin/opencode-cloud" "$@"
 }
 
 pienv() {
@@ -250,3 +256,6 @@ export PATH="$PATH:$ANDROID_HOME/platform-tools"
 # Added by Cap
 export PATH="/Users/khuynh/.cap/bin:$PATH"
 export PATH=$PATH:$HOME/.maestro/bin
+
+# opencode
+export PATH=/Users/khuynh/.opencode/bin:$PATH

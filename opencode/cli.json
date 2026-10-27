@@ -3,7 +3,6 @@
   "theme": {
     "name": "catppuccin"
   },
-  "plugins": ["./herdr-opencode"],
   "attention": {
     "enabled": true,
     "notifications": true,

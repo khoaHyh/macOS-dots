@@ -45,8 +45,17 @@ case "${1:-}" in
       }
     '
     ;;
+  disk)
+    LC_ALL=C /bin/df -kP "$HOME" | /usr/bin/awk '
+      NR == 2 && $4 ~ /^[0-9]+$/ {
+        printf "%.1f\n", $4 / 1048576
+        found = 1
+      }
+      END { if (!found) exit 1 }
+    '
+    ;;
   *)
-    printf "usage: %s {cpu|memory}\n" "$0" >&2
+    printf "usage: %s {cpu|memory|disk}\n" "$0" >&2
     exit 2
     ;;
 esac

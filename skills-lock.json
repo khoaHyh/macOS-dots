@@ -97,12 +97,6 @@
       "skillPath": "skills/productivity/grilling/SKILL.md",
       "computedHash": "ef1641a2047b71b60f1942cd35efb47d3afc9d584dff5a0b01f8c7db923aaa08"
     },
-    "herdr": {
-      "source": "herdrdev/herdr",
-      "sourceType": "github",
-      "skillPath": "skills/herdr/SKILL.md",
-      "computedHash": "72177e911f55467de8737174072ec6bb08e30bbf62bceabcb69678e944398b18"
-    },
     "improve-codebase-architecture": {
       "source": "mattpocock/skills",
       "sourceType": "github",

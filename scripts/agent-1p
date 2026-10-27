@@ -1,0 +1,55 @@
+#!/bin/zsh -f
+# Credential routing for trusted consumers, not a sandbox or a secret printer.
+unsetopt xtrace verbose allexport
+
+case "${1:-}" in
+  contexts)
+    (( $# == 1 )) || { print -u2 'Usage: agent-1p contexts'; exit 2; }
+    print -r -- 'agents: Agents (existing read-only service account)'
+    print -r -- 'staging: Agents – Staging (existing read-only service account)'
+    if [[ -n "${OPENCODE_1P_ENV_ID:-${MCP_1P_ENV_ID:-}}" ]]; then
+      print -r -- 'environment: selector configured (access not checked)'
+    else
+      print -r -- 'environment: selector missing; configure OPENCODE_1P_ENV_ID in ~/.zshrc.private'
+    fi
+    print -r -- 'Usage: agent-1p <agents|staging|environment> -- <trusted-wrapper> [args...]'
+    exit 0 ;;
+  agents|environment) item=opencode.1password.service-account ;;
+  staging) item=opencode.1password.agents-staging ;;
+  *) print -u2 'Choose an explicit context: agents, staging, or environment.'; exit 2 ;;
+esac
+
+if (( $# < 3 )) || [[ "$2" != -- || -z "$3" ]]; then
+  print -u2 'Usage: agent-1p <agents|staging|environment> -- <trusted-wrapper> [args...]'
+  exit 2
+fi
+if [[ "$1" == environment ]]; then
+  export OPENCODE_1P_ENV_ID="${OPENCODE_1P_ENV_ID:-${MCP_1P_ENV_ID:-}}"
+  if [[ -z "$OPENCODE_1P_ENV_ID" ]]; then
+    print -u2 'Environment selector missing: configure OPENCODE_1P_ENV_ID in ~/.zshrc.private.'
+    exit 1
+  fi
+fi
+shift 2
+
+# Connect takes precedence over service accounts. Remove every ambient auth
+# selector before choosing exactly one credential; never try another account.
+for key in ${(k)parameters}; do
+  case "$key" in
+    OP_SERVICE_ACCOUNT_TOKEN|OP_SESSION|OP_SESSION_*|OP_ACCOUNT|OP_CONNECT_HOST|OP_CONNECT_TOKEN)
+      unset "$key" ;;
+  esac
+done
+export OP_BIOMETRIC_UNLOCK_ENABLED=false
+export OP_DEBUG=false
+typeset +x token
+token=$(/usr/bin/security find-generic-password -a "$USER" -s "$item" -w 2>/dev/null)
+if (( $? != 0 )) || [[ "$token" != ops_* || ${#token} -le 128 || "$token" == *[[:space:]]* ]]; then
+  print -u2 "The $item Keychain credential is missing or malformed; operation not started."
+  exit 1
+fi
+
+# The owning wrapper controls secret retrieval/output and any Environment
+# allowlist. In particular, do not inject an entire Environment here.
+export OP_SERVICE_ACCOUNT_TOKEN="$token"
+exec "$@"

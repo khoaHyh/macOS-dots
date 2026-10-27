@@ -31,7 +31,6 @@ permission:
     grill-with-docs: allow
     grilling: allow
     handoff: allow
-    herdr: allow
     improve-codebase-architecture: allow
     install-anti-slop: allow
     maintain-verification-skill: allow
