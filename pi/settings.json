@@ -1,8 +1,10 @@
 {
-  "defaultProvider": "openai-codex",
-  "defaultModel": "gpt-6-sol",
+  "defaultProvider": "openai",
+  "defaultModel": "gpt-6.1-sol",
   "defaultThinkingLevel": "high",
   "hideThinkingBlock": true,
+  "collapseChangelog": true,
+  "showCacheMissNotices": false,
   "theme": "rose-pine-dawn",
   "quietStartup": true,
   "liteline": {
@@ -12,15 +14,12 @@
     "fiveHourLimitTokens": 5000000,
     "weeklyLimitTokens": 50000000
   },
-  "lastChangelogVersion": "0.85.1",
+  "lastChangelogVersion": "1.4.0",
   "packages": [
-    {
-      "source": "npm:@plannotator/pi-extension",
-      "skills": []
-    },
-    "npm:pi-mcp-adapter",
     "npm:pi-autoresearch",
     "npm:@juicesharp/rpiv-ask-user-question@1.17.1"
+  ],
+  "extensions": [
+    "-extensions/continue-after-compaction.ts"
   ]
 }
-

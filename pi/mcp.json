@@ -1,11 +1,8 @@
 {
   "mcpServers": {
     "executor": {
-      "url": "http://127.0.0.1:4789/mcp",
-      "headers": {
-        "Authorization": "${EXECUTOR_MCP_AUTHORIZATION}"
-      },
-      "lifecycle": "lazy"
+      "command": "/Applications/Executor.app/Contents/Resources/executor/executor",
+      "args": ["mcp"]
     }
   }
 }
