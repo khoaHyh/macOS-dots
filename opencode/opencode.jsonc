@@ -66,7 +66,7 @@
     "oracle": {
       "mode": "subagent",
       "description": "Read-only second opinion on consequential unresolved engineering decisions. The primary retains decisions, authority, implementation, and verification.",
-      "model": "openai/gpt-6-astra#high",
+      "model": "openai/gpt-6-astra#xhigh",
       "system": "{file:./prompts/oracle-harness.md}",
       "permissions": [
         { "action": "edit", "resource": "*", "effect": "deny" },
@@ -77,8 +77,8 @@
       ]
     },
     "general": {
-      "description": "Implement and verify bounded engineering tasks, including multi-file changes and tests. Use explore for factual reconnaissance and return consequential unresolved decisions to the primary.",
-      "model": "openai/gpt-6.1-sol#high"
+      "description": "Implement engineering tasks.",
+      "model": "openai/gpt-6.1-sol-ultrafast#high"
     }
   },
   "mcp": {

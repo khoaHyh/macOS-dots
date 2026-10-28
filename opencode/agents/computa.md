@@ -26,8 +26,8 @@ permission:
     find-animation-opportunities: allow
     find-docs: allow
     fix-merge-conflicts: allow
+    gh-stack: allow
     go-engineering: allow
-    graphite: allow
     grill-with-docs: allow
     grilling: allow
     handoff: allow
@@ -61,7 +61,6 @@ permission:
     terraform-test: allow
     thermo-nuclear-code-quality-review: allow
     typescript-magician: allow
-    vcs-detect: allow
     wait-what: allow
     worktrees: allow
     writing-for-agents: allow

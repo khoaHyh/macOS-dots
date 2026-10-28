@@ -23,7 +23,7 @@
       "source": "khoahyh/skills",
       "sourceType": "github",
       "skillPath": "computa-please/SKILL.md",
-      "computedHash": "e169e31abfc157efa2b0ceaa1030b80b3b2621dc91c87eebbe78ddb8ea020537"
+      "computedHash": "7561f955279bcbfd109c359461344a3ffc841148774c2c8c750e1af619c4f291"
     },
     "cua-driver": {
       "source": "trycua/cua",
@@ -78,6 +78,12 @@
       "sourceType": "github",
       "skillPath": "skills/find-docs/SKILL.md",
       "computedHash": "e4a9a707d8e5d575d166a175f2fec66e0a13de46597f7dbc910c735ccf01bb93"
+    },
+    "gh-stack": {
+      "source": "github/gh-stack",
+      "sourceType": "github",
+      "skillPath": "skills/gh-stack/SKILL.md",
+      "computedHash": "e54bf50370987f13ca2803b3be829f36350b68a79dc36ffd3b27350bc6d2fde1"
     },
     "graphite": {
       "source": "withgraphite/agent-skills",

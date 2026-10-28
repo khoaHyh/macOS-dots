@@ -39,7 +39,7 @@ git worktree add -b <branch> ~/dev/worktrees/<repo-slug>__<branch-slug>
 
 Omit `-b` when `<branch>` already exists.
 
-4. Enter the worktree. Then `gt track` / `gt create` as needed.
+4. Enter the worktree and confirm its branch and working state:
 
 ```bash
 git status --short --branch
