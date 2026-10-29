@@ -23,7 +23,7 @@
       "source": "khoahyh/skills",
       "sourceType": "github",
       "skillPath": "computa-please/SKILL.md",
-      "computedHash": "7561f955279bcbfd109c359461344a3ffc841148774c2c8c750e1af619c4f291"
+      "computedHash": "63e09b1f604a19cece19af0892486ed608b8111fff432cc76ca29324fb65e25f"
     },
     "cua-driver": {
       "source": "trycua/cua",
@@ -144,7 +144,7 @@
       "source": "khoahyh/skills",
       "sourceType": "github",
       "skillPath": "record-verification/SKILL.md",
-      "computedHash": "d692b986a590a8cc7d31bb9de0791d4a2ced274ef44e439de00f32a4f3c98b0d"
+      "computedHash": "5245117ce4eecff233675c2a1d93344aa02ac21ff694e940f8819574f69a1263"
     },
     "retro": {
       "source": "mattpocock/skills",
@@ -187,13 +187,6 @@
       "sourceType": "github",
       "skillPath": "skills/terminal-control/SKILL.md",
       "computedHash": "2175a5fb1a2fbe6fcff4049c9970018bbe8ca5a870882186a17265c42c8fa19a"
-    },
-    "test-audit": {
-      "source": "openclaw/openclaw",
-      "ref": "main",
-      "sourceType": "github",
-      "skillPath": ".agents/skills/test-audit/SKILL.md",
-      "computedHash": "2b203b479ebf0c524fe5a2a91461300c327b3179df2b92b48d0503663a6423c0"
     },
     "writing-for-agents": {
       "source": "mattpocock/skills",
