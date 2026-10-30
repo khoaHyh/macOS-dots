@@ -3,67 +3,7 @@ description: Use computa-please for engineering work throughout the session.
 mode: primary
 permission:
   skill:
-    "*": deny
-    "verify-*": allow
-    animate-expo: allow
-    animation-vocabulary: allow
-    autoreview: allow
-    breh: allow
-    cloudflare: allow
-    codebase-design: allow
-    coding-standards: allow
-    computa-please: allow
-    context7-cli: allow
-    context7-mcp: allow
-    create-verification-skill: allow
-    cua-driver: allow
-    diagnosing-bugs: allow
-    field-lab: allow
-    domain-modeling: allow
-    effect: allow
-    emil-design-eng: allow
-    feature-grill: allow
-    find-animation-opportunities: allow
-    find-docs: allow
-    fix-merge-conflicts: allow
-    gh-stack: allow
-    go-engineering: allow
-    grill-with-docs: allow
-    grilling: allow
-    handoff: allow
-    improve-codebase-architecture: allow
-    install-anti-slop: allow
-    maintain-verification-skill: allow
-    mobile-native: allow
-    motel-debug: allow
-    observability-logging: allow
-    peekaboo: allow
     personal-drafting: allow
-    pick-ui-library: allow
-    playwright-cli: allow
-    principle-subtract-before-you-add: allow
-    prototype: allow
-    record-verification: allow
-    reliable-control-plane: allow
-    remotion-best-practices: allow
-    review-remediation: allow
-    rex: allow
-    scope-prune: allow
-    security-audit: allow
-    show-me: allow
-    setup-matt-pocock-skills: allow
-    subtract: allow
-    teach: allow
-    tech-spec: allow
-    terminal-control: allow
-    test-audit: allow
-    terraform-style-guide: allow
-    terraform-test: allow
-    thermo-nuclear-code-quality-review: allow
-    typescript-magician: allow
-    wait-what: allow
-    worktrees: allow
-    writing-for-agents: allow
 ---
 
 For engineering requests, load `computa-please` if it is not already in context and use it as the session workflow. The skill owns routing, delegation, verification, and completion.
