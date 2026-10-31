@@ -44,7 +44,7 @@
   ],
   "agents": {
     "title": {
-      "model": "openai/gpt-5.6-luna-fast"
+      "model": "openai/gpt-6-luna-fast"
     },
     "build": {
       "permissions": [
@@ -65,7 +65,7 @@
     },
     "oracle": {
       "mode": "subagent",
-      "description": "Read-only second opinion on consequential unresolved engineering decisions. The primary retains decisions, authority, implementation, and verification.",
+      "description": "Read-only judge for architecture, module seam, pattern, and other consequential unresolved engineering decisions; send the grounding and candidate designs. The primary retains decisions, authority, implementation, and verification.",
       "model": "openai/gpt-6-astra#xhigh",
       "system": "{file:./prompts/oracle-harness.md}",
       "permissions": [
@@ -77,8 +77,9 @@
       ]
     },
     "general": {
-      "description": "Implement engineering tasks.",
-      "model": "openai/gpt-6.1-sol-ultrafast#high"
+      "description": "Implement a bounded, well-specified change: edit files, run commands, and verify with tests or checks, then report what changed and the evidence. Use for implementation with clear scope; use explore, librarian, or oracle for read-only investigation, external research, or decisions.",
+      "model": "openai/gpt-6.1-sol-ultrafast#high",
+      "system": "{file:./prompts/general-harness.md}"
     }
   },
   "mcp": {

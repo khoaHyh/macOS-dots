@@ -13,6 +13,12 @@
       "skillPath": "skills/animation-vocabulary/SKILL.md",
       "computedHash": "0058036865ecbb864fd0c4132efcc62425355d6e99c7e6ef6a936742d62a5dea"
     },
+    "blast-radius": {
+      "source": "khoahyh/skills",
+      "sourceType": "github",
+      "skillPath": "blast-radius/SKILL.md",
+      "computedHash": "7ba40f40df48e5e8fa14e49b807045660ffcbc7a07311cef10e480bc1ea5fbe6"
+    },
     "break-ui": {
       "source": "emilkowalski/skills",
       "sourceType": "github",
@@ -29,7 +35,13 @@
       "source": "khoahyh/skills",
       "sourceType": "github",
       "skillPath": "computa-please/SKILL.md",
-      "computedHash": "63e09b1f604a19cece19af0892486ed608b8111fff432cc76ca29324fb65e25f"
+      "computedHash": "2b3ec46180aff06f9f2010e561fa52ce0811c73108b786be78cba582646a865b"
+    },
+    "correct": {
+      "source": "cursor/plugins",
+      "sourceType": "github",
+      "skillPath": "harness/pstack/claude-code/skills/correct/SKILL.md",
+      "computedHash": "b7e0850f6e5370007dd560aca2a728b49891208b8782da67212b49638105827e"
     },
     "cua-driver": {
       "source": "trycua/cua",
@@ -181,6 +193,12 @@
       "sourceType": "github",
       "skillPath": "plugins/show-me/skills/show-me/SKILL.md",
       "computedHash": "43766f53afe7eb9feba0bb7716590c35cbb8d39d4a91eddef50e9566a6f6ae19"
+    },
+    "statechart": {
+      "source": "cursor/plugins",
+      "sourceType": "github",
+      "skillPath": "harness/pstack/claude-code/skills/statechart/SKILL.md",
+      "computedHash": "ab7f305663449c2f6d832cd273879cee3caeebd65536fa525ccaf03eb6963374"
     },
     "subtract": {
       "source": "khoahyh/skills",
