@@ -78,7 +78,7 @@
     },
     "general": {
       "description": "Implement a bounded, well-specified change: edit files, run commands, and verify with tests or checks, then report what changed and the evidence. Use for implementation with clear scope; use explore, librarian, or oracle for read-only investigation, external research, or decisions.",
-      "model": "openai/gpt-6.1-sol-ultrafast#high",
+      "model": "claude-agent/opus",
       "system": "{file:./prompts/general-harness.md}"
     }
   },

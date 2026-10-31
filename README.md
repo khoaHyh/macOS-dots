@@ -226,6 +226,12 @@ ls -la ~/.tmux/plugins/tpm
 - AeroSpace opens Ghostty with `alt + enter` and handles window-manager shortcuts without `skhd`.
 - `scripts/refresh_simple_bar.sh` keeps Übersicht/simple-bar in sync with AeroSpace focus/workspace changes.
 - AeroSpace workspaces are separate from macOS Mission Control Spaces; simple-bar reflects AeroSpace workspaces in this setup.
+- `simple-bar/local-changes.patch` holds local fixes to the simple-bar widget checkout (upstream commit `72fde02`), including a 2-second AppleEvent timeout on Spotify calls so a hung Spotify cannot freeze the bar. Reapply after updating simple-bar:
+
+  ```bash
+  cd ~/Library/Application\ Support/Übersicht/widgets/simple-bar
+  git apply ~/dev/macOS-dots/simple-bar/local-changes.patch
+  ```
 - Mission Control's `Option + 1..6` desktop shortcuts should stay disabled so AeroSpace owns `alt + number`.
 - Prefer using a single native macOS Desktop per display; use AeroSpace workspaces for day-to-day workspace switching.
 - AeroSpace's docs recommend disabling `Displays have separate Spaces` for multi-monitor stability; this requires logging out before it takes effect.

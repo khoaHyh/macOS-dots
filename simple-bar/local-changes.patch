@@ -1,0 +1,361 @@
+diff --git a/index.jsx b/index.jsx
+index eea95f4..1c1822b 100644
+--- a/index.jsx
++++ b/index.jsx
+@@ -208,9 +208,6 @@ function render({ output, error }) {
+     "simple-bar--no-shadow": shadow !== "on",
+   });
+ 
+-  // Handle bar focus ring on click
+-  Utils.handleBarFocus();
+-
+   // Render the bar with appropriate components and data
+   return (
+     <SimpleBarContextProvider
+@@ -218,7 +215,11 @@ function render({ output, error }) {
+       displays={displays}
+       SIPDisabled={SIPDisabled}
+     >
+-      <div className={classes}>
++      <div
++        className={classes}
++        onClick={Utils.handleBarFocus}
++        onMouseLeave={Utils.blurBar}
++      >
+         <SideIcon.Component />
+         <React.Suspense fallback={<React.Fragment />}>
+           {windowManager === "yabai" && (
+diff --git a/lib/components/data/mic.jsx b/lib/components/data/mic.jsx
+index e9061bd..dcf204a 100644
+--- a/lib/components/data/mic.jsx
++++ b/lib/components/data/mic.jsx
+@@ -40,6 +40,7 @@ export const Widget = React.memo(() => {
+   const { volume: _volume } = state || {};
+   const [volume, setVolume] = React.useState(_volume && parseInt(_volume, 10));
+   const [dragging, setDragging] = React.useState(false);
++  const draggingRef = React.useRef(false);
+ 
+   /**
+    * Reset the widget state.
+@@ -66,13 +67,10 @@ export const Widget = React.memo(() => {
+   // Refresh the widget periodically.
+   useWidgetRefresh(visible, getMic, refresh);
+ 
+-  // Update the mic volume when dragging state changes.
+-  React.useEffect(() => {
+-    if (!dragging) setMic(volume);
+-  }, [dragging, volume]);
+-
+   // Update the volume state when the fetched volume changes.
+   React.useEffect(() => {
++    // A poll must not replace the value being chosen during a drag.
++    if (draggingRef.current) return;
+     setVolume((currentVolume) => {
+       if (_volume && currentVolume !== parseInt(_volume, 10)) {
+         return parseInt(_volume, 10);
+@@ -94,17 +92,27 @@ export const Widget = React.memo(() => {
+   const onChange = (e) => {
+     const value = parseInt(e.target.value, 10);
+     setVolume(value);
++    // Keyboard changes have no mouse release to commit them.
++    if (!draggingRef.current) setMic(value);
+   };
+ 
+   /**
+    * Handle mouse down event on the slider.
+    */
+-  const onMouseDown = () => setDragging(true);
++  const onMouseDown = () => {
++    draggingRef.current = true;
++    setDragging(true);
++  };
+ 
+   /**
+    * Handle mouse up event on the slider.
+    */
+-  const onMouseUp = () => setDragging(false);
++  const onMouseUp = (e) => {
++    if (!draggingRef.current) return;
++    draggingRef.current = false;
++    setDragging(false);
++    setMic(parseInt(e.currentTarget.value, 10));
++  };
+ 
+   const formattedVolume = `${volume.toString().padStart(2, "0")}%`;
+ 
+diff --git a/lib/components/data/sound.jsx b/lib/components/data/sound.jsx
+index b8229df..9dbb071 100644
+--- a/lib/components/data/sound.jsx
++++ b/lib/components/data/sound.jsx
+@@ -40,6 +40,7 @@ export const Widget = React.memo(() => {
+   const { volume: _volume } = state || {};
+   const [volume, setVolume] = React.useState(_volume && parseInt(_volume, 10));
+   const [dragging, setDragging] = React.useState(false);
++  const draggingRef = React.useRef(false);
+ 
+   /**
+    * Reset the widget state.
+@@ -74,13 +75,10 @@ export const Widget = React.memo(() => {
+   // Refresh the widget at the specified interval.
+   useWidgetRefresh(visible, getSound, refresh);
+ 
+-  // Update the sound settings when dragging ends.
+-  React.useEffect(() => {
+-    if (!dragging) setSound(volume);
+-  }, [dragging, volume]);
+-
+   // Update the volume state when the fetched volume changes.
+   React.useEffect(() => {
++    // A poll must not replace the value being chosen during a drag.
++    if (draggingRef.current) return;
+     setVolume((currentVolume) => {
+       if (_volume && currentVolume !== parseInt(_volume, 10)) {
+         return parseInt(_volume, 10);
+@@ -107,10 +105,20 @@ export const Widget = React.memo(() => {
+   const onChange = (e) => {
+     const value = parseInt(e.target.value, 10);
+     setVolume(value);
++    // Keyboard changes have no mouse release to commit them.
++    if (!draggingRef.current) setSound(value);
+   };
+ 
+-  const onMouseDown = () => setDragging(true);
+-  const onMouseUp = () => setDragging(false);
++  const onMouseDown = () => {
++    draggingRef.current = true;
++    setDragging(true);
++  };
++  const onMouseUp = (e) => {
++    if (!draggingRef.current) return;
++    draggingRef.current = false;
++    setDragging(false);
++    setSound(parseInt(e.currentTarget.value, 10));
++  };
+ 
+   const formattedVolume = `${volume.toString().padStart(2, "0")}%`;
+ 
+diff --git a/lib/components/data/spotify.jsx b/lib/components/data/spotify.jsx
+index bbba95e..ef6e362 100644
+--- a/lib/components/data/spotify.jsx
++++ b/lib/components/data/spotify.jsx
+@@ -75,13 +75,15 @@ export const Widget = React.memo(() => {
+     if (showSpotifyMetadata) {
+       const [playerState, trackName, artistName] = await Promise.all([
+         Uebersicht.run(
+-          `osascript -e 'tell application "Spotify" to player state as string' 2>/dev/null || echo "stopped"`,
++          // Spotify can stop answering AppleEvents; the default 2-minute wait
++          // holds Übersicht's few server connections and freezes every widget.
++          `osascript -e 'with timeout of 2 seconds' -e 'tell application "Spotify" to player state as string' -e 'end timeout' 2>/dev/null || echo "stopped"`,
+         ),
+         Uebersicht.run(
+-          `osascript -e 'tell application "Spotify" to name of current track as string' 2>/dev/null || echo ""`,
++          `osascript -e 'with timeout of 2 seconds' -e 'tell application "Spotify" to name of current track as string' -e 'end timeout' 2>/dev/null || echo ""`,
+         ),
+         Uebersicht.run(
+-          `osascript -e 'tell application "Spotify" to artist of current track as string' 2>/dev/null || echo ""`,
++          `osascript -e 'with timeout of 2 seconds' -e 'tell application "Spotify" to artist of current track as string' -e 'end timeout' 2>/dev/null || echo ""`,
+         ),
+       ]);
+       setState({
+@@ -92,7 +94,7 @@ export const Widget = React.memo(() => {
+       // else, only playerState
+     } else {
+       const playerState = await Uebersicht.run(
+-        `osascript -e 'tell application "Spotify" to player state as string' 2>/dev/null || echo "stopped"`,
++        `osascript -e 'with timeout of 2 seconds' -e 'tell application "Spotify" to player state as string' -e 'end timeout' 2>/dev/null || echo "stopped"`,
+       );
+       setState({
+         playerState: Utils.cleanupOutput(playerState),
+diff --git a/lib/components/data/time.jsx b/lib/components/data/time.jsx
+index 6890ffb..e203130 100644
+--- a/lib/components/data/time.jsx
++++ b/lib/components/data/time.jsx
+@@ -90,20 +90,9 @@ export const Widget = React.memo(() => {
+   const diff = Math.max(0, dayEnd - new Date());
+   const fillerWidth = (100 - (100 * diff) / range) / 100;
+ 
+-  /**
+-   * Icon component for the time widget.
+-   * @returns {JSX.Element} The rendered icon.
+-   */
+-  const TimeIcon = () => {
+-    return <Icon time={time} />;
+-  };
+-
+   return (
+-    <DataWidget.Widget
+-      classes="time"
+-      Icon={showIcon ? TimeIcon : null}
+-      disableSlider
+-    >
++    <DataWidget.Widget classes="time" disableSlider>
++      {showIcon && <Icon time={time} />}
+       {time}
+       {dayProgress && (
+         <div
+diff --git a/lib/scripts/init-aerospace.sh b/lib/scripts/init-aerospace.sh
+index 0e9c140..bc053c7 100644
+--- a/lib/scripts/init-aerospace.sh
++++ b/lib/scripts/init-aerospace.sh
+@@ -6,10 +6,11 @@ SIP=$(csrutil status)
+ 
+ # List monitors using the aerospace tool, format the output as JSON, and store it in the variable displays
+ # Redirect any error output to /dev/null
+-displays=$($aerospace_path list-monitors --json --format "%{monitor-id} %{monitor-name} %{monitor-appkit-nsscreen-screens-id}" 2> /dev/null)
++displays=$("$aerospace_path" list-monitors --json --format "%{monitor-id} %{monitor-name} %{monitor-appkit-nsscreen-screens-id}" 2> /dev/null)
++aerospace_status=$?
+ 
+-# Check if the previous command failed (exit status 1)
+-if [ $? -eq 1 ]; then
++# Check if the previous command failed or returned no JSON data
++if [ "$aerospace_status" -ne 0 ] || [ -z "$displays" ]; then
+   # Print "aerospaceError" and exit the script with status 0
+   echo "aerospaceError"
+   exit 0
+@@ -23,4 +24,4 @@ echo $(cat <<-EOF
+     "shadow": true
+   }
+ EOF
+-)
+\ No newline at end of file
++)
+diff --git a/lib/scripts/init-yabai.sh b/lib/scripts/init-yabai.sh
+index 5dbbfe3..233872b 100644
+--- a/lib/scripts/init-yabai.sh
++++ b/lib/scripts/init-yabai.sh
+@@ -38,43 +38,52 @@ if [ -z "$displays" ]; then
+     displays=$($yabai_path -m query --displays)
+ fi
+ 
++# Resolve the helper used by yabai signals before adding signal actions.
++SCRIPT_DIR=$(cd "$(dirname "$0")" && pwd)
++refresh_widget="${SCRIPT_DIR}/refresh-widget.sh"
++
++remove_refresh_signals() {
++    $yabai_path -m signal --remove label="Refresh simple-bar when focused application changes" >/dev/null 2>&1 || true
++    $yabai_path -m signal --remove label="Refresh simple-bar when a window is minimized" >/dev/null 2>&1 || true
++    $yabai_path -m signal --remove label="Refresh simple-bar when a window is resized" >/dev/null 2>&1 || true
++    $yabai_path -m signal --remove label="Refresh simple-bar when an application window is closed" >/dev/null 2>&1 || true
++    $yabai_path -m signal --remove label="Refresh simple-bar on space change" >/dev/null 2>&1 || true
++    $yabai_path -m signal --remove label="Refresh simple-bar on display focus change" >/dev/null 2>&1 || true
++    $yabai_path -m signal --remove label="Refresh simple-bar when current window title changes" >/dev/null 2>&1 || true
++    $yabai_path -m signal --remove label="Refresh simple-bar on space removal" >/dev/null 2>&1 || true
++    $yabai_path -m signal --remove label="Refresh simple-bar on space creation" >/dev/null 2>&1 || true
++}
++
+ # Add or remove signals based on the disable_signals flag
+ if [ $disable_signals = "false" ]; then
++    remove_refresh_signals
++
+     # Add signals to refresh the simple-bar widget on various yabai events
+-    $yabai_path -m signal --add event=window_focused action="osascript -e 'tell application id \"tracesOf.Uebersicht\" to refresh widget id \"simple-bar-index-jsx\"'" label="Refresh simple-bar when focused application changes"
+-    $yabai_path -m signal --add event=window_minimized action="osascript -e 'tell application id \"tracesOf.Uebersicht\" to refresh widget id \"simple-bar-index-jsx\"'" label="Refresh simple-bar when a window is minimized"
+-    $yabai_path -m signal --add event=window_resized action="osascript -e 'tell application id \"tracesOf.Uebersicht\" to refresh widget id \"simple-bar-index-jsx\"'" label="Refresh simple-bar when a window is resized"
+-    $yabai_path -m signal --add event=window_destroyed action="osascript -e 'tell application id \"tracesOf.Uebersicht\" to refresh widget id \"simple-bar-index-jsx\"'" label="Refresh simple-bar when an application window is closed"
+-    $yabai_path -m signal --add event=space_changed action="osascript -e 'tell application id \"tracesOf.Uebersicht\" to refresh widget id \"simple-bar-index-jsx\"'" label="Refresh simple-bar on space change"
+-    $yabai_path -m signal --add event=display_changed action="osascript -e 'tell application id \"tracesOf.Uebersicht\" to refresh widget id \"simple-bar-index-jsx\"'" label="Refresh simple-bar on display focus change"
++    $yabai_path -m signal --add event=window_focused action="'$refresh_widget'" label="Refresh simple-bar when focused application changes"
++    $yabai_path -m signal --add event=window_minimized action="'$refresh_widget'" label="Refresh simple-bar when a window is minimized"
++    $yabai_path -m signal --add event=window_resized action="'$refresh_widget'" label="Refresh simple-bar when a window is resized"
++    $yabai_path -m signal --add event=window_destroyed action="'$refresh_widget'" label="Refresh simple-bar when an application window is closed"
++    $yabai_path -m signal --add event=space_changed action="'$refresh_widget'" label="Refresh simple-bar on space change"
++    $yabai_path -m signal --add event=display_changed action="'$refresh_widget'" label="Refresh simple-bar on display focus change"
+ 
+     # Add signal for window title change if enabled
+     if [ $enable_window_title_changed_signal = "true" ]; then
+-        $yabai_path -m signal --add event=window_title_changed action="osascript -e 'tell application id \"tracesOf.Uebersicht\" to refresh widget id \"simple-bar-index-jsx\"'" label="Refresh simple-bar when current window title changes"
++        $yabai_path -m signal --add event=window_title_changed action="'$refresh_widget'" label="Refresh simple-bar when current window title changes"
+     fi
+ 
+     # Add signals for space creation and destruction if yabai version is 6 or higher
+     yabai_major_version=$($yabai_path -v | awk -F '.' '{print $1}' | sed 's/yabai-v//')
+     if [ $yabai_major_version -ge 6 ]; then
+-        $yabai_path -m signal --add event=space_destroyed action="osascript -e 'tell application id \"tracesOf.Uebersicht\" to refresh widget id \"simple-bar-index-jsx\"'" label="Refresh simple-bar on space removal"
+-        $yabai_path -m signal --add event=space_created action="osascript -e 'tell application id \"tracesOf.Uebersicht\" to refresh widget id \"simple-bar-index-jsx\"'" label="Refresh simple-bar on space creation"
++        $yabai_path -m signal --add event=space_destroyed action="'$refresh_widget'" label="Refresh simple-bar on space removal"
++        $yabai_path -m signal --add event=space_created action="'$refresh_widget'" label="Refresh simple-bar on space creation"
+     fi
+ else
+     # Remove signals if disable_signals is true
+-    $yabai_path -m signal --remove label="Refresh simple-bar when focused application changes" >/dev/null 2>&1 || true
+-    $yabai_path -m signal --remove label="Refresh simple-bar when a window is minimized" >/dev/null 2>&1 || true
+-    $yabai_path -m signal --remove label="Refresh simple-bar when a window is resized" >/dev/null 2>&1 || true
+-    $yabai_path -m signal --remove label="Refresh simple-bar when an application window is closed" >/dev/null 2>&1 || true
+-    $yabai_path -m signal --remove label="Refresh simple-bar on space change" >/dev/null 2>&1 || true
+-    $yabai_path -m signal --remove label="Refresh simple-bar on display focus change" >/dev/null 2>&1 || true
+-    $yabai_path -m signal --remove label="Refresh simple-bar when current window title changes" >/dev/null 2>&1 || true
+-    $yabai_path -m signal --remove label="Refresh simple-bar on space removal" >/dev/null 2>&1 || true
+-    $yabai_path -m signal --remove label="Refresh simple-bar on space creation" >/dev/null 2>&1 || true
++    remove_refresh_signals
+ fi
+ 
+ # Determine skhd mode based on the display_skhd_mode flag and disable_signals flag
+ if [ $display_skhd_mode = "true" ]; then
+-  SCRIPT_DIR=$(cd $(dirname "${BASH_SOURCE[0]}") && pwd)
+   if [ $disable_signals = "false" ]; then
+     skhd_mode=$(cat "$("${SCRIPT_DIR}"/yabai-set-mode.sh --query)")
+   else
+diff --git a/lib/utils.js b/lib/utils.js
+index 8d60d2e..9e20314 100644
+--- a/lib/utils.js
++++ b/lib/utils.js
+@@ -535,31 +535,13 @@ export async function switchSpace(currentIndex, desiredIndex) {
+ }
+ 
+ /**
+- * Adds event listeners to handle focus and blur events on the bar element.
++ * Focuses the bar when its background is clicked, ignoring child clicks.
+  *
+- * This function selects the element with the class "simple-bar" and adds
+- * event listeners for "click" and "mouseleave" events. When the bar is clicked,
+- * it checks if the click target is the bar itself and then calls the `focusBar` function.
+- * When the mouse leaves the bar, it calls the `blurBar` function.
++ * @param {React.MouseEvent<HTMLDivElement>} e - The click event on the bar.
+  */
+-export function handleBarFocus() {
+-  const bar = document.querySelector(".simple-bar");
+-  if (!bar) return;
+-  bar.addEventListener("click", (e) => {
+-    if (e.target !== bar) return;
+-    focusBar();
+-  });
+-  bar.addEventListener("mouseleave", blurBar);
+-}
+-
+-/**
+- * Focuses the bar element by adding the "simple-bar--focused" class to it.
+- * If the bar element is not found, the function does nothing.
+- */
+-function focusBar() {
+-  const bar = document.querySelector(".simple-bar");
+-  if (!bar) return;
+-  bar.classList.add("simple-bar--focused");
++export function handleBarFocus(e) {
++  if (e.target !== e.currentTarget) return;
++  e.currentTarget.classList.add("simple-bar--focused");
+ }
+ 
+ /**
+diff --git a/lib/scripts/refresh-widget.sh b/lib/scripts/refresh-widget.sh
+new file mode 100755
+index 0000000..8238e54
+--- /dev/null
++++ b/lib/scripts/refresh-widget.sh
+@@ -0,0 +1,17 @@
++#!/bin/sh
++
++LOCK_DIR="${TMPDIR:-/tmp}/simple-bar-refresh-widget.lock"
++
++if ! mkdir "$LOCK_DIR" 2>/dev/null; then
++  exit 0
++fi
++
++cleanup() {
++  rmdir "$LOCK_DIR" 2>/dev/null || true
++}
++trap cleanup EXIT INT TERM
++
++osascript \
++  -e 'with timeout of 2 seconds' \
++  -e 'tell application id "tracesOf.Uebersicht" to refresh widget id "simple-bar-index-jsx"' \
++  -e 'end timeout'
